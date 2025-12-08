@@ -1,36 +1,103 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Edit, Trash2, ChevronDown, ChevronRight, Folder, File as FileIcon } from "lucide-react";
+import {
+  PlusCircle,
+  Edit,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  File as FileIcon,
+  Package,
+  FolderTree,
+  Layers,
+  Search,
+  Filter,
+  Hash,
+} from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { produce } from 'immer';
 
 // --- DATA STRUCTURES ---
-type Item = { id: string; name: string; code: string; };
-type Group = { id: string; name: string; items: Item[]; };
-type Store = { id: string; name: string; groups: Group[]; };
+type Item = {
+  id: string;
+  name: string;
+  code: string;
+  quantity?: number;
+  unit?: string;
+};
+
+type Group = {
+  id: string;
+  name: string;
+  items: Item[];
+};
+
+type Store = {
+  id: string;
+  name: string;
+  groups: Group[];
+};
 
 // --- MOCK DATA ---
 const initialTreeData: Store[] = [
-  { id: 'store-1', name: 'مخزن الأثاث', groups: [
-      { id: 'group-1-1', name: 'كراسي', items: [
-          { id: 'item-1-1-1', name: 'كرسي مكتب', code: 'FUR-CHR-001' },
-          { id: 'item-1-1-2', name: 'كرسي قاعة', code: 'FUR-CHR-002' },
-        ] },
-      { id: 'group-1-2', name: 'طاولات', items: [
-          { id: 'item-1-2-1', name: 'طاولة اجتماعات', code: 'FUR-TBL-001' },
-        ] },
-    ] },
-  { id: 'store-2', name: 'مخزن السجاد', groups: [
-      { id: 'group-2-1', name: 'سجاد صناعي', items: [
-          { id: 'item-2-1-1', name: 'سجاد صحراوي 2*3 م', code: 'CRP-IND-001' },
-        ] },
-    ] },
+  {
+    id: 'store-1',
+    name: 'مخزن الأثاث',
+    groups: [
+      {
+        id: 'group-1-1',
+        name: 'كراسي',
+        items: [
+          { id: 'item-1-1-1', name: 'كرسي مكتب', code: 'FUR-CHR-001', quantity: 150, unit: 'قطعة' },
+          { id: 'item-1-1-2', name: 'كرسي قاعة', code: 'FUR-CHR-002', quantity: 85, unit: 'قطعة' },
+        ],
+      },
+      {
+        id: 'group-1-2',
+        name: 'طاولات',
+        items: [
+          { id: 'item-1-2-1', name: 'طاولة اجتماعات', code: 'FUR-TBL-001', quantity: 25, unit: 'قطعة' },
+          { id: 'item-1-2-2', name: 'طاولة مكتب', code: 'FUR-TBL-002', quantity: 120, unit: 'قطعة' },
+        ],
+      },
+    ],
+  },
+  {
+    id: 'store-2',
+    name: 'مخزن السجاد',
+    groups: [
+      {
+        id: 'group-2-1',
+        name: 'سجاد صناعي',
+        items: [
+          { id: 'item-2-1-1', name: 'سجاد صحراوي 2*3 م', code: 'CRP-IND-001', quantity: 45, unit: 'متر' },
+          { id: 'item-2-1-2', name: 'سجاد فارسي 3*4 م', code: 'CRP-IND-002', quantity: 32, unit: 'متر' },
+        ],
+      },
+      {
+        id: 'group-2-2',
+        name: 'سجاد طبيعي',
+        items: [
+          { id: 'item-2-2-1', name: 'سجاد صوف 2*3 م', code: 'CRP-NAT-001', quantity: 18, unit: 'متر' },
+        ],
+      },
+    ],
+  },
 ];
 
 // --- MODAL STATE TYPE ---
@@ -38,149 +105,572 @@ type ModalState = {
   isOpen: boolean;
   mode: 'add' | 'edit';
   type: 'store' | 'group' | 'item' | null;
-  data?: { id: string; name: string; code?: string; parentId?: string };
+  data?: { id: string; name: string; code?: string; quantity?: number; unit?: string; parentId?: string };
+};
+
+// Group Node Component
+const GroupNode = ({
+  group,
+  storeId,
+  onOpenModal,
+  onDelete,
+  searchTerm,
+  level = 1,
+}: {
+  group: Group;
+  storeId: string;
+  onOpenModal: (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: any) => void;
+  onDelete: (type: 'store' | 'group' | 'item', id: string) => void;
+  searchTerm: string;
+  level?: number;
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const matchesSearch = (text: string) => {
+    if (!searchTerm) return true;
+    return text.toLowerCase().includes(searchTerm.toLowerCase());
+  };
+
+  const hasMatchingItem = group.items.some(
+    (item) => matchesSearch(item.name) || matchesSearch(item.code)
+  );
+  const groupMatches = matchesSearch(group.name);
+
+  if (!groupMatches && !hasMatchingItem && searchTerm) return null;
+
+  const itemCount = group.items.length;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="pr-2 mt-1">
+      <div
+        className={`flex items-center gap-2 group mb-0.5 rounded-lg hover:bg-muted/50 p-2 transition-all border ${
+          groupMatches && searchTerm ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'
+        }`}
+      >
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+            {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          </Button>
+        </CollapsibleTrigger>
+        <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-950 text-blue-600">
+          <Folder className="h-3.5 w-3.5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`font-semibold text-sm ${groupMatches && searchTerm ? 'text-primary' : ''}`}>
+              {group.name}
+            </span>
+            <Badge variant="secondary" className="text-xs h-5">
+              {itemCount} مادة
+            </Badge>
+          </div>
+        </div>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() =>
+              onOpenModal('add', 'item', {
+                id: `temp-${Date.now()}`,
+                parentId: group.id,
+                name: '',
+                code: '',
+              })
+            }
+            title="إضافة مادة"
+          >
+            <PlusCircle className="h-3.5 w-3.5 text-green-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onOpenModal('edit', 'group', group)}
+            title="تعديل"
+          >
+            <Edit className="h-3.5 w-3.5 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onDelete('group', group.id)}
+            title="حذف"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-red-600" />
+          </Button>
+        </div>
+      </div>
+
+      <CollapsibleContent className="pr-4 border-r-2 border-dashed border-muted-foreground/20 mr-3">
+        {group.items.map((item) => {
+          const itemMatches = matchesSearch(item.name) || matchesSearch(item.code);
+          if (!itemMatches && searchTerm) return null;
+
+          return (
+            <div
+              key={item.id}
+              className={`flex items-center gap-2 group mt-1 p-2 rounded-lg hover:bg-muted/50 transition-all border ${
+                itemMatches && searchTerm ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'
+              }`}
+            >
+              <div className="w-7 shrink-0"></div>
+              <div className="p-1.5 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-500">
+                <FileIcon className="h-3.5 w-3.5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-sm font-medium ${itemMatches && searchTerm ? 'text-primary' : ''}`}>
+                    {item.name}
+                  </span>
+                  <code className="text-xs px-1.5 py-0.5 bg-muted rounded">{item.code}</code>
+                  {item.quantity !== undefined && (
+                    <Badge variant="outline" className="text-xs h-5">
+                      {item.quantity} {item.unit}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onOpenModal('edit', 'item', item)}
+                  title="تعديل"
+                >
+                  <Edit className="h-3.5 w-3.5 text-blue-600" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onDelete('item', item.id)}
+                  title="حذف"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+// Store Node Component
+const StoreNode = ({
+  store,
+  onOpenModal,
+  onDelete,
+  searchTerm,
+}: {
+  store: Store;
+  onOpenModal: (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: any) => void;
+  onDelete: (type: 'store' | 'group' | 'item', id: string) => void;
+  searchTerm: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(true);
+
+  const matchesSearch = (text: string) => {
+    if (!searchTerm) return true;
+    return text.toLowerCase().includes(searchTerm.toLowerCase());
+  };
+
+  const hasMatchingContent = store.groups.some(
+    (group) =>
+      matchesSearch(group.name) || group.items.some((item) => matchesSearch(item.name) || matchesSearch(item.code))
+  );
+
+  const storeMatches = matchesSearch(store.name);
+
+  if (!storeMatches && !hasMatchingContent && searchTerm) return null;
+
+  const totalItems = store.groups.reduce((sum, g) => sum + g.items.length, 0);
+  const groupCount = store.groups.length;
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="pr-2 mt-1">
+      <div
+        className={`flex items-center gap-2 group mb-0.5 rounded-lg hover:bg-muted/50 p-2 transition-all border ${
+          storeMatches && searchTerm ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'
+        }`}
+      >
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+            {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          </Button>
+        </CollapsibleTrigger>
+        <div className="p-1.5 rounded-md bg-yellow-50 dark:bg-yellow-950 text-yellow-600">
+          <Folder className="h-3.5 w-3.5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`font-semibold text-sm ${storeMatches && searchTerm ? 'text-primary' : ''}`}>
+              {store.name}
+            </span>
+            <Badge variant="outline" className="text-xs h-5">
+              مخزن
+            </Badge>
+            <Badge variant="secondary" className="text-xs h-5">
+              {groupCount} مجموعة
+            </Badge>
+            <Badge variant="default" className="text-xs h-5 bg-blue-600">
+              <Package className="h-3 w-3 ml-1" />
+              {totalItems} مادة
+            </Badge>
+          </div>
+        </div>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() =>
+              onOpenModal('add', 'group', {
+                id: `temp-${Date.now()}`,
+                parentId: store.id,
+                name: '',
+              })
+            }
+            title="إضافة مجموعة"
+          >
+            <PlusCircle className="h-3.5 w-3.5 text-green-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onOpenModal('edit', 'store', store)}
+            title="تعديل"
+          >
+            <Edit className="h-3.5 w-3.5 text-blue-600" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => onDelete('store', store.id)}
+            title="حذف"
+          >
+            <Trash2 className="h-3.5 w-3.5 text-red-600" />
+          </Button>
+        </div>
+      </div>
+
+      <CollapsibleContent className="pr-4 border-r-2 border-dashed border-muted-foreground/20 mr-3">
+        {store.groups.map((group) => (
+          <GroupNode
+            key={group.id}
+            group={group}
+            storeId={store.id}
+            onOpenModal={onOpenModal}
+            onDelete={onDelete}
+            searchTerm={searchTerm}
+          />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
+  );
 };
 
 const ItemsPage = () => {
   const [treeData, setTreeData] = useState<Store[]>(initialTreeData);
-  const [isOpen, setIsOpen] = useState<Record<string, boolean>>({ 'store-1': true, 'group-1-1': true });
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'add', type: null });
-  const [formData, setFormData] = useState({ name: '', code: '' });
+  const [formData, setFormData] = useState({ name: '', code: '', quantity: '', unit: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
 
-  const toggleNode = (id: string) => setIsOpen(prev => ({ ...prev, [id]: !prev[id] }));
+  // Calculate statistics
+  const stats = useMemo(() => {
+    let totalStores = treeData.length;
+    let totalGroups = 0;
+    let totalItems = 0;
 
-  // --- ACTION HANDLERS ---
+    treeData.forEach((store) => {
+      totalGroups += store.groups.length;
+      store.groups.forEach((group) => {
+        totalItems += group.items.length;
+      });
+    });
+
+    return { totalStores, totalGroups, totalItems };
+  }, [treeData]);
+
   const openModal = (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: ModalState['data']) => {
     setModal({ isOpen: true, mode, type, data });
-    setFormData({ name: data?.name || '', code: data?.code || '' });
+    setFormData({
+      name: data?.name || '',
+      code: data?.code || '',
+      quantity: data?.quantity?.toString() || '',
+      unit: data?.unit || '',
+    });
   };
-  
-  const closeModal = () => setModal({ isOpen: false, mode: 'add', type: null });
+
+  const closeModal = () => {
+    setModal({ isOpen: false, mode: 'add', type: null });
+    setFormData({ name: '', code: '', quantity: '', unit: '' });
+  };
 
   const handleSave = () => {
     if (!modal.type) return;
 
-    setTreeData(produce(draft => {
-      const { type, mode, data } = modal;
-      if (mode === 'add') {
-        const newItem = { id: `item-${Date.now()}`, name: formData.name, code: formData.code };
-        const newGroup = { id: `group-${Date.now()}`, name: formData.name, items: [] };
-        
-        for (const store of draft) {
-          if (type === 'group' && store.id === data?.parentId) store.groups.push(newGroup);
-          for (const group of store.groups) {
-            if (type === 'item' && group.id === data?.parentId) group.items.push(newItem);
+    if (!formData.name.trim()) {
+      alert('الرجاء إدخال الاسم');
+      return;
+    }
+
+    if (modal.type === 'item' && !formData.code.trim()) {
+      alert('الرجاء إدخال كود المادة');
+      return;
+    }
+
+    setTreeData(
+      produce((draft) => {
+        const { type, mode, data } = modal;
+        if (mode === 'add') {
+          const newItem = {
+            id: `item-${Date.now()}`,
+            name: formData.name,
+            code: formData.code,
+            quantity: formData.quantity ? parseInt(formData.quantity) : undefined,
+            unit: formData.unit || undefined,
+          };
+          const newGroup = { id: `group-${Date.now()}`, name: formData.name, items: [] };
+          const newStore = { id: `store-${Date.now()}`, name: formData.name, groups: [] };
+
+          if (type === 'store') {
+            draft.push(newStore);
+          } else {
+            for (const store of draft) {
+              if (type === 'group' && store.id === data?.parentId) store.groups.push(newGroup);
+              for (const group of store.groups) {
+                if (type === 'item' && group.id === data?.parentId) group.items.push(newItem);
+              }
+            }
+          }
+        } else if (mode === 'edit' && data) {
+          for (const store of draft) {
+            if (type === 'store' && store.id === data.id) store.name = formData.name;
+            for (const group of store.groups) {
+              if (type === 'group' && group.id === data.id) group.name = formData.name;
+              for (const item of group.items) {
+                if (type === 'item' && item.id === data.id) {
+                  item.name = formData.name;
+                  item.code = formData.code;
+                  item.quantity = formData.quantity ? parseInt(formData.quantity) : undefined;
+                  item.unit = formData.unit || undefined;
+                }
+              }
+            }
           }
         }
-      } else if (mode === 'edit' && data) {
-         for (const store of draft) {
-           if (type === 'store' && store.id === data.id) store.name = formData.name;
-           for (const group of store.groups) {
-             if (type === 'group' && group.id === data.id) group.name = formData.name;
-             for (const item of group.items) {
-               if (type === 'item' && item.id === data.id) {
-                 item.name = formData.name;
-                 item.code = formData.code;
-               }
-             }
-           }
-         }
-      }
-    }));
+      })
+    );
     closeModal();
   };
-  
+
   const handleDelete = (type: 'store' | 'group' | 'item', id: string) => {
-    if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
-    setTreeData(produce(draft => {
-      if (type === 'store') return draft.filter(s => s.id !== id);
-      for (const store of draft) {
-        if (type === 'group') store.groups = store.groups.filter(g => g.id !== id);
-        for (const group of store.groups) {
-          if (type === 'item') group.items = group.items.filter(i => i.id !== id);
+    const typeLabels = { store: 'مخزن', group: 'مجموعة', item: 'مادة' };
+    if (!confirm(`هل أنت متأكد من حذف هذا ${typeLabels[type]}؟`)) return;
+
+    setTreeData(
+      produce((draft) => {
+        if (type === 'store') {
+          return draft.filter((s) => s.id !== id);
         }
-      }
-    }));
+        for (const store of draft) {
+          if (type === 'group') store.groups = store.groups.filter((g) => g.id !== id);
+          for (const group of store.groups) {
+            if (type === 'item') group.items = group.items.filter((i) => i.id !== id);
+          }
+        }
+      })
+    );
   };
-  
-  const ActionButtons = ({ onEdit, onDelete, onAdd }: { onEdit?: () => void, onDelete?: () => void, onAdd?: () => void }) => (
-    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity mr-auto">
-      {onAdd && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAdd}><PlusCircle className="h-4 w-4 text-green-500" /></Button>}
-      {onEdit && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onEdit}><Edit className="h-4 w-4 text-blue-500" /></Button>}
-      {onDelete && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDelete}><Trash2 className="h-4 w-4 text-red-500" /></Button>}
-    </div>
-  );
 
   return (
-    <>
+    <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">المخازن</CardTitle>
+            <Folder className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">{stats.totalStores}</div>
+            <p className="text-xs text-muted-foreground">مخزن مسجل</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">المجموعات</CardTitle>
+            <Layers className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.totalGroups}</div>
+            <p className="text-xs text-muted-foreground">مجموعة مسجلة</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">المواد</CardTitle>
+            <Package className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{stats.totalItems}</div>
+            <p className="text-xs text-muted-foreground">مادة مسجلة</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">الأكواد</CardTitle>
+            <Hash className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{stats.totalItems}</div>
+            <p className="text-xs text-muted-foreground">كود فريد</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>شجرة المواد</CardTitle>
-          <Button onClick={() => openModal('add', 'store', { id: `temp-${Date.now()}`, name: '' })}>
-            <PlusCircle className="ml-2 h-4 w-4" />إضافة مخزن
-          </Button>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FolderTree className="h-5 w-5" />
+                شجرة المواد
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                إدارة المخازن والمجموعات والمواد في النظام
+              </p>
+            </div>
+            <Button
+              onClick={() => openModal('add', 'store', { id: `temp-${Date.now()}`, name: '' })}
+              className="shrink-0"
+            >
+              <PlusCircle className="ml-2 h-4 w-4" />
+              إضافة مخزن
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="p-6 font-mono text-sm">
-          {treeData.map(store => (
-            <Collapsible key={store.id} open={isOpen[store.id]} onOpenChange={() => toggleNode(store.id)} className="pr-4">
-              <div className="flex items-center gap-2 group mb-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 p-1">
-                <CollapsibleTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6">{isOpen[store.id] ? <ChevronDown /> : <ChevronRight />}</Button></CollapsibleTrigger>
-                <Folder className="h-5 w-5 text-yellow-500" />
-                <span className="font-semibold">{store.name}</span>
-                <ActionButtons onAdd={() => openModal('add', 'group', { id: `temp-${Date.now()}`, parentId: store.id, name: '' })} onEdit={() => openModal('edit', 'store', store)} onDelete={() => handleDelete('store', store.id)} />
-              </div>
-              <CollapsibleContent className="pr-6 border-r-2 border-dashed border-gray-300 dark:border-gray-700">
-                {store.groups.map(group => (
-                  <Collapsible key={group.id} open={isOpen[group.id]} onOpenChange={() => toggleNode(group.id)} className="pr-4 mt-2">
-                    <div className="flex items-center gap-2 group mb-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 p-1">
-                      <CollapsibleTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6">{isOpen[group.id] ? <ChevronDown /> : <ChevronRight />}</Button></CollapsibleTrigger>
-                      <Folder className="h-5 w-5 text-blue-400" />
-                      <span>{group.name}</span>
-                      <ActionButtons onAdd={() => openModal('add', 'item', { id: `temp-${Date.now()}`, parentId: group.id, name: '', code: '' })} onEdit={() => openModal('edit', 'group', group)} onDelete={() => handleDelete('group', group.id)} />
-                    </div>
-                    <CollapsibleContent className="pr-8 border-r-2 border-dashed border-gray-300 dark:border-gray-700">
-                      {group.items.map(item => (
-                        <div key={item.id} className="flex items-center gap-2 group mt-2 p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
-                           <div className="w-6 shrink-0"></div>
-                           <FileIcon className="h-5 w-5 text-gray-400 shrink-0" />
-                           <span>{item.name} <span className="text-xs text-muted-foreground">({item.code})</span></span>
-                           <ActionButtons onEdit={() => openModal('edit', 'item', item)} onDelete={() => handleDelete('item', item.id)} />
-                        </div>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
+        <CardContent className="p-6">
+          {/* Search */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="flex-1 relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="البحث عن مخزن، مجموعة أو مادة..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+          </div>
+
+          {/* Tree */}
+          {treeData.length === 0 ? (
+            <div className="text-center py-12">
+              <FolderTree className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">لا توجد بيانات</h3>
+              <p className="text-sm text-muted-foreground mb-4">ابدأ بإضافة مخزن جديد</p>
+              <Button onClick={() => openModal('add', 'store', { id: `temp-${Date.now()}`, name: '' })}>
+                <PlusCircle className="ml-2 h-4 w-4" />
+                إضافة مخزن
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {treeData.map((store) => (
+                <StoreNode
+                  key={store.id}
+                  store={store}
+                  onOpenModal={openModal}
+                  onDelete={handleDelete}
+                  searchTerm={searchTerm}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* --- DIALOG --- */}
+      {/* Dialog */}
       <Dialog open={modal.isOpen} onOpenChange={closeModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{`${modal.mode === 'add' ? 'إضافة' : 'تعديل'} ${ modal.type === 'store' ? 'مخزن' : modal.type === 'group' ? 'مجموعة' : 'مادة'}`}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {modal.type === 'store' && <Folder className="h-5 w-5 text-yellow-600" />}
+              {modal.type === 'group' && <Folder className="h-5 w-5 text-blue-600" />}
+              {modal.type === 'item' && <FileIcon className="h-5 w-5 text-gray-600" />}
+              {`${modal.mode === 'add' ? 'إضافة' : 'تعديل'} ${
+                modal.type === 'store' ? 'مخزن' : modal.type === 'group' ? 'مجموعة' : 'مادة'
+              }`}
+            </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">الاسم</Label>
-              <Input id="name" value={formData.name} onChange={e => setFormData(f => ({ ...f, name: e.target.value }))} className="col-span-3" />
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">الاسم</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
+                placeholder="أدخل الاسم..."
+                autoFocus
+              />
             </div>
             {modal.type === 'item' && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="code" className="text-right">الكود</Label>
-                <Input id="code" value={formData.code} onChange={e => setFormData(f => ({ ...f, code: e.target.value }))} className="col-span-3" />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="code">الكود</Label>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData((f) => ({ ...f, code: e.target.value }))}
+                    placeholder="مثال: FUR-CHR-001"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">الكمية</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData((f) => ({ ...f, quantity: e.target.value }))}
+                      placeholder="100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="unit">الوحدة</Label>
+                    <Input
+                      id="unit"
+                      value={formData.unit}
+                      onChange={(e) => setFormData((f) => ({ ...f, unit: e.target.value }))}
+                      placeholder="قطعة، متر، كغم..."
+                    />
+                  </div>
+                </div>
+              </>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeModal}>إلغاء</Button>
-            <Button onClick={handleSave}>حفظ</Button>
+            <Button variant="outline" onClick={closeModal}>
+              إلغاء
+            </Button>
+            <Button onClick={handleSave}>{modal.mode === 'add' ? 'إضافة' : 'حفظ'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 };
 

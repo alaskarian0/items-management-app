@@ -53,12 +53,12 @@ export const navbarData: NavbarData = {
       items: [
         {
           title: "إدارة المخازن",
-          url: "/settings/stores",
+          url: "/warehouse/stores",
           icon: Warehouse,
         },
         {
           title: "إدخال المواد",
-          url: "/warehouse/entry/new",
+          url: "/warehouse/entry",
           icon: PackagePlus,
         },
         {
@@ -67,14 +67,14 @@ export const navbarData: NavbarData = {
           icon: PackageMinus,
         },
         {
+          title: "حركة المواد",
+          url: "/warehouse/item-movement",
+          icon: History,
+        },
+        {
           title: "الرصيد المخزني",
           url: "/warehouse/stock-balance",
           icon: Boxes,
-        },
-        {
-          title: "رصيد الأقسام",
-          url: "/warehouse/department-balance",
-          icon: Building2,
         },
       ],
     },
@@ -123,36 +123,31 @@ export const navbarData: NavbarData = {
       ],
     },
     {
-      title: "إدارة المواد",
-      url: "/materials",
-      icon: Package,
-      items: [
-        {
-          title: "شجرة المواد",
-          url: "/items",
-          icon: Boxes,
-        },
-        {
-          title: "الذمة",
-          url: "/custody",
-          icon: ClipboardList,
-        },
-        {
-          title: "حركة المواد",
-          url: "/item-movement",
-          icon: History,
-        },
-      ]
-    },
-    {
       title: "التقارير",
       url: "/reports",
       icon: BarChart3,
-    },
-    {
-      title: "الأرشيف",
-      url: "/archive",
-      icon: FileArchive,
+      items: [
+        {
+          title: "حركة المواد",
+          url: "/reports/item-movement",
+          icon: History,
+        },
+        {
+          title: "تقارير الموجودات الثابتة",
+          url: "/reports/fixed-assets",
+          icon: Landmark,
+        },
+        {
+          title: "تقارير الإدخال والإصدار",
+          url: "/reports/entry-issuance",
+          icon: FileText,
+        },
+        {
+          title: "التقارير المالية",
+          url: "/reports/financial",
+          icon: BarChart3,
+        },
+      ],
     },
   ],
   projects: [
@@ -161,6 +156,11 @@ export const navbarData: NavbarData = {
       url: "/settings",
       icon: Settings,
       items: [
+        {
+          title: "شجرة المواد",
+          url: "/items",
+          icon: Boxes,
+        },
         {
           title: "الأقسام",
           url: "/settings/departments",
@@ -188,11 +188,14 @@ export const navbarData: NavbarData = {
 };
 
 // Utility function to filter navigation items based on user role
-export function filterNavItemsByRole(items: NavItem[], userRole?: string): NavItem[] {
+export function filterNavItemsByRole(
+  items: NavItem[],
+  userRole?: string
+): NavItem[] {
   if (!userRole) return []; // If no user role, return empty array
-  
+
   return items
-    .filter(item => {
+    .filter((item) => {
       // If no roles specified, item is accessible to all authenticated users
       if (!item.roles || item.roles.length === 0) {
         return true;
@@ -200,10 +203,12 @@ export function filterNavItemsByRole(items: NavItem[], userRole?: string): NavIt
       // Check if user's role is in the allowed roles
       return item.roles.includes(userRole);
     })
-    .map(item => ({
+    .map((item) => ({
       ...item,
       // Recursively filter subitems if they exist
-      items: item.items ? filterNavItemsByRole(item.items, userRole) : undefined
+      items: item.items
+        ? filterNavItemsByRole(item.items, userRole)
+        : undefined,
     }));
 }
 
@@ -218,22 +223,22 @@ export function getFilteredNavbarData(userRole?: string): NavbarData {
 // Utility function to generate route labels from navbar data
 export function generateRouteLabels(data: NavbarData): Record<string, string> {
   const labels: Record<string, string> = {};
-  
+
   // Helper function to extract labels from nav items
   const extractLabels = (items: NavItem[]) => {
-    items.forEach(item => {
+    items.forEach((item) => {
       labels[item.url] = item.title.trim();
-      
+
       // If item has subitems, extract their labels too
       if (item.items) {
         extractLabels(item.items);
       }
     });
   };
-  
+
   // Extract labels from both navMain and projects
   extractLabels(data.navMain);
   extractLabels(data.projects);
-  
+
   return labels;
 }
