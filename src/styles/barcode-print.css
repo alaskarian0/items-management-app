@@ -1,0 +1,171 @@
+/* Barcode and QR Code Printing Styles */
+
+@media print {
+  /* Hide all elements except the print content */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the print preview content */
+  .print-preview,
+  .print-preview * {
+    visibility: visible;
+  }
+  
+  /* Reset print preview positioning */
+  .print-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Hide screen-only elements */
+  .print-footer,
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  /* Optimize label printing */
+  .label-cell {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure proper spacing between labels */
+  .print-grid {
+    page-break-after: always;
+  }
+  
+  /* Remove shadows and backgrounds for printing */
+  .print-preview .border {
+    box-shadow: none !important;
+  }
+  
+  /* High quality rendering for barcodes and QR codes */
+  .print-preview svg,
+  .print-preview img {
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+  }
+  
+  /* Ensure text doesn't overflow */
+  .print-preview .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Optimize for different paper sizes */
+  @page {
+    margin: 0.5in;
+    size: A4;
+  }
+  
+  /* For label paper (smaller margins) */
+  @page label {
+    margin: 0.25in;
+    size: A4;
+  }
+}
+
+/* Screen styles for print preview */
+.print-preview {
+  background: white;
+  padding: 20px;
+  min-height: 100vh;
+}
+
+.print-grid {
+  background: white;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+/* Label preview styles */
+.label-preview {
+  border: 1px solid #ddd;
+  background: white;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+}
+
+.label-preview:hover {
+  border-color: #007bff;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+/* Loading state for barcode/QR code generation */
+.barcode-loading,
+.qrcode-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border: 1px dashed #dee2e6;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+/* Error states */
+.barcode-error,
+.qrcode-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8d7da;
+  border: 1px dashed #f5c6cb;
+  color: #721c24;
+  font-size: 0.875rem;
+}
+
+/* Print button styles */
+.print-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.print-button:hover {
+  background: #0056b3;
+}
+
+.print-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Responsive design for print preview */
+@media (max-width: 768px) {
+  .print-preview {
+    padding: 10px;
+  }
+  
+  .print-grid {
+    overflow-x: auto;
+    padding: 5px;
+  }
+}
+
+/* Animation for loading states */
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.loading-pulse {
+  animation: pulse 1.5s infinite;
+}

@@ -38,6 +38,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BarcodeQRPrintModal } from "@/components/features/barcode-printing";
+import "@/styles/barcode-print.css";
 
 type FixedAsset = {
   id: string;
@@ -103,6 +105,8 @@ const CodingPage = () => {
   const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [barcodeInput, setBarcodeInput] = useState('');
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedAssetsForPrint, setSelectedAssetsForPrint] = useState<string[]>([]);
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.name.includes(searchTerm) ||
@@ -140,7 +144,22 @@ const CodingPage = () => {
 
   const handlePrintBarcodes = () => {
     const codedAssets = assets.filter(a => a.status === 'coded');
-    alert(`طباعة ${codedAssets.length} باركود`);
+    if (codedAssets.length === 0) {
+      alert('لا توجد موجودات مرمزة للطباعة');
+      return;
+    }
+    setSelectedAssetsForPrint(codedAssets.map(asset => asset.id));
+    setIsPrintModalOpen(true);
+  };
+
+  const handlePrintQRCodes = () => {
+    const codedAssets = assets.filter(a => a.status === 'coded');
+    if (codedAssets.length === 0) {
+      alert('لا توجد موجودات مرمزة لطباعة QR Code');
+      return;
+    }
+    setSelectedAssetsForPrint(codedAssets.map(asset => asset.id));
+    setIsPrintModalOpen(true);
   };
 
   const stats = {
@@ -200,6 +219,10 @@ const CodingPage = () => {
                 <Printer className="ml-2 h-4 w-4" />
                 طباعة الباركودات
               </Button>
+              <Button onClick={handlePrintQRCodes} variant="outline">
+                <QrCode className="ml-2 h-4 w-4" />
+                طباعة QR Codes
+              </Button>
               <Button variant="outline">
                 <Download className="ml-2 h-4 w-4" />
                 تصدير
@@ -235,17 +258,17 @@ const CodingPage = () => {
           </div>
 
           {/* Table */}
-          <div className="border rounded-lg">
-            <Table>
+          <div className="border rounded-lg overflow-x-auto">
+            <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead>اسم الموجود</TableHead>
-                  <TableHead>الفئة</TableHead>
-                  <TableHead>الرقم التسلسلي</TableHead>
-                  <TableHead>الباركود</TableHead>
-                  <TableHead>الموقع</TableHead>
-                  <TableHead>القيمة (دينار)</TableHead>
-                  <TableHead>الحالة</TableHead>
+                  <TableHead className="text-right">اسم الموجود</TableHead>
+                  <TableHead className="text-right">الفئة</TableHead>
+                  <TableHead className="text-right">الرقم التسلسلي</TableHead>
+                  <TableHead className="text-right">الباركود</TableHead>
+                  <TableHead className="text-right">الموقع</TableHead>
+                  <TableHead className="text-right">القيمة (دينار)</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
@@ -259,10 +282,10 @@ const CodingPage = () => {
                 ) : (
                   filteredAssets.map((asset) => (
                     <TableRow key={asset.id}>
-                      <TableCell className="font-medium">{asset.name}</TableCell>
-                      <TableCell>{asset.category}</TableCell>
-                      <TableCell className="font-mono text-sm">{asset.serialNumber}</TableCell>
-                      <TableCell>
+                      <TableCell className="font-medium text-right">{asset.name}</TableCell>
+                      <TableCell className="text-right">{asset.category}</TableCell>
+                      <TableCell className="font-mono text-sm text-right">{asset.serialNumber}</TableCell>
+                      <TableCell className="text-right">
                         {asset.barcode ? (
                           <code className="px-2 py-1 bg-muted rounded text-sm">
                             {asset.barcode}
@@ -271,9 +294,9 @@ const CodingPage = () => {
                           <span className="text-muted-foreground text-sm">غير محدد</span>
                         )}
                       </TableCell>
-                      <TableCell>{asset.location}</TableCell>
-                      <TableCell>{asset.value.toLocaleString()}</TableCell>
-                      <TableCell>
+                      <TableCell className="text-right">{asset.location}</TableCell>
+                      <TableCell className="text-right">{asset.value.toLocaleString('ar-SA')}</TableCell>
+                      <TableCell className="text-right">
                         <Badge variant={asset.status === 'coded' ? 'default' : 'secondary'}>
                           {asset.status === 'coded' ? 'مرمز' : 'بانتظار الترميز'}
                         </Badge>
@@ -356,6 +379,15 @@ const CodingPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode/QR Code Print Modal */}
+      <BarcodeQRPrintModal
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
+        assets={assets}
+        selectedAssets={selectedAssetsForPrint}
+        onSelectedAssetsChange={setSelectedAssetsForPrint}
+      />
     </div>
   );
 };
