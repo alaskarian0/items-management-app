@@ -12,14 +12,8 @@ import {
   Building2,
   Truck,
   Ruler,
-  FileArchive,
   Settings,
-  FileText,
-  Bell,
-  Package,
-  ClipboardList,
   Zap,
-  UserCircle,
   TrendingDown,
   Gift,
   BarChart3,
@@ -89,9 +83,9 @@ export const navbarData: NavbarData = {
           icon: PackagePlus,
         },
         {
-          title: "جرد الأقسام",
-          url: "/department-inventory",
-          icon: ClipboardList,
+          title: "شجرة المواد",
+          url: "/items",
+          icon: Boxes,
         },
       ],
     },
@@ -123,31 +117,9 @@ export const navbarData: NavbarData = {
       ],
     },
     {
-      title: "التقارير",
+      title: "مركز التقارير",
       url: "/reports",
       icon: BarChart3,
-      items: [
-        {
-          title: "حركة المواد",
-          url: "/reports/item-movement",
-          icon: History,
-        },
-        {
-          title: "تقارير الموجودات الثابتة",
-          url: "/reports/fixed-assets",
-          icon: Landmark,
-        },
-        {
-          title: "تقارير الإدخال والإصدار",
-          url: "/reports/entry-issuance",
-          icon: FileText,
-        },
-        {
-          title: "التقارير المالية",
-          url: "/reports/financial",
-          icon: BarChart3,
-        },
-      ],
     },
   ],
   projects: [
@@ -156,11 +128,6 @@ export const navbarData: NavbarData = {
       url: "/settings",
       icon: Settings,
       items: [
-        {
-          title: "شجرة المواد",
-          url: "/items",
-          icon: Boxes,
-        },
         {
           title: "الأقسام",
           url: "/settings/departments",

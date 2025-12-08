@@ -13,6 +13,12 @@ import type { User, ChangePasswordData } from "@/store/auth/authTypes";
 import { Loader2, Lock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
+type LoginResponse = {
+  access_token: string;
+  user: User & { isTempPass?: boolean };
+  data?: LoginResponse;
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
@@ -85,10 +91,9 @@ export default function LoginPage() {
       await login({
         data: formData,
         onSuccess: (response: unknown) => {
-          const responseData = (response as Record<string, unknown>).data || response;
-          const { access_token, user } = responseData as Record<string, any>;
+          const responseData = (response as LoginResponse)?.data || (response as LoginResponse);
+          const { access_token, user } = responseData;
           
-          // Check if user has temporary password
           if (user.isTempPass) {
             setLoggedInUser(user);
             setAccessToken(access_token);
@@ -99,7 +104,6 @@ export default function LoginPage() {
             setShowChangePassword(true);
             setErrors({});
           } else {
-            // Normal login - redirect to home
             setAuth(user, access_token);
             router.push("/");
           }

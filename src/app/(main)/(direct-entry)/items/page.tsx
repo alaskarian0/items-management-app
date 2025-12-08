@@ -443,7 +443,7 @@ const ItemsPage = () => {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    let totalStores = treeData.length;
+    const totalStores = treeData.length;
     let totalGroups = 0;
     let totalItems = 0;
 

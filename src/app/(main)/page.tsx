@@ -24,7 +24,6 @@ import {
   AlertCircle,
   Users,
   Barcode,
-  Gift,
   PackagePlus,
   PackageMinus,
   Building2,

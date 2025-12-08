@@ -333,7 +333,7 @@ const ItemIssuancePage = () => {
                         colSpan={5}
                         className="text-center text-muted-foreground h-24"
                       >
-                        لا توجد مواد مضافة. انقر على "إضافة سطر" لإضافة مادة
+                        لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; لإضافة مادة
                         جديدة
                       </TableCell>
                     </TableRow>

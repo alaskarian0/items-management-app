@@ -12,7 +12,6 @@ import {
   Warehouse as WarehouseIcon,
   Building2,
   Layers,
-  FolderTree,
   Search,
   Package,
   Filter,
@@ -233,7 +232,7 @@ const ManageWarehousesPage = () => {
       totalItems: number;
     } => {
       let total = 0;
-      let main = nodes.length;
+      const main = nodes.length;
       let sub = 0;
       let maxDepth = 0;
       let totalItems = 0;

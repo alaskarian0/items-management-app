@@ -31,7 +31,10 @@ import {
   Package,
   AlertCircle,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRightLeft,
+  Building2,
+  UserPlus
 } from "lucide-react";
 import {
   Select,
@@ -56,6 +59,29 @@ type CustodyRecord = {
   condition: 'excellent' | 'good' | 'fair' | 'poor';
   notes?: string;
 };
+
+// Mock data for departments and employees
+const departments = [
+  'قسم تقنية المعلومات',
+  'قسم المحاسبة',
+  'قسم الإعلام',
+  'قسم التدريب',
+  'قسم الشؤون الإدارية',
+  'قسم الموارد البشرية',
+  'قسم الهندسة',
+  'قسم المبيعات',
+];
+
+const employees = [
+  { id: 'EMP-001', name: 'أحمد محمد علي', department: 'قسم تقنية المعلومات' },
+  { id: 'EMP-002', name: 'فاطمة حسن', department: 'قسم المحاسبة' },
+  { id: 'EMP-003', name: 'محمد خالد', department: 'قسم الإعلام' },
+  { id: 'EMP-004', name: 'سارة أحمد', department: 'قسم التدريب' },
+  { id: 'EMP-005', name: 'علي حسين', department: 'قسم الشؤون الإدارية' },
+  { id: 'EMP-006', name: 'نورا أحمد', department: 'قسم الموارد البشرية' },
+  { id: 'EMP-007', name: 'خالد إبراهيم', department: 'قسم الهندسة' },
+  { id: 'EMP-008', name: 'مريم سعيد', department: 'قسم المبيعات' },
+];
 
 const mockCustodyRecords: CustodyRecord[] = [
   {
@@ -115,9 +141,16 @@ const CustodyPage = () => {
   const [selectedRecord, setSelectedRecord] = useState<CustodyRecord | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [returnNotes, setReturnNotes] = useState('');
+  const [transferNotes, setTransferNotes] = useState('');
+  const [transferDepartment, setTransferDepartment] = useState<string | undefined>(undefined);
+  const [transferEmployee, setTransferEmployee] = useState<string | undefined>(undefined);
 
-  const departments = Array.from(new Set(records.map(r => r.department)));
+  const recordDepartments = Array.from(new Set(records.map(r => r.department)));
+  const filteredEmployees = transferDepartment
+    ? employees.filter(emp => emp.department === transferDepartment)
+    : employees;
 
   const filteredRecords = records.filter(record => {
     const matchesSearch = record.assetName.includes(searchTerm) ||
@@ -140,6 +173,14 @@ const CustodyPage = () => {
     setIsReturnDialogOpen(true);
   };
 
+  const handleTransferAsset = (record: CustodyRecord) => {
+    setSelectedRecord(record);
+    setTransferDepartment(undefined);
+    setTransferEmployee(undefined);
+    setTransferNotes('');
+    setIsTransferDialogOpen(true);
+  };
+
   const handleConfirmReturn = () => {
     if (selectedRecord) {
       setRecords(records.map(record =>
@@ -155,6 +196,31 @@ const CustodyPage = () => {
       setIsReturnDialogOpen(false);
       setSelectedRecord(null);
       setReturnNotes('');
+    }
+  };
+
+  const handleConfirmTransfer = () => {
+    if (selectedRecord && transferDepartment && transferEmployee) {
+      const selectedEmployee = employees.find(emp => emp.id === transferEmployee);
+      if (selectedEmployee) {
+        setRecords(records.map(record =>
+          record.id === selectedRecord.id
+            ? {
+                ...record,
+                employeeName: selectedEmployee.name,
+                employeeId: selectedEmployee.id,
+                department: selectedEmployee.department,
+                assignDate: new Date().toISOString().split('T')[0],
+                notes: transferNotes ? `${record.notes ? record.notes + ' | ' : ''}تم التحويل إلى ${selectedEmployee.name}: ${transferNotes}` : (record.notes || '') + ` تم التحويل إلى ${selectedEmployee.name}`
+              }
+            : record
+        ));
+      }
+      setIsTransferDialogOpen(false);
+      setSelectedRecord(null);
+      setTransferDepartment(undefined);
+      setTransferEmployee(undefined);
+      setTransferNotes('');
     }
   };
 
@@ -256,10 +322,10 @@ const CustodyPage = () => {
                 className="pr-10"
               />
             </div>
-            <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+            <Select value={filterStatus} onValueChange={(value: 'all' | 'active' | 'returned') => setFilterStatus(value)}>
               <SelectTrigger>
                 <Filter className="ml-2 h-4 w-4" />
-                <SelectValue />
+                <SelectValue placeholder="الحالة" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع الحالات</SelectItem>
@@ -273,7 +339,7 @@ const CustodyPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع الأقسام</SelectItem>
-                {departments.map(dept => (
+                {recordDepartments.map(dept => (
                   <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                 ))}
               </SelectContent>
@@ -360,13 +426,24 @@ const CustodyPage = () => {
                               <FileText className="h-4 w-4" />
                             </Button>
                             {record.status === 'active' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleReturnAsset(record)}
-                              >
-                                إرجاع
-                              </Button>
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleTransferAsset(record)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <ArrowRightLeft className="h-4 w-4" />
+                                  تحويل
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleReturnAsset(record)}
+                                >
+                                  إرجاع
+                                </Button>
+                              </>
                             )}
                           </div>
                         </TableCell>
@@ -479,6 +556,101 @@ const CustodyPage = () => {
             </Button>
             <Button onClick={handleConfirmReturn}>
               تأكيد الإرجاع
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer Asset Dialog */}
+      <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowRightLeft className="h-5 w-5" />
+              تحويل الذمة
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRecord && (
+            <div className="space-y-4 py-4">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  سيتم تحويل ذمة الموجود <strong>{selectedRecord.assetName}</strong> من
+                  الموظف <strong>{selectedRecord.employeeName}</strong>
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  القسم الجديد
+                </Label>
+                <Select value={transferDepartment} onValueChange={setTransferDepartment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر القسم الجديد..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept} value={dept}>
+                        {dept}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  الموظف الجديد
+                </Label>
+                <Select
+                  value={transferEmployee}
+                  onValueChange={setTransferEmployee}
+                  disabled={!transferDepartment}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الموظف الجديد..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredEmployees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>ملاحظات التحويل</Label>
+                <Textarea
+                  value={transferNotes}
+                  onChange={(e) => setTransferNotes(e.target.value)}
+                  placeholder="أدخل سبب التحويل أو أي ملاحظات إضافية..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Current Assignment Info */}
+              <div className="border-t pt-4">
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>الموظف الحالي: <span className="font-medium text-foreground">{selectedRecord.employeeName}</span></div>
+                  <div>القسم الحالي: <span className="font-medium text-foreground">{selectedRecord.department}</span></div>
+                  <div>تاريخ التسليم: <span className="font-medium text-foreground">{selectedRecord.assignDate}</span></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button
+              onClick={handleConfirmTransfer}
+              disabled={!transferDepartment || !transferEmployee}
+            >
+              تأكيد التحويل
             </Button>
           </DialogFooter>
         </DialogContent>

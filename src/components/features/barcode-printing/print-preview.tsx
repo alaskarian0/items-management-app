@@ -3,6 +3,8 @@
 import React from 'react';
 import { LabelTemplate, FixedAsset } from './label-template';
 
+export type { FixedAsset };
+
 export interface PrintPreviewProps {
   assets: FixedAsset[];
   template: 'standard' | 'large' | 'small';

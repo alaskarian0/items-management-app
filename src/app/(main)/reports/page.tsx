@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, BarChart2, Boxes, History, Building } from "lucide-react";
+import { ArrowLeft, BarChart2, Boxes, History, Building, Building2, FileText, Truck } from "lucide-react";
 import Link from 'next/link';
 
 type ReportCardProps = {
@@ -33,28 +33,46 @@ const ReportCard = ({ title, description, icon: Icon, link }: ReportCardProps) =
 const ReportsPage = () => {
   const reports = [
     {
-      title: "الرصيد المخزني",
-      description: "عرض الأرصدة الحالية لجميع المواد في مخزن محدد.",
-      icon: Boxes,
-      link: "/stores/1/warehouse/stock-balance",
+      title: "تقارير الإدخال والإصدار",
+      description: "تقارير تفصيلية عن عمليات الإدخال والإصدار اليومية والشهرية.",
+      icon: FileText,
+      link: "/reports/entry-issuance",
     },
     {
-      title: "حركة مادة",
-      description: "تتبع سجل الإدخالات والإخراجات التفصيلي لمادة معينة.",
+      title: "تقارير الرصيد المخزني",
+      description: "تقارير شاملة عن الأرصدة الحالية والمستويات الحرجة للمواد.",
+      icon: Boxes,
+      link: "/reports/stock-balance",
+    },
+    {
+      title: "تقارير حركة المواد",
+      description: "تقارير تحليلية عن حركة المواد بين الأقسام والمخازن.",
       icon: History,
-      link: "/stores/1/warehouse/item-movement",
+      link: "/reports/item-movement",
+    },
+    {
+      title: "تقارير الموردين",
+      description: "تقارير مفصلة عن المواد الموردة من موردين محددين.",
+      icon: Truck,
+      link: "/reports/suppliers",
+    },
+    {
+      title: "تقارير الموجودات الثابتة",
+      description: "تقارير شاملة عن الأصول الثابتة وتتبعها.",
+      icon: Building,
+      link: "/reports/fixed-assets",
     },
     {
       title: "رصيد الأقسام",
       description: "عرض المواد التي تم إصدارها إلى الأقسام المختلفة.",
-      icon: Building,
-      link: "#", // Placeholder
+      icon: Building2,
+      link: "/reports/department-balance",
     },
     {
-      title: "تقرير الموردين",
-      description: "تقارير مفصلة عن المواد الموردة من موردين محددين.",
+      title: "التقارير المالية",
+      description: "تقارير مالية شاملة عن قيمة المخزون والتكاليف.",
       icon: BarChart2,
-      link: "#", // Placeholder
+      link: "/reports/financial",
     },
   ];
 

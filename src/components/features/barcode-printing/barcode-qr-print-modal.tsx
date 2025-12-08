@@ -84,16 +84,13 @@ export const BarcodeQRPrintModal: React.FC<BarcodeQRPrintModalProps> = ({
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: 'Barcode and QR Code Labels',
-    onBeforeGetContent: () => {
+    onBeforePrint: () => {
       return new Promise((resolve) => {
         setShowPreview(true);
         setTimeout(() => {
-          resolve(true);
+          resolve();
         }, 100);
       });
-    },
-    onAfterPrint: () => {
-      setShowPreview(false);
     },
   });
 
@@ -185,9 +182,9 @@ export const BarcodeQRPrintModal: React.FC<BarcodeQRPrintModalProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="small">صغير (1.5" x 1")</SelectItem>
-                      <SelectItem value="standard">标准 (2" x 1")</SelectItem>
-                      <SelectItem value="large">كبير (3" x 2")</SelectItem>
+                      <SelectItem value="small">صغير (1.5&quot; x 1&quot;)</SelectItem>
+                      <SelectItem value="standard">标准 (2&quot; x 1&quot;)</SelectItem>
+                      <SelectItem value="large">كبير (3&quot; x 2&quot;)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

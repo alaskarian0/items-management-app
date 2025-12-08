@@ -48,6 +48,22 @@ import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
 
 // --- MOCK DATA (to be replaced with API calls) ---
+const divisions = [
+  { id: 1, name: "شعبة الهندسة المدنية" },
+  { id: 2, name: "شعبة الهندسة الكهربائية" },
+  { id: 3, name: "شعبة الهندسة الميكانيكية" },
+  { id: 4, name: "شعبة الشؤون الإدارية" },
+];
+
+const units = [
+  { id: 1, name: "وحدة التخطيط", divisionId: 1 },
+  { id: 2, name: "وحدة التنفيذ", divisionId: 1 },
+  { id: 3, name: "وحدة الصيانة الكهربائية", divisionId: 2 },
+  { id: 4, name: "وحدة الصيانة الميكانيكية", divisionId: 3 },
+  { id: 5, name: "وحدة الشؤون المالية", divisionId: 4 },
+  { id: 6, name: "وحدة الموارد البشرية", divisionId: 4 },
+];
+
 const departments = [
   { id: 1, name: "قسم الشؤون الهندسية" },
   { id: 2, name: "قسم الشؤون الإدارية" },
@@ -77,6 +93,8 @@ const ItemEntryPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("1101");
   const [department, setDepartment] = useState<string>();
+  const [division, setDivision] = useState<string>();
+  const [unit, setUnit] = useState<string>();
   const [supplier, setSupplier] = useState<string>();
   const [notes, setNotes] = useState("");
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
@@ -135,7 +153,7 @@ const ItemEntryPage = () => {
           إدخال المواد
         </h2>
         <p className="text-muted-foreground mt-1">
-          إنشاء فاتورة إدخال مواد جديدة إلى المخزن
+          إنشاء مستند إدخال مواد جديدة إلى المخزن
         </p>
       </div>
 
@@ -163,15 +181,88 @@ const ItemEntryPage = () => {
         </CardContent>
       </Card>
 
-      {/* Invoice Form */}
+      {/* Document Details Section */}
       {selectedWarehouse && (
         <Card>
           <CardHeader>
-            <CardTitle>تفاصيل فاتورة الإدخال</CardTitle>
+            <CardTitle>تفاصيل مستند الإدخال</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* --- HEADER FORM --- */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>القسم</Label>
+                <Select onValueChange={setDepartment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر القسم..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>الشعبة</Label>
+                <Select
+                  value={division}
+                  onValueChange={(value) => {
+                    setDivision(value);
+                    setUnit(""); // Reset unit when division changes
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الشعبة..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {divisions.map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>الوحدة</Label>
+                <Select
+                  value={unit}
+                  onValueChange={setUnit}
+                  disabled={!division}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الوحدة..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units
+                      .filter((u) => u.divisionId === Number(division))
+                      .map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>
+                          {u.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>اسم المورد</Label>
+                <Select onValueChange={setSupplier}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المورد..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label>نوع الإدخال</Label>
                 <Select onValueChange={setEntryType}>
@@ -218,38 +309,8 @@ const ItemEntryPage = () => {
                   onChange={(e) => setDocNumber(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>القسم المستلم</Label>
-                <Select onValueChange={setDepartment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر القسم..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>اسم المورد</Label>
-                <Select onValueChange={setSupplier}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المورد..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3">
-                <Label>ملاحظات عامة</Label>
+              <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-4">
+                <Label>البيان أو الملاحظات العامة</Label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -257,121 +318,130 @@ const ItemEntryPage = () => {
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
 
+      {/* Items Section */}
+      {selectedWarehouse && (
+        <Card>
+          <CardHeader>
+            <CardTitle>المواد المدخلة</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
             {/* --- ITEMS TABLE --- */}
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">المواد المدخلة</Label>
-              <div className="border rounded-md">
-                <Table>
-                  <TableHeader>
+            <div className="border rounded-md">
+              <Table dir="rtl">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-2/5 text-right">المادة</TableHead>
+                    <TableHead className="text-right">الوحدة</TableHead>
+                    <TableHead className="text-right">
+                      الكمية
+                    </TableHead>
+                    <TableHead className="text-right">سعر المفرد</TableHead>
+                    <TableHead className="text-right">الضمان</TableHead>
+                    <TableHead className="text-right">إجراء</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {itemsList.length === 0 ? (
                     <TableRow>
-                      <TableHead>المادة</TableHead>
-                      <TableHead>الوحدة</TableHead>
-                      <TableHead>الكمية</TableHead>
-                      <TableHead>سعر المفرد</TableHead>
-                      <TableHead>الضمان</TableHead>
-                      <TableHead>المجموع</TableHead>
-                      <TableHead>إجراء</TableHead>
+                      <TableCell
+                        colSpan={6}
+                        className="text-center text-muted-foreground h-24"
+                      >
+                        لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; لإضافة مادة
+                        جديدة
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {itemsList.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={7}
-                          className="text-center text-muted-foreground h-24"
-                        >
-                          لا توجد مواد مضافة. انقر على "إضافة سطر" لإضافة مادة
-                          جديدة
+                  ) : (
+                    itemsList.map((item, index) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Select
+                            onValueChange={(value) =>
+                              handleItemChange(index, "itemName", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر المادة..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {items.map((i) => (
+                                <SelectItem key={i.id} value={i.name}>
+                                  {i.name} ({i.code})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            readOnly
+                            value={item.unit}
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "quantity",
+                                Number(e.target.value)
+                              )
+                            }
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "price",
+                                Number(e.target.value)
+                              )
+                            }
+                            className="w-28"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            value={item.warranty || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "warranty",
+                                e.target.value
+                              )
+                            }
+                            className="w-32"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveItem(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      itemsList.map((item, index) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <Select
-                              onValueChange={(value) =>
-                                handleItemChange(index, "itemName", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="اختر المادة..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {items.map((i) => (
-                                  <SelectItem key={i.id} value={i.name}>
-                                    {i.name} ({i.code})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Input readOnly value={item.unit} />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "quantity",
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-24"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              value={item.price}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "price",
-                                  Number(e.target.value)
-                                )
-                              }
-                              className="w-28"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={item.warranty || ""}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "warranty",
-                                  e.target.value
-                                )
-                              }
-                              className="w-32"
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {(item.quantity * item.price).toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveItem(index)}
-                            >
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-                <div className="p-2 flex justify-start">
-                  <Button variant="outline" size="sm" onClick={handleAddItem}>
-                    <PlusCircle className="ml-2 h-4 w-4" /> إضافة سطر
-                  </Button>
-                </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              <div className="p-2 flex justify-start">
+                <Button variant="outline" size="sm" onClick={handleAddItem}>
+                  <PlusCircle className="ml-2 h-4 w-4" /> إضافة سطر
+                </Button>
               </div>
             </div>
 

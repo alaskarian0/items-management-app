@@ -19,11 +19,30 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Boxes, Search } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import {
+  AlertCircle,
+  Boxes,
+  Search,
+  Filter,
+  CalendarIcon,
+  Truck,
+  TrendingUp,
+  TrendingDown,
+  X
+} from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 // --- MOCK DATA ---
 const allItems = [
@@ -33,7 +52,15 @@ const allItems = [
     code: "FUR-CHR-001",
     unit: "قطعة",
     stock: 50,
+    minStock: 20,
+    maxStock: 100,
     group: "كراسي",
+    vendor: "شركة النبلاء",
+    lastPurchaseDate: new Date(2024, 11, 1),
+    lastIssueDate: new Date(2024, 11, 5),
+    averageCost: 25000,
+    totalValue: 1250000,
+    status: "normal",
   },
   {
     id: 2,
@@ -41,7 +68,15 @@ const allItems = [
     code: "FUR-CHR-002",
     unit: "قطعة",
     stock: 200,
+    minStock: 50,
+    maxStock: 300,
     group: "كراسي",
+    vendor: "موردون متحدون",
+    lastPurchaseDate: new Date(2024, 10, 15),
+    lastIssueDate: new Date(2024, 11, 7),
+    averageCost: 15000,
+    totalValue: 3000000,
+    status: "normal",
   },
   {
     id: 3,
@@ -49,7 +84,15 @@ const allItems = [
     code: "FUR-TBL-001",
     unit: "قطعة",
     stock: 10,
+    minStock: 15,
+    maxStock: 50,
     group: "طاولات",
+    vendor: "شركة النبلاء",
+    lastPurchaseDate: new Date(2024, 9, 20),
+    lastIssueDate: new Date(2024, 11, 6),
+    averageCost: 75000,
+    totalValue: 750000,
+    status: "low",
   },
   {
     id: 4,
@@ -57,7 +100,15 @@ const allItems = [
     code: "CRP-IND-001",
     unit: "قطعة",
     stock: 120,
+    minStock: 30,
+    maxStock: 200,
     group: "سجاد صناعي",
+    vendor: "منظمة الهلال الأحمر",
+    lastPurchaseDate: new Date(2024, 11, 1),
+    lastIssueDate: new Date(2024, 11, 8),
+    averageCost: 45000,
+    totalValue: 5400000,
+    status: "normal",
   },
   {
     id: 5,
@@ -65,7 +116,15 @@ const allItems = [
     code: "CRP-IND-002",
     unit: "قطعة",
     stock: 75,
+    minStock: 25,
+    maxStock: 100,
     group: "سجاد صناعي",
+    vendor: "شركة السجاد الفاخر",
+    lastPurchaseDate: new Date(2024, 8, 10),
+    lastIssueDate: new Date(2024, 11, 4),
+    averageCost: 120000,
+    totalValue: 9000000,
+    status: "normal",
   },
   {
     id: 6,
@@ -73,7 +132,15 @@ const allItems = [
     code: "FUR-DSK-001",
     unit: "قطعة",
     stock: 35,
+    minStock: 20,
+    maxStock: 60,
     group: "مكاتب",
+    vendor: "مورّد الأثاث الحديث",
+    lastPurchaseDate: new Date(2024, 10, 5),
+    lastIssueDate: new Date(2024, 11, 3),
+    averageCost: 85000,
+    totalValue: 2975000,
+    status: "normal",
   },
   {
     id: 7,
@@ -81,35 +148,107 @@ const allItems = [
     code: "FUR-CAB-001",
     unit: "قطعة",
     stock: 15,
+    minStock: 20,
+    maxStock: 40,
     group: "خزائن",
+    vendor: "مورّد الأثاث الحديث",
+    lastPurchaseDate: new Date(2024, 7, 15),
+    lastIssueDate: new Date(2024, 11, 2),
+    averageCost: 120000,
+    totalValue: 1800000,
+    status: "low",
+  },
+  {
+    id: 8,
+    name: "شاشة عرض",
+    code: "ELE-DSP-001",
+    unit: "قطعة",
+    stock: 5,
+    minStock: 10,
+    maxStock: 25,
+    group: "إلكترونيات",
+    vendor: "شركة التقنية المتقدمة",
+    lastPurchaseDate: new Date(2024, 6, 20),
+    lastIssueDate: new Date(2024, 11, 7),
+    averageCost: 450000,
+    totalValue: 2250000,
+    status: "critical",
   },
 ];
 
-const itemGroups = ["كراسي", "طاولات", "سجاد صناعي", "مكاتب", "خزائن"];
+const itemGroups = ["كراسي", "طاولات", "سجاد صناعي", "مكاتب", "خزائن", "إلكترونيات"];
+const vendors = ["شركة النبلاء", "موردون متحدون", "منظمة الهلال الأحمر", "شركة السجاد الفاخر", "مورّد الأثاث الحديث", "شركة التقنية المتقدمة"];
 
 const StockBalancePage = () => {
   const { selectedWarehouse } = useWarehouse();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string>("all");
+  const [selectedVendor, setSelectedVendor] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [purchaseDateFrom, setPurchaseDateFrom] = useState<Date | undefined>();
+  const [purchaseDateTo, setPurchaseDateTo] = useState<Date | undefined>();
+  const [issueDateFrom, setIssueDateFrom] = useState<Date | undefined>();
+  const [issueDateTo, setIssueDateTo] = useState<Date | undefined>();
 
   const filteredItems = useMemo(() => {
     return allItems.filter((item) => {
-      const matchesGroup =
-        selectedGroup === "all" || item.group === selectedGroup;
+      const matchesGroup = selectedGroup === "all" || item.group === selectedGroup;
+      const matchesVendor = selectedVendor === "all" || item.vendor === selectedVendor;
+      const matchesStatus = selectedStatus === "all" || item.status === selectedStatus;
       const matchesSearch =
         searchTerm === "" ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.code.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesGroup && matchesSearch;
+        item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.vendor.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesPurchaseDateFrom = !purchaseDateFrom || item.lastPurchaseDate >= purchaseDateFrom;
+      const matchesPurchaseDateTo = !purchaseDateTo || item.lastPurchaseDate <= purchaseDateTo;
+      const matchesIssueDateFrom = !issueDateFrom || item.lastIssueDate >= issueDateFrom;
+      const matchesIssueDateTo = !issueDateTo || item.lastIssueDate <= issueDateTo;
+
+      return matchesGroup && matchesVendor && matchesStatus && matchesSearch &&
+             matchesPurchaseDateFrom && matchesPurchaseDateTo && matchesIssueDateFrom && matchesIssueDateTo;
     });
-  }, [searchTerm, selectedGroup]);
+  }, [searchTerm, selectedGroup, selectedVendor, selectedStatus, purchaseDateFrom, purchaseDateTo, issueDateFrom, issueDateTo]);
 
   // Calculate statistics
   const stats = useMemo(() => {
     const totalItems = filteredItems.length;
     const totalStock = filteredItems.reduce((sum, item) => sum + item.stock, 0);
-    return { totalItems, totalStock };
+    const totalValue = filteredItems.reduce((sum, item) => sum + item.totalValue, 0);
+    const lowStockItems = filteredItems.filter(item => item.status === "low" || item.status === "critical").length;
+    const criticalItems = filteredItems.filter(item => item.status === "critical").length;
+
+    return { totalItems, totalStock, totalValue, lowStockItems, criticalItems };
   }, [filteredItems]);
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setSelectedGroup("all");
+    setSelectedVendor("all");
+    setSelectedStatus("all");
+    setPurchaseDateFrom(undefined);
+    setPurchaseDateTo(undefined);
+    setIssueDateFrom(undefined);
+    setIssueDateTo(undefined);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "critical":
+        return <Badge variant="destructive">حرج</Badge>;
+      case "low":
+        return <Badge variant="secondary">منخفض</Badge>;
+      default:
+        return <Badge variant="default">طبيعي</Badge>;
+    }
+  };
+
+  const getStockStatusColor = (stock: number, minStock: number, maxStock: number) => {
+    if (stock <= minStock) return "text-red-600";
+    if (stock >= maxStock) return "text-orange-600";
+    return "text-green-600";
+  };
 
   return (
     <div className="space-y-6">
@@ -150,7 +289,7 @@ const StockBalancePage = () => {
 
       {/* Statistics Cards */}
       {selectedWarehouse && (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -182,15 +321,45 @@ const StockBalancePage = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                المجموعات النشطة
+                القيمة الإجمالية
               </CardTitle>
-              <Boxes className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">
-                {itemGroups.length}
+                {(stats.totalValue / 1000000).toFixed(1)}M
               </div>
-              <p className="text-xs text-muted-foreground">مجموعة</p>
+              <p className="text-xs text-muted-foreground">دينار عراقي</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                مخزون منخفض
+              </CardTitle>
+              <TrendingDown className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">
+                {stats.lowStockItems}
+              </div>
+              <p className="text-xs text-muted-foreground">صنف يحتاج إعادة طلب</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                مخزون خطير
+              </CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {stats.criticalItems}
+              </div>
+              <p className="text-xs text-muted-foreground">صنف طارئ</p>
             </CardContent>
           </Card>
         </div>
@@ -200,22 +369,28 @@ const StockBalancePage = () => {
       {selectedWarehouse && (
         <Card>
           <CardHeader>
-            <CardTitle>تفاصيل الرصيد المخزني</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              تفاصيل الرصيد المخزني
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Filters */}
-            <div className="space-y-2">
-              <Label className="text-base font-semibold">البحث والتصفية</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Enhanced Filters */}
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">البحث والتصفية المتقدمة</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Search */}
                 <div className="relative">
-                  <Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="ابحث بالاسم أو الكود..."
+                    placeholder="ابحث بالاسم أو الكود أو المورد..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pr-8"
+                    className="pr-10"
                   />
                 </div>
+
+                {/* Group Filter */}
                 <Select value={selectedGroup} onValueChange={setSelectedGroup}>
                   <SelectTrigger>
                     <SelectValue placeholder="فلترة حسب المجموعة..." />
@@ -229,21 +404,178 @@ const StockBalancePage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {/* Vendor Filter */}
+                <Select value={selectedVendor} onValueChange={setSelectedVendor}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="فلترة حسب المورد..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل الموردين</SelectItem>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor} value={vendor}>
+                        {vendor}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Status Filter */}
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="فلترة حسب الحالة..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">كل الحالات</SelectItem>
+                    <SelectItem value="normal">طبيعي</SelectItem>
+                    <SelectItem value="low">منخفض</SelectItem>
+                    <SelectItem value="critical">حرج</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Purchase Date From */}
+                <div className="space-y-2">
+                  <Label>تاريخ الشراء من</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {purchaseDateFrom ? (
+                          format(purchaseDateFrom, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={purchaseDateFrom}
+                        onSelect={setPurchaseDateFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Purchase Date To */}
+                <div className="space-y-2">
+                  <Label>تاريخ الشراء إلى</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {purchaseDateTo ? (
+                          format(purchaseDateTo, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={purchaseDateTo}
+                        onSelect={setPurchaseDateTo}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Issue Date From */}
+                <div className="space-y-2">
+                  <Label>تاريخ الصرف من</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {issueDateFrom ? (
+                          format(issueDateFrom, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={issueDateFrom}
+                        onSelect={setIssueDateFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Issue Date To */}
+                <div className="space-y-2">
+                  <Label>تاريخ الصرف إلى</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {issueDateTo ? (
+                          format(issueDateTo, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={issueDateTo}
+                        onSelect={setIssueDateTo}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Clear Filters Button */}
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={clearFilters} className="flex items-center gap-2">
+                  <X className="h-4 w-4" />
+                  مسح جميع الفلاتر
+                </Button>
               </div>
             </div>
 
-            {/* Stock Table */}
+            {/* RTL Stock Table */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">جدول المواد</Label>
               <div className="border rounded-md">
-                <Table>
+                <Table dir="rtl">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>كود المادة</TableHead>
-                      <TableHead>اسم المادة</TableHead>
-                      <TableHead>المجموعة</TableHead>
-                      <TableHead>وحدة القياس</TableHead>
-                      <TableHead>الرصيد الحالي</TableHead>
+                      <TableHead className="text-right">كود المادة</TableHead>
+                      <TableHead className="text-right">اسم المادة</TableHead>
+                      <TableHead className="text-right">المجموعة</TableHead>
+                      <TableHead className="text-right">المورد</TableHead>
+                      <TableHead className="text-right">الحد الأدنى</TableHead>
+                      <TableHead className="text-right">الحد الأعلى</TableHead>
+                      <TableHead className="text-right">الرصيد الحالي</TableHead>
+                      <TableHead className="text-right">الحالة</TableHead>
+                      <TableHead className="text-right">آخر شراء</TableHead>
+                      <TableHead className="text-right">آخر صرف</TableHead>
+                      <TableHead className="text-right">القيمة الإجمالية</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -261,21 +593,40 @@ const StockBalancePage = () => {
                           <TableCell>
                             <Badge variant="secondary">{item.group}</Badge>
                           </TableCell>
-                          <TableCell>{item.unit}</TableCell>
                           <TableCell>
-                            <span className="font-bold text-lg text-blue-600">
+                            <div className="flex items-center gap-1">
+                              <Truck className="h-3 w-3" />
+                              {item.vendor}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{item.minStock}</TableCell>
+                          <TableCell className="text-center">{item.maxStock}</TableCell>
+                          <TableCell>
+                            <span className={`font-bold text-lg ${getStockStatusColor(item.stock, item.minStock, item.maxStock)}`}>
                               {item.stock}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(item.status)}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {format(item.lastPurchaseDate, "yyyy-MM-dd", { locale: ar })}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {format(item.lastIssueDate, "yyyy-MM-dd", { locale: ar })}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {(item.totalValue / 1000).toFixed(0)}K
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={5}
+                          colSpan={11}
                           className="text-center text-muted-foreground h-24"
                         >
-                          لا توجد مواد تطابق معايير البحث
+                          لا توجد مواد تطابق معايير البحث والتصفية
                         </TableCell>
                       </TableRow>
                     )}

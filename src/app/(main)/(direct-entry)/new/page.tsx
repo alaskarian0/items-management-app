@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Zap, PlusCircle, Trash2, Search } from "lucide-react";
+import { Zap, Trash2, Search } from "lucide-react";
 import { useImmer } from "use-immer";
 import {
   Command,
