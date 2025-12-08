@@ -39,7 +39,7 @@ import {
   PlusCircle,
   Trash2,
   AlertCircle,
-  PackagePlus,
+  PackageMinus,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -52,13 +52,22 @@ const departments = [
   { id: 1, name: "قسم الشؤون الهندسية" },
   { id: 2, name: "قسم الشؤون الإدارية" },
 ];
-const suppliers = [
-  { id: 1, name: "شركة النبلاء" },
-  { id: 2, name: "موردون متحدون" },
-];
 const items = [
-  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة" },
-  { id: 2, name: "طاولة اجتماعات", code: "FUR-TBL-001", unit: "قطعة" },
+  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة", stock: 50 },
+  {
+    id: 2,
+    name: "طاولة اجتماعات",
+    code: "FUR-TBL-001",
+    unit: "قطعة",
+    stock: 10,
+  },
+  {
+    id: 3,
+    name: "سجاد صحراوي 2*3 م",
+    code: "CRP-IND-001",
+    unit: "قطعة",
+    stock: 120,
+  },
 ];
 
 type DocumentItem = {
@@ -67,18 +76,17 @@ type DocumentItem = {
   itemName: string;
   unit: string;
   quantity: number;
-  price: number;
-  warranty?: string;
+  stock: number;
+  notes?: string;
 };
 
-const ItemEntryPage = () => {
+const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
-  const [entryType, setEntryType] = useState<string>();
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [docNumber, setDocNumber] = useState("1101");
+  const [docNumber, setDocNumber] = useState("2305");
   const [department, setDepartment] = useState<string>();
-  const [supplier, setSupplier] = useState<string>();
-  const [notes, setNotes] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [generalNotes, setGeneralNotes] = useState("");
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
 
   const handleAddItem = () => {
@@ -89,7 +97,7 @@ const ItemEntryPage = () => {
         itemName: "",
         unit: "",
         quantity: 1,
-        price: 0,
+        stock: 0,
       });
     });
   };
@@ -108,6 +116,7 @@ const ItemEntryPage = () => {
           if (selectedItem) {
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
+            item.stock = selectedItem.stock;
           }
         }
       }
@@ -120,22 +129,16 @@ const ItemEntryPage = () => {
     });
   };
 
-  const calculateTotal = () => {
-    return itemsList
-      .reduce((acc, item) => acc + item.quantity * item.price, 0)
-      .toFixed(2);
-  };
-
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div>
         <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <PackagePlus className="h-8 w-8" />
-          إدخال المواد
+          <PackageMinus className="h-8 w-8" />
+          إصدار المواد
         </h2>
         <p className="text-muted-foreground mt-1">
-          إنشاء فاتورة إدخال مواد جديدة إلى المخزن
+          إنشاء مستند إصدار مواد من المخزن إلى الأقسام
         </p>
       </div>
 
@@ -150,7 +153,7 @@ const ItemEntryPage = () => {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  الرجاء اختيار المخزن للمتابعة في عملية الإدخال
+                  الرجاء اختيار المخزن للمتابعة في عملية الإصدار
                 </AlertDescription>
               </Alert>
               <WarehouseSelector />
@@ -163,27 +166,36 @@ const ItemEntryPage = () => {
         </CardContent>
       </Card>
 
-      {/* Invoice Form */}
+      {/* Issuance Document Form */}
       {selectedWarehouse && (
         <Card>
           <CardHeader>
-            <CardTitle>تفاصيل فاتورة الإدخال</CardTitle>
+            <CardTitle>تفاصيل مستند الإصدار</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* --- HEADER FORM --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label>نوع الإدخال</Label>
-                <Select onValueChange={setEntryType}>
+                <Label>اسم القسم</Label>
+                <Select onValueChange={setDepartment}>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر نوع الإدخال..." />
+                    <SelectValue placeholder="اختر القسم..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="purchases">مشتريات</SelectItem>
-                    <SelectItem value="gifts">هدايا وندور</SelectItem>
-                    <SelectItem value="returns">ارجاع مواد</SelectItem>
+                    {departments.map((d) => (
+                      <SelectItem key={d.id} value={String(d.id)}>
+                        {d.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>اسم المستلم</Label>
+                <Input
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>التاريخ</Label>
@@ -218,41 +230,11 @@ const ItemEntryPage = () => {
                   onChange={(e) => setDocNumber(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>القسم المستلم</Label>
-                <Select onValueChange={setDepartment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر القسم..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>اسم المورد</Label>
-                <Select onValueChange={setSupplier}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المورد..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-3">
-                <Label>ملاحظات عامة</Label>
+              <div className="space-y-2 col-span-1 md:col-span-2">
+                <Label>البيان أو الملاحظات العامة</Label>
                 <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  value={generalNotes}
+                  onChange={(e) => setGeneralNotes(e.target.value)}
                   placeholder="اكتب ملاحظاتك هنا..."
                 />
               </div>
@@ -260,17 +242,17 @@ const ItemEntryPage = () => {
 
             {/* --- ITEMS TABLE --- */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">المواد المدخلة</Label>
+              <Label className="text-base font-semibold">
+                المواد المطلوب إصدارها
+              </Label>
               <div className="border rounded-md">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>المادة</TableHead>
+                      <TableHead className="w-2/5">المادة</TableHead>
                       <TableHead>الوحدة</TableHead>
-                      <TableHead>الكمية</TableHead>
-                      <TableHead>سعر المفرد</TableHead>
-                      <TableHead>الضمان</TableHead>
-                      <TableHead>المجموع</TableHead>
+                      <TableHead>الكمية المطلوبة</TableHead>
+                      <TableHead>ملاحظات</TableHead>
                       <TableHead>إجراء</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -278,7 +260,7 @@ const ItemEntryPage = () => {
                     {itemsList.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={7}
+                          colSpan={5}
                           className="text-center text-muted-foreground h-24"
                         >
                           لا توجد مواد مضافة. انقر على "إضافة سطر" لإضافة مادة
@@ -305,9 +287,24 @@ const ItemEntryPage = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                            {item.stock > 0 && (
+                              <p
+                                className={`text-xs mt-1 ${
+                                  item.quantity > item.stock
+                                    ? "text-red-500"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                الرصيد المتوفر: {item.stock}
+                              </p>
+                            )}
                           </TableCell>
                           <TableCell>
-                            <Input readOnly value={item.unit} />
+                            <Input
+                              readOnly
+                              value={item.unit}
+                              className="w-24"
+                            />
                           </TableCell>
                           <TableCell>
                             <Input
@@ -325,33 +322,11 @@ const ItemEntryPage = () => {
                           </TableCell>
                           <TableCell>
                             <Input
-                              type="number"
-                              value={item.price}
+                              value={item.notes || ""}
                               onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "price",
-                                  Number(e.target.value)
-                                )
+                                handleItemChange(index, "notes", e.target.value)
                               }
-                              className="w-28"
                             />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={item.warranty || ""}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "warranty",
-                                  e.target.value
-                                )
-                              }
-                              className="w-32"
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {(item.quantity * item.price).toFixed(2)}
                           </TableCell>
                           <TableCell>
                             <Button
@@ -374,15 +349,6 @@ const ItemEntryPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* --- FOOTER --- */}
-            <div className="flex justify-end items-center gap-4 p-4 bg-muted rounded-md">
-              <span className="text-lg font-bold">المجموع النهائي:</span>
-              <span className="text-2xl font-bold text-primary">
-                {calculateTotal()}
-              </span>
-              <span className="font-semibold">دينار عراقي</span>
-            </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button variant="outline">مستند جديد</Button>
@@ -394,4 +360,4 @@ const ItemEntryPage = () => {
   );
 };
 
-export default ItemEntryPage;
+export default ItemIssuancePage;

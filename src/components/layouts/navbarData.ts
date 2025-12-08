@@ -63,7 +63,7 @@ export const navbarData: NavbarData = {
         },
         {
           title: "إصدار المواد",
-          url: "/warehouse/issuance/new",
+          url: "/warehouse/issuance",
           icon: PackageMinus,
         },
         {

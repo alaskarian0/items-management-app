@@ -17,6 +17,7 @@ import {
   Search,
   Filter,
   Hash,
+  Warehouse,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -30,15 +31,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { produce } from 'immer';
 
 // --- DATA STRUCTURES ---
+type WarehouseAssignment = {
+  warehouseId: string;
+  warehouseName: string;
+  stock: number;
+};
+
 type Item = {
   id: string;
   name: string;
   code: string;
   quantity?: number;
   unit?: string;
+  warehouses?: WarehouseAssignment[];
 };
 
 type Group = {
@@ -53,6 +62,15 @@ type Store = {
   groups: Group[];
 };
 
+// Available warehouses for assignment
+const availableWarehouses = [
+  { id: 'wh-1', name: 'المخزن الرئيسي' },
+  { id: 'wh-2', name: 'مخزن المواد الثابتة' },
+  { id: 'wh-3', name: 'مخزن المواد الاستهلاكية' },
+  { id: 'wh-4', name: 'مخزن الأثاث' },
+  { id: 'wh-5', name: 'مخزن المفروشات' },
+];
+
 // --- MOCK DATA ---
 const initialTreeData: Store[] = [
   {
@@ -63,7 +81,17 @@ const initialTreeData: Store[] = [
         id: 'group-1-1',
         name: 'كراسي',
         items: [
-          { id: 'item-1-1-1', name: 'كرسي مكتب', code: 'FUR-CHR-001', quantity: 150, unit: 'قطعة' },
+          {
+            id: 'item-1-1-1',
+            name: 'كرسي مكتب',
+            code: 'FUR-CHR-001',
+            quantity: 150,
+            unit: 'قطعة',
+            warehouses: [
+              { warehouseId: 'wh-1', warehouseName: 'المخزن الرئيسي', stock: 100 },
+              { warehouseId: 'wh-4', warehouseName: 'مخزن الأثاث', stock: 50 },
+            ]
+          },
           { id: 'item-1-1-2', name: 'كرسي قاعة', code: 'FUR-CHR-002', quantity: 85, unit: 'قطعة' },
         ],
       },
@@ -108,12 +136,19 @@ type ModalState = {
   data?: { id: string; name: string; code?: string; quantity?: number; unit?: string; parentId?: string };
 };
 
+type WarehouseModalState = {
+  isOpen: boolean;
+  item: Item | null;
+  assignments: WarehouseAssignment[];
+};
+
 // Group Node Component
 const GroupNode = ({
   group,
   storeId,
   onOpenModal,
   onDelete,
+  onManageWarehouses,
   searchTerm,
   level = 1,
 }: {
@@ -121,6 +156,7 @@ const GroupNode = ({
   storeId: string;
   onOpenModal: (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: any) => void;
   onDelete: (type: 'store' | 'group' | 'item', id: string) => void;
+  onManageWarehouses: (item: Item) => void;
   searchTerm: string;
   level?: number;
 }) => {
@@ -230,9 +266,24 @@ const GroupNode = ({
                       {item.quantity} {item.unit}
                     </Badge>
                   )}
+                  {item.warehouses && item.warehouses.length > 0 && (
+                    <Badge variant="secondary" className="text-xs h-5 bg-green-100 text-green-700">
+                      <Warehouse className="h-3 w-3 ml-1" />
+                      {item.warehouses.length} مخزن
+                    </Badge>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onManageWarehouses(item)}
+                  title="إدارة المخازن"
+                >
+                  <Warehouse className="h-3.5 w-3.5 text-purple-600" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -249,7 +300,7 @@ const GroupNode = ({
                   onClick={() => onDelete('item', item.id)}
                   title="حذف"
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-red-600" />
+                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
                 </Button>
               </div>
             </div>
@@ -265,11 +316,13 @@ const StoreNode = ({
   store,
   onOpenModal,
   onDelete,
+  onManageWarehouses,
   searchTerm,
 }: {
   store: Store;
   onOpenModal: (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: any) => void;
   onDelete: (type: 'store' | 'group' | 'item', id: string) => void;
+  onManageWarehouses: (item: Item) => void;
   searchTerm: string;
 }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -368,6 +421,7 @@ const StoreNode = ({
             storeId={store.id}
             onOpenModal={onOpenModal}
             onDelete={onDelete}
+            onManageWarehouses={onManageWarehouses}
             searchTerm={searchTerm}
           />
         ))}
@@ -379,9 +433,13 @@ const StoreNode = ({
 const ItemsPage = () => {
   const [treeData, setTreeData] = useState<Store[]>(initialTreeData);
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'add', type: null });
+  const [warehouseModal, setWarehouseModal] = useState<WarehouseModalState>({
+    isOpen: false,
+    item: null,
+    assignments: []
+  });
   const [formData, setFormData] = useState({ name: '', code: '', quantity: '', unit: '' });
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -412,6 +470,56 @@ const ItemsPage = () => {
   const closeModal = () => {
     setModal({ isOpen: false, mode: 'add', type: null });
     setFormData({ name: '', code: '', quantity: '', unit: '' });
+  };
+
+  const openWarehouseModal = (item: Item) => {
+    setWarehouseModal({
+      isOpen: true,
+      item,
+      assignments: item.warehouses || [],
+    });
+  };
+
+  const closeWarehouseModal = () => {
+    setWarehouseModal({ isOpen: false, item: null, assignments: [] });
+  };
+
+  const handleWarehouseToggle = (warehouseId: string, warehouseName: string, checked: boolean) => {
+    setWarehouseModal(prev => ({
+      ...prev,
+      assignments: checked
+        ? [...prev.assignments, { warehouseId, warehouseName, stock: 0 }]
+        : prev.assignments.filter(a => a.warehouseId !== warehouseId)
+    }));
+  };
+
+  const handleStockChange = (warehouseId: string, stock: number) => {
+    setWarehouseModal(prev => ({
+      ...prev,
+      assignments: prev.assignments.map(a =>
+        a.warehouseId === warehouseId ? { ...a, stock } : a
+      )
+    }));
+  };
+
+  const saveWarehouseAssignments = () => {
+    if (!warehouseModal.item) return;
+
+    setTreeData(produce(draft => {
+      for (const store of draft) {
+        for (const group of store.groups) {
+          for (const item of group.items) {
+            if (item.id === warehouseModal.item?.id) {
+              item.warehouses = warehouseModal.assignments;
+              // Update total quantity
+              item.quantity = warehouseModal.assignments.reduce((sum, a) => sum + a.stock, 0);
+            }
+          }
+        }
+      }
+    }));
+
+    closeWarehouseModal();
   };
 
   const handleSave = () => {
@@ -595,6 +703,7 @@ const ItemsPage = () => {
                   store={store}
                   onOpenModal={openModal}
                   onDelete={handleDelete}
+                  onManageWarehouses={openWarehouseModal}
                   searchTerm={searchTerm}
                 />
               ))}
@@ -603,7 +712,7 @@ const ItemsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog */}
+      {/* Item Edit Dialog */}
       <Dialog open={modal.isOpen} onOpenChange={closeModal}>
         <DialogContent>
           <DialogHeader>
@@ -667,6 +776,72 @@ const ItemsPage = () => {
               إلغاء
             </Button>
             <Button onClick={handleSave}>{modal.mode === 'add' ? 'إضافة' : 'حفظ'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Warehouse Management Dialog */}
+      <Dialog open={warehouseModal.isOpen} onOpenChange={closeWarehouseModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Warehouse className="h-5 w-5 text-purple-600" />
+              إدارة المخازن - {warehouseModal.item?.name}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              اختر المخازن التي تحتوي على هذه المادة وحدد الكميات في كل مخزن
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 py-4 max-h-[400px] overflow-y-auto">
+            {availableWarehouses.map((warehouse) => {
+              const assignment = warehouseModal.assignments.find(a => a.warehouseId === warehouse.id);
+              const isAssigned = !!assignment;
+
+              return (
+                <div key={warehouse.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                  <Checkbox
+                    id={`wh-${warehouse.id}`}
+                    checked={isAssigned}
+                    onCheckedChange={(checked) =>
+                      handleWarehouseToggle(warehouse.id, warehouse.name, checked as boolean)
+                    }
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor={`wh-${warehouse.id}`} className="font-medium cursor-pointer">
+                      {warehouse.name}
+                    </Label>
+                  </div>
+                  {isAssigned && (
+                    <div className="w-32">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={assignment.stock}
+                        onChange={(e) => handleStockChange(warehouse.id, parseInt(e.target.value) || 0)}
+                        placeholder="الكمية"
+                        className="text-center"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="border-t pt-4">
+            <div className="flex justify-between items-center text-sm mb-4">
+              <span className="font-semibold">إجمالي الكمية:</span>
+              <span className="text-xl font-bold text-primary">
+                {warehouseModal.assignments.reduce((sum, a) => sum + a.stock, 0)} {warehouseModal.item?.unit || ''}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeWarehouseModal}>
+              إلغاء
+            </Button>
+            <Button onClick={saveWarehouseAssignments}>
+              حفظ التوزيع
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
