@@ -68,8 +68,9 @@ const donatedAssetsView: DonatedAssetView[] = assetDonated.map(donation => {
     assetName: asset?.name || 'غير معروف',
     assetCode: asset?.assetCode || 'غير معروف',
     category: asset?.category || 'غير معروف',
-    // Map fairMarketValue to value for backward compatibility
-    value: donation.fairMarketValue
+    value: donation.fairMarketValue,
+    condition: asset?.condition,
+    documentNumber: donation.receiptNumber
   };
 });
 
@@ -102,7 +103,7 @@ const DonatedPage = () => {
   const stats = {
     total: assets.length,
     totalValue: assets.reduce((sum, a) => sum + a.value, 0),
-    delivered: assets.filter(a => a.status === 'delivered').length,
+    delivered: assets.filter(a => a.status === 'completed').length,
     approved: assets.filter(a => a.status === 'approved').length,
     pending: assets.filter(a => a.status === 'pending').length,
     organizations: new Set(assets.map(a => a.donatedTo)).size,
@@ -260,7 +261,7 @@ const DonatedPage = () => {
                 ) : (
                   filteredAssets.map((asset) => {
                     const statusBadge = getStatusBadge(asset.status);
-                    const conditionBadge = getConditionBadge(asset.condition);
+                    const conditionBadge = getConditionBadge(asset.condition || 'good');
 
                     return (
                       <TableRow key={asset.id}>
@@ -360,8 +361,8 @@ const DonatedPage = () => {
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">الحالة</Label>
                     <div>
-                      <Badge variant={getConditionBadge(selectedAsset.condition).variant}>
-                        {getConditionBadge(selectedAsset.condition).label}
+                      <Badge variant={getConditionBadge(selectedAsset.condition || 'good').variant}>
+                        {getConditionBadge(selectedAsset.condition || 'good').label}
                       </Badge>
                     </div>
                   </div>
@@ -393,13 +394,19 @@ const DonatedPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">رقم الوثيقة</Label>
-                    <code className="px-2 py-1 bg-muted rounded text-sm">
-                      {selectedAsset.documentNumber}
-                    </code>
+                    <div className="flex items-center gap-2">
+                      <code className="px-2 py-1 bg-muted rounded text-sm">
+                        {selectedAsset.documentNumber || '-'}
+                      </code>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">تاريخ المنح</Label>
-                    <div className="font-medium">{selectedAsset.donationDate}</div>
+                    <div className="font-medium">
+                      {selectedAsset.donationDate instanceof Date
+                        ? selectedAsset.donationDate.toLocaleDateString('ar-SA')
+                        : new Date(selectedAsset.donationDate).toLocaleDateString('ar-SA')}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">الموافقة من قبل</Label>

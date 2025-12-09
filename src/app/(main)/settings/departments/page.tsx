@@ -48,10 +48,12 @@ import {
   getUnitById,
   getDivisionsByDepartment,
   getUnitsByDivision,
+} from "@/lib/data/settings-data";
+import {
   type Department,
   type Division,
   type Unit
-} from "@/lib/data/settings-data";
+} from "@/lib/types/settings";
 
 
 const DepartmentsPage = () => {
@@ -144,10 +146,10 @@ const DepartmentsPage = () => {
       setDepartmentsList(departmentsList.map(dept =>
         dept.id === editingDepartment.id
           ? {
-              ...dept,
-              ...departmentForm,
-              updatedAt: new Date().toISOString()
-            }
+            ...dept,
+            ...departmentForm,
+            updatedAt: new Date().toISOString()
+          }
           : dept
       ));
     } else {
@@ -206,10 +208,10 @@ const DepartmentsPage = () => {
       setDivisionsList(divisionsList.map(div =>
         div.id === editingDivision.id
           ? {
-              ...div,
-              ...divisionForm,
-              updatedAt: new Date().toISOString()
-            }
+            ...div,
+            ...divisionForm,
+            updatedAt: new Date().toISOString()
+          }
           : div
       ));
     } else {
@@ -272,10 +274,10 @@ const DepartmentsPage = () => {
       setUnitsList(unitsList.map(unit =>
         unit.id === editingUnit.id
           ? {
-              ...unit,
-              ...unitForm,
-              updatedAt: new Date().toISOString()
-            }
+            ...unit,
+            ...unitForm,
+            updatedAt: new Date().toISOString()
+          }
           : unit
       ));
     } else {
@@ -687,7 +689,7 @@ const DepartmentsPage = () => {
                 rows={3}
               />
             </div>
-              <div className="flex items-center space-2">
+            <div className="flex items-center space-2">
               <input
                 type="checkbox"
                 id="deptActive"

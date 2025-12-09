@@ -45,9 +45,11 @@ import {
   getSupplierByCode,
   searchSuppliers,
   getActiveSuppliers,
+} from "@/lib/data/settings-data";
+import {
   type Supplier,
   SUPPLIER_CATEGORIES
-} from "@/lib/data/settings-data";
+} from "@/lib/types/settings";
 
 const SuppliersPage = () => {
   const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
@@ -137,9 +139,9 @@ const SuppliersPage = () => {
         suppliersList.map((supplier) =>
           supplier.id === currentSupplier.id
             ? {
-                ...supplier,
-                ...formData,
-              }
+              ...supplier,
+              ...formData,
+            }
             : supplier
         )
       );

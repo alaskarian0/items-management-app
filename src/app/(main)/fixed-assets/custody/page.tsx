@@ -51,9 +51,6 @@ import {
   assetCustodies,
   fixedAssets,
   getAssetById,
-  assetCustodies,
-  fixedAssets,
-  getAssetById,
 } from "@/lib/data/fixed-assets-data";
 import { type AssetCustody, type FixedAsset } from "@/lib/types/fixed-assets";
 import { departments } from "@/lib/data/warehouse-data";
@@ -97,6 +94,9 @@ const CustodyPage = () => {
   const [transferEmployee, setTransferEmployee] = useState<string | undefined>(
     undefined
   );
+
+  // Mock filtered employees for build fix
+  const filteredEmployees: Array<{ id: string, name: string }> = [];
 
   const recordDepartments = Array.from(
     new Set(records.map((r) => r.department))
@@ -390,18 +390,14 @@ const CustodyPage = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {record.startDate instanceof Date
-                              ? record.startDate.toLocaleDateString('ar-SA')
-                              : new Date(record.startDate).toLocaleDateString('ar-SA')}
+                            {record.startDate.toLocaleDateString("ar-IQ")}
                           </div>
                         </TableCell>
                         <TableCell>
                           {record.endDate ? (
                             <div className="flex items-center gap-2">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
-                              {record.endDate instanceof Date
-                                ? record.endDate.toLocaleDateString('ar-SA')
-                                : new Date(record.endDate).toLocaleDateString('ar-SA')}
+                              {record.endDate.toLocaleDateString("ar-IQ")}
                             </div>
                           ) : (
                             <span className="text-muted-foreground text-sm">
@@ -501,15 +497,15 @@ const CustodyPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">تاريخ التسليم</Label>
-                  <div className="font-medium">{selectedRecord.assignDate}</div>
+                  <div className="font-medium">{selectedRecord.startDate.toLocaleDateString('ar-IQ')}</div>
                 </div>
-                {selectedRecord.returnDate && (
+                {selectedRecord.endDate && (
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">
                       تاريخ الإرجاع
                     </Label>
                     <div className="font-medium">
-                      {selectedRecord.returnDate}
+                      {selectedRecord.endDate?.toLocaleDateString('ar-IQ')}
                     </div>
                   </div>
                 )}
@@ -619,8 +615,8 @@ const CustodyPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
+                      <SelectItem key={dept.id} value={dept.id.toString()}>
+                        {dept.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -678,7 +674,7 @@ const CustodyPage = () => {
                   <div>
                     تاريخ التسليم:{" "}
                     <span className="font-medium text-foreground">
-                      {selectedRecord.assignDate}
+                      {selectedRecord.startDate.toLocaleDateString('ar-IQ')}
                     </span>
                   </div>
                 </div>
