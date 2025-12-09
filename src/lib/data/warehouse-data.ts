@@ -12,8 +12,12 @@ import type {
   StockItem,
   ItemMovement,
   WarehouseStore,
-  WarehouseDocument
+  WarehouseDocument,
+  DocumentItem,
+  IssuanceFormData
 } from '@/lib/types/warehouse';
+
+export type { DocumentItem, IssuanceFormData };
 
 // Departments
 export const departments: Department[] = [

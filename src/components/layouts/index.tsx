@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/layouts/app-sidebar";
+import { NotificationBell } from "@/components/layouts/notification-bell";
 import { DynamicBreadcrumb } from "@/components/layouts/dynamic-breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -26,6 +27,9 @@ export default function Layouts({
                 className="mr-2 data-[orientation=vertical]:h-4"
               />
               <DynamicBreadcrumb />
+            </div>
+            <div className="mr-auto px-4">
+              <NotificationBell />
             </div>
           </header>
           <div className="  p-10  pt-4 ">{children}</div>

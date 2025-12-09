@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Trash2, Search, CalendarIcon, PlusCircle } from "lucide-react";
+import { Zap, Trash2, Search, CalendarIcon, PlusCircle, Info, AlertTriangle, Package, DollarSign, Calendar as CalendarIconLucide } from "lucide-react";
 import { useImmer } from "use-immer";
 import {
   Command,
@@ -74,13 +74,17 @@ const units = [
 ];
 
 const availableItems = [
-  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة", stock: 50 },
+  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة", stock: 50, price: 25000, lastEntryDate: "2024-01-15", expiryDate: null, specs: "جلد، لون أسود، دوار" },
   {
     id: 2,
     name: "طاولة اجتماعات",
     code: "FUR-TBL-001",
     unit: "قطعة",
     stock: 10,
+    price: 150000,
+    lastEntryDate: "2024-02-01",
+    expiryDate: null,
+    specs: "خشب بلوط، 200x100 سم"
   },
   { id: 3, name: "مكتب خشبي", code: "FUR-DSK-001", unit: "قطعة", stock: 35 },
   { id: 4, name: "خزانة ملفات", code: "FUR-CAB-001", unit: "قطعة", stock: 15 },
@@ -123,6 +127,12 @@ const QuickEntryPage = () => {
   const [itemsList, updateItemsList] = useImmer<DirectEntryItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
+
+  // Get currently focused item details
+  const focusedItem = focusedItemIndex !== null && itemsList[focusedItemIndex]?.itemId
+    ? availableItems.find(i => i.id === itemsList[focusedItemIndex].itemId)
+    : null;
 
   // Mock suppliers data for autocomplete
   const [suppliers] = useState([
@@ -294,6 +304,7 @@ const QuickEntryPage = () => {
                   <SelectContent>
                     <SelectItem value="gifts">هدايا وندور</SelectItem>
                     <SelectItem value="purchases">مشتريات</SelectItem>
+                    <SelectItem value="returned">مرتجع</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -425,7 +436,11 @@ const QuickEntryPage = () => {
                     </TableRow>
                   ) : (
                     itemsList.map((item, index) => (
-                      <TableRow key={item.id}>
+                      <TableRow
+                        key={item.id}
+                        className={focusedItemIndex === index ? "bg-muted/50" : ""}
+                        onClick={() => setFocusedItemIndex(index)}
+                      >
                         <TableCell className="text-right">
                           {item.itemId ? (
                             <div className="font-mono text-sm font-medium">
@@ -648,6 +663,62 @@ const QuickEntryPage = () => {
               حفظ الإدخال المباشر
             </Button>
           </CardFooter>
+        </Card>
+      )}
+
+      {/* Material Info Panel (Floating/Fixed) */}
+      {focusedItem && (
+        <Card className="fixed left-6 top-24 w-80 shadow-lg border-l-4 border-l-primary hidden xl:block animate-in slide-in-from-right-4">
+          <CardHeader className="pb-2 bg-muted/30">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              معلومات المادة
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-muted-foreground">اسم المادة</div>
+              <div className="font-bold">{focusedItem.name}</div>
+              <div className="text-xs font-mono bg-muted px-2 py-1 rounded w-fit mt-1">
+                {focusedItem.code}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Package className="h-3 w-3" /> الرصيد الحالي
+                </div>
+                <div className="font-bold text-lg">{focusedItem.stock} {focusedItem.unit}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" /> آخر سعر
+                </div>
+                {/* @ts-ignore - mock data extension */}
+                <div className="font-bold">{focusedItem.price?.toLocaleString() || '-'} د.ع</div>
+              </div>
+            </div>
+
+            <div className="space-y-1 border-t pt-2">
+              <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                <CalendarIconLucide className="h-3 w-3" /> آخر إدخال
+              </div>
+              {/* @ts-ignore - mock data extension */}
+              <div className="text-sm">{focusedItem.lastEntryDate || '-'}</div>
+            </div>
+
+            {/* @ts-ignore - mock data extension */}
+            {focusedItem.specs && (
+              <div className="space-y-1 border-t pt-2">
+                <div className="text-xs text-muted-foreground mb-1">المواصفات</div>
+                <div className="text-sm bg-muted/50 p-2 rounded text-muted-foreground">
+                  {/* @ts-ignore */}
+                  {focusedItem.specs}
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
       )}
     </div>

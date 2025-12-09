@@ -74,6 +74,7 @@ const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("2305");
+  const [refDocNumber, setRefDocNumber] = useState("");
   const [division, setDivision] = useState<string>();
   const [unit, setUnit] = useState<string>();
   const [department, setDepartment] = useState<string>();
@@ -94,7 +95,7 @@ const ItemIssuancePage = () => {
         quantity: 1,
         stock: 0,
         vendorName: "",
-        vendorId: null,
+        vendorId: undefined,
       });
     });
   };
@@ -271,6 +272,14 @@ const ItemIssuancePage = () => {
                 <Input
                   value={docNumber}
                   onChange={(e) => setDocNumber(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>رقم مستند الإدخال المرجعي (اختياري)</Label>
+                <Input
+                  value={refDocNumber}
+                  onChange={(e) => setRefDocNumber(e.target.value)}
+                  placeholder="رقم المستند..."
                 />
               </div>
               <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-4">
@@ -469,15 +478,14 @@ const ItemIssuancePage = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <span
-                            className={`font-medium ${
-                              item.quantity > item.stock
-                                ? "text-red-500"
-                                : item.itemId && item.stock > 0
+                            className={`font-medium ${item.quantity > (item.stock ?? 0)
+                              ? "text-red-500"
+                              : item.itemId && (item.stock ?? 0) > 0
                                 ? "text-green-600"
                                 : "text-muted-foreground"
-                            }`}
+                              }`}
                           >
-                            {item.stock}
+                            {item.stock ?? 0}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -503,7 +511,7 @@ const ItemIssuancePage = () => {
                                 (s) => s.id === Number(value)
                               );
                               updateItemsList((draft) => {
-                                draft[index].vendorId = Number(value);
+                                draft[index].vendorId = value ? Number(value) : undefined;
                                 draft[index].vendorName =
                                   selectedSupplier?.name || "";
                               });
@@ -563,7 +571,12 @@ const ItemIssuancePage = () => {
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button variant="outline">مستند جديد</Button>
-            <Button>حفظ المستند</Button>
+            <Button
+              disabled={itemsList.some(item => item.quantity > (item.stock ?? 0))}
+              title={itemsList.some(item => item.quantity > (item.stock ?? 0)) ? "لا يمكن الحفظ: الكمية المطلوبة أكبر من الرصيد" : ""}
+            >
+              حفظ المستند
+            </Button>
           </CardFooter>
         </Card>
       )}
