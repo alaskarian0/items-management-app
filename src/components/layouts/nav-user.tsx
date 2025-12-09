@@ -6,10 +6,10 @@ import {
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  Monitor,
+  Moon,
   Sparkles,
   Sun,
-  Moon,
-  Monitor,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 

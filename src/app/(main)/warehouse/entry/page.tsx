@@ -1,16 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -18,12 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
   TableBody,
@@ -33,44 +41,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  CalendarIcon,
-  PlusCircle,
-  Trash2,
-  AlertCircle,
-  PackagePlus,
-  Search,
-  Save,
-  Loader2,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
-import { useImmer } from "use-immer";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { toast } from "sonner";
-import { db } from "@/lib/db";
 import { saveDocument, useItems } from "@/hooks/use-inventory";
+import { db } from "@/lib/db";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import {
+  AlertCircle,
+  CalendarIcon,
+  Loader2,
+  PackagePlus,
+  PlusCircle,
+  Save,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useImmer } from "use-immer";
 
 // Import shared data and types
 import {
   departments,
   divisions,
-  units,
-  suppliers,
   entryTypes,
-  getDivisionsByDepartment,
-  getUnitsByDivision,
-  type DocumentItem,
+  suppliers,
+  units,
+  type DocumentItem
 } from "@/lib/data/warehouse-data";
 import { type Item } from "@/lib/types/warehouse";
 

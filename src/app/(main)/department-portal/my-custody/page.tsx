@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
     Table,
@@ -13,8 +12,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Search, Package, Printer, Download, UserCircle } from "lucide-react";
-import { assetCustodies, fixedAssets, getAssetById } from "@/lib/data/fixed-assets-data";
+import { assetCustodies, getAssetById } from "@/lib/data/fixed-assets-data";
+import { Download, Package, Printer, Search, UserCircle } from "lucide-react";
+import { useState } from 'react';
 
 const MyCustodyPage = () => {
     const [searchTerm, setSearchTerm] = useState('');

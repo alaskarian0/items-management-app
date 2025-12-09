@@ -1,15 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,18 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  PlusCircle,
-  Edit,
-  Trash2,
-  Truck,
-  Search,
-  Phone,
-  MapPin,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -38,13 +19,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Edit,
+  Phone,
+  PlusCircle,
+  Search,
+  Trash2,
+  Truck
+} from "lucide-react";
+import { useMemo, useState } from "react";
 
 // Import shared data and types
 import {
-  suppliers,
-  getSupplierByCode,
-  searchSuppliers,
   getActiveSuppliers,
+  suppliers
 } from "@/lib/data/settings-data";
 import {
   type Supplier,

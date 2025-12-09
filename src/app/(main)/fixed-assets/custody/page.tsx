@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,47 +28,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Users,
-  Search,
-  FileText,
-  Download,
-  Filter,
-  UserCircle,
-  Package,
   AlertCircle,
-  Calendar,
-  CheckCircle2,
   ArrowRightLeft,
   Building2,
+  Calendar,
+  CheckCircle2,
+  Download,
+  FileText,
+  Filter,
+  Package,
+  Search,
+  UserCircle,
   UserPlus,
+  Users,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
 
 // Import shared data and types
 import {
   assetCustodies,
-  fixedAssets,
-  getAssetById,
+  getAssetById
 } from "@/lib/data/fixed-assets-data";
-import { type AssetCustody, type FixedAsset } from "@/lib/types/fixed-assets";
 import { departments } from "@/lib/data/warehouse-data";
+import { type AssetCustody } from "@/lib/types/fixed-assets";
 
 // View model for custody records display
 type CustodyRecordView = AssetCustody & {

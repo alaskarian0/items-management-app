@@ -1,10 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { BarcodeQRPrintModal } from "@/components/features/barcode-printing";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,42 +29,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogOverlay,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import "@/styles/barcode-print.css";
 import {
   Barcode,
-  Search,
-  Printer,
-  QrCode,
+  CheckCircle2,
   Download,
   Filter,
-  CheckCircle2,
+  Printer,
+  QrCode,
+  Search,
   XCircle
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { BarcodeQRPrintModal } from "@/components/features/barcode-printing";
-import "@/styles/barcode-print.css";
+import { useState } from 'react';
 
 // Import shared data and types
 import {
-  fixedAssets,
-  getAssetByCode,
-  searchAssets,
+  fixedAssets
 } from "@/lib/data/fixed-assets-data";
-import { type FixedAsset, type AssetCoding } from "@/lib/types/fixed-assets";
+import { type FixedAsset } from "@/lib/types/fixed-assets";
 
 const CodingPage = () => {
   const [assets, setAssets] = useState<FixedAsset[]>(fixedAssets);

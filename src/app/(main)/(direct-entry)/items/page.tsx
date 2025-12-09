@@ -1,38 +1,30 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  PlusCircle,
-  Edit,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  Folder,
-  File as FileIcon,
-  Package,
-  FolderTree,
-  Layers,
-  Search,
-  Filter,
-  Hash,
-  Warehouse,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { produce } from 'immer';
+import {
+  ChevronDown,
+  ChevronRight,
+  Edit,
+  File as FileIcon,
+  Folder,
+  FolderTree,
+  Hash,
+  Layers,
+  Package,
+  PlusCircle,
+  Search,
+  Trash2,
+  Warehouse
+} from "lucide-react";
+import { useMemo, useState } from 'react';
 
 // --- DATA STRUCTURES ---
 type WarehouseAssignment = {

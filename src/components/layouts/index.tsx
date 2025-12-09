@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/layouts/app-sidebar";
-import { NotificationBell } from "@/components/layouts/notification-bell";
 import { DynamicBreadcrumb } from "@/components/layouts/dynamic-breadcrumb";
+import { NotificationBell } from "@/components/layouts/notification-bell";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,

@@ -1,16 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -18,12 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
   TableBody,
@@ -33,44 +41,32 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  CalendarIcon,
-  PlusCircle,
-  Trash2,
-  AlertCircle,
-  PackageMinus,
-  Search,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
-import { useImmer } from "use-immer";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  AlertCircle,
+  CalendarIcon,
+  PackageMinus,
+  PlusCircle,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { useImmer } from "use-immer";
 
 // Import shared data and types
+import { useNotificationStore } from "@/context/notification-store";
+import { db } from "@/lib/db";
+import { saveDocument, useItems } from "@/hooks/use-inventory";
 import {
   departments,
   divisions,
-  units,
-  items,
   suppliers,
-  getDivisionsByDepartment,
-  getUnitsByDivision,
-  searchItems,
+  units
 } from "@/lib/data/warehouse-data";
 import { DocumentItem } from "@/lib/types/warehouse";
-import { useItems, saveDocument, useStock } from "@/hooks/use-inventory";
-import { useNotificationStore } from "@/context/notification-store";
-import { useRouter } from "next/navigation";
 
 const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
@@ -121,11 +117,23 @@ const ItemIssuancePage = () => {
         item[field] = value;
         if (field === "itemName") {
           const selectedItem = items.find((i) => i.name === value);
-          if (selectedItem) {
+          if (selectedItem && selectedWarehouse) {
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
-            // Ideally fetch real stock here, for now use static or 0
-            item.stock = (selectedItem as any).stock || 0;
+            item.itemCode = selectedItem.code;
+
+            // Fetch real stock from database
+            db.inventory.get({
+              warehouseId: selectedWarehouse.id,
+              itemId: selectedItem.id
+            }).then(inventoryRecord => {
+              updateItemsList((draft) => {
+                const currentItem = draft[index];
+                if (currentItem && currentItem.itemId === selectedItem.id) {
+                  currentItem.stock = inventoryRecord?.quantity || 0;
+                }
+              });
+            });
           }
         }
       }

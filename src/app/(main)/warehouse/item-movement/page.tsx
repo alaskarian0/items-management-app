@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -14,12 +18,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
   Table,
   TableBody,
   TableCell,
@@ -27,31 +25,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  AlertCircle,
-  History,
-  Search,
-  Filter,
-  CalendarIcon,
-  ArrowDownLeft,
-  ArrowUpRight,
-  FileText,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CalendarIcon,
+  History,
+  Search
+} from "lucide-react";
+import { useMemo, useState } from "react";
 
 // Import shared data and types
 import {
-  itemMovements,
-  movementTypes,
-  type ItemMovement,
-  type MovementFilter
+  movementTypes
 } from "@/lib/data/warehouse-data";
+import { useMovements } from "@/hooks/use-inventory";
 
 const ItemMovementPage = () => {
   const { selectedWarehouse } = useWarehouse();
+  const itemMovements = useMovements(selectedWarehouse?.id || 0) || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState<string>("all");
   const [itemTypeFilter, setItemTypeFilter] = useState<string>("all");
@@ -342,11 +338,10 @@ const ItemMovementPage = () => {
                                 <ArrowUpRight className="h-4 w-4 text-red-600" />
                               )}
                               <span
-                                className={`font-medium ${
-                                  movement.movementType === "إدخال"
+                                className={`font-medium ${movement.movementType === "إدخال"
                                     ? "text-green-600"
                                     : "text-red-600"
-                                }`}
+                                  }`}
                               >
                                 {movement.movementType}
                               </span>

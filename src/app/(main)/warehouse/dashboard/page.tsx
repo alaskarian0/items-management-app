@@ -1,19 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-    Package,
-    Landmark,
-    ArrowRight,
-    Warehouse,
-    Box,
-    Settings2,
-    TrendingUp,
-    History
-} from "lucide-react";
-import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Select,
     SelectContent,
@@ -22,6 +10,18 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { warehouses } from "@/lib/data/warehouse-data";
+import {
+    ArrowRight,
+    Box,
+    History,
+    Landmark,
+    Package,
+    Settings2,
+    TrendingUp,
+    Warehouse
+} from "lucide-react";
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const WarehouseEntryPage = () => {
     const router = useRouter();

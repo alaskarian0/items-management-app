@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
-import { useReactToPrint } from "react-to-print";
-import "@/styles/report-modal.css"; // Import your custom styles for the report modal
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,12 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ColumnDef } from "./table-view";
-import { cn } from "@/lib/utils";
 import { formatDate } from "@/lib/dateUtils";
+import { cn } from "@/lib/utils";
+import "@/styles/report-modal.css"; // Import your custom styles for the report modal
+import React, { useMemo, useRef, useState } from "react";
+import { useReactToPrint } from "react-to-print";
+import { ColumnDef } from "./table-view";
 
 export interface ReportModalProps<T extends { id: React.Key }> {
   trigger: React.ReactNode;

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { LabelTemplate, FixedAsset } from './label-template';
+import { FixedAsset, LabelTemplate } from './label-template';
 
 export type { FixedAsset };
 

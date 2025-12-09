@@ -1,34 +1,34 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertCircle,
+  Barcode,
+  Building2,
+  Package,
+  PackageMinus,
+  PackagePlus,
+  TrendingDown,
+  TrendingUp,
+  Users,
+  Warehouse,
+} from "lucide-react";
 import {
   Bar,
   BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  LineChart,
-  Line,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Warehouse,
-  Package,
-  TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  Users,
-  Barcode,
-  PackagePlus,
-  PackageMinus,
-  Building2,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 // Warehouse stock data
 const warehouseStockData = [

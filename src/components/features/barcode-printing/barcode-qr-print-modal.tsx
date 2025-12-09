@@ -1,16 +1,15 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,10 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { PrintPreview, FixedAsset } from './print-preview';
-import { Barcode, QrCode, Settings, Printer, Eye } from 'lucide-react';
+import { Barcode, Eye, Printer, QrCode, Settings } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import { FixedAsset, PrintPreview } from './print-preview';
 
 export interface BarcodeQRPrintModalProps {
   open: boolean;

@@ -1,5 +1,4 @@
 // components/content-view/CustomPagination.tsx
-import React from "react";
 import { Button } from "@/components/ui/button";
 
 export interface CustomPaginationProps {

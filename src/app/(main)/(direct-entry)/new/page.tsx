@@ -1,16 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -26,31 +39,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Zap, Trash2, Search, CalendarIcon, PlusCircle, Info, AlertTriangle, Package, DollarSign, Calendar as CalendarIconLucide } from "lucide-react";
-import { useImmer } from "use-immer";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
+import { useNotificationStore } from "@/context/notification-store";
+import { useWarehouse } from "@/context/warehouse-context";
+import { saveDocument, useItems, useSuppliers } from "@/hooks/use-inventory";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
-import { useWarehouse } from "@/context/warehouse-context";
-import { useItems, useSuppliers, saveDocument } from "@/hooks/use-inventory";
-import { useNotificationStore } from "@/context/notification-store";
+import { CalendarIcon, Calendar as CalendarIconLucide, DollarSign, Info, Package, PlusCircle, Search, Trash2, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useImmer } from "use-immer";
 
 // --- MOCK DATA ---
 const departments = [

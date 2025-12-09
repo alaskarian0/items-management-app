@@ -131,3 +131,46 @@ export function useInventoryStock(warehouseId: number) {
         }).filter(i => i.stock > 0 || true); // Optional: filter out zero stock?
     }, [warehouseId]);
 }
+
+// Fetch Movements for a Warehouse
+export function useMovements(warehouseId: number) {
+    return useLiveQuery(async () => {
+        if (!warehouseId) return [];
+
+        // Get movements for this warehouse
+        const movements = await db.movements
+            .where("warehouseId")
+            .equals(warehouseId)
+            .reverse() // Most recent first
+            .toArray();
+
+        // Get all items and documents to join details
+        const allItems = await db.items.toArray();
+        const allDocuments = await db.documents.toArray();
+        const allDepartments = await db.departments.toArray();
+
+        // Join and format
+        return movements.map(movement => {
+            const item = allItems.find(i => i.id === movement.itemId);
+            const document = allDocuments.find(d => d.id === movement.docId);
+            const department = allDepartments.find(d => d.id === movement.departmentId);
+
+            return {
+                id: movement.id!,
+                itemCode: item?.code || 'N/A',
+                itemName: item?.name || 'Unknown Item',
+                unit: item?.unit || 'قطعة',
+                movementType: movement.type === 'entry' ? 'إدخال' : 'إصدار',
+                quantity: movement.quantity,
+                balance: 0, // Would need to calculate running balance
+                referenceNumber: document?.docNumber || 'N/A',
+                date: movement.date.toISOString(),
+                department: department?.name,
+                division: undefined, // Would need division join
+                recipient: document?.recipientName,
+                supplier: undefined, // Would need supplier join
+                notes: document?.notes
+            };
+        });
+    }, [warehouseId]);
+}

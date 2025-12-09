@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
 import {
   Warehouse,
 } from "lucide-react";
+import * as React from "react";
 
 import { NavGroup } from "@/components/layouts/NavGroup";
 import { NavUser } from "@/components/layouts/nav-user";

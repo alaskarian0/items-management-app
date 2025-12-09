@@ -7,9 +7,9 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { usePathname } from "next/navigation"
-import { navbarData, generateRouteLabels } from "./navbarData";
+} from "@/components/ui/breadcrumb";
+import { usePathname } from "next/navigation";
+import { generateRouteLabels, navbarData } from "./navbarData";
 
 // Generate route labels from navbar data
 const routeLabels = generateRouteLabels(navbarData)
