@@ -26,6 +26,7 @@ export default function RootLayout({
       <body dir="rtl"
         className={`${cairo.variable} antialiased`}
         style={{ fontFamily: 'var(--font-cairo), Cairo, system-ui, sans-serif' }}
+        suppressHydrationWarning
       >
         <Providers>
           {children}

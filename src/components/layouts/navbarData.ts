@@ -159,7 +159,7 @@ export function filterNavItemsByRole(
   items: NavItem[],
   userRole?: string
 ): NavItem[] {
-  if (!userRole) return []; // If no user role, return empty array
+  // if (!userRole) return []; // If no user role, return empty array
 
   return items
     .filter((item) => {
@@ -168,7 +168,7 @@ export function filterNavItemsByRole(
         return true;
       }
       // Check if user's role is in the allowed roles
-      return item.roles.includes(userRole);
+      return userRole ? item.roles.includes(userRole) : false;
     })
     .map((item) => ({
       ...item,

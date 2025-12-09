@@ -23,8 +23,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Get filtered navigation data based on user role
   const filteredNavData = React.useMemo(() => {
-    // return getFilteredNavbarData(user?.role);
-    return getFilteredNavbarData("admin");
+    return getFilteredNavbarData(user?.role);
   }, [user?.role]);
 
   return (

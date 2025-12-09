@@ -38,13 +38,10 @@ export function NavGroup({
 }) {
   const pathname = usePathname()
 
-  // Check if any sub-item is active
-  const isItemActive = (item: typeof items[0]) => {
-    if (pathname === item.url) return true
-    if (item.items) {
-      return item.items.some(subItem => pathname === subItem.url)
-    }
-    return false
+  // Check if a URL is active
+  const isUrlActive = (url: string) => {
+    if (url === "/" && pathname !== "/") return false
+    return pathname.startsWith(url)
   }
 
   return (
@@ -52,11 +49,12 @@ export function NavGroup({
       {groupLabel && <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => {
-          const hasActiveChild = item.items?.some(subItem => pathname === subItem.url)
+          const hasActiveChild = item.items?.some(subItem => isUrlActive(subItem.url))
+          const isItemActive = isUrlActive(item.url)
 
           return item.items ? (
             <Collapsible
-              key={item.title}
+              key={item.url}
               asChild
               defaultOpen={hasActiveChild || item.isActive}
               className="group/collapsible"
@@ -75,10 +73,9 @@ export function NavGroup({
                 <CollapsibleContent>
                   <SidebarMenuSub>
                     {item.items.map((subItem) => {
-                      const isActive = pathname === subItem.url
                       return (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild isActive={isActive}>
+                        <SidebarMenuSubItem key={subItem.url}>
+                          <SidebarMenuSubButton asChild isActive={isUrlActive(subItem.url)}>
                             <Link href={subItem.url}>
                               <span>{subItem.title}</span>
                             </Link>
@@ -91,11 +88,11 @@ export function NavGroup({
               </SidebarMenuItem>
             </Collapsible>
           ) : (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.url}>
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                isActive={pathname === item.url}
+                isActive={isItemActive}
               >
                 <Link href={item.url}>
                   {item.icon && <item.icon />}
