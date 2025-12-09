@@ -15,25 +15,18 @@ import {
 import { assetCustodies, getAssetById } from "@/lib/data/fixed-assets-data";
 import { Download, Package, Printer, Search, UserCircle } from "lucide-react";
 import { useState } from 'react';
+import { useCustody } from "@/hooks/use-inventory";
 
 const MyCustodyPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Mock: Filter data to simulate "My Department Only" view
-    // In a real app, this would filter by the logged-in user's department
-    const myAssets = assetCustodies.map(custody => {
-        const asset = getAssetById(custody.assetId);
-        return {
-            ...custody,
-            assetName: asset?.name || 'Unknown',
-            assetCode: asset?.assetCode || 'Unknown',
-        };
-    }).slice(0, 5); // Just show a few as demo
+    // For demo, use department ID 1. In real app, get from auth context
+    const custodyRecords = useCustody(1) || [];
 
-    const filteredAssets = myAssets.filter(asset =>
-        asset.assetName.includes(searchTerm) ||
-        asset.assetCode.includes(searchTerm) ||
-        asset.employeeName.includes(searchTerm)
+    const filteredAssets = custodyRecords.filter(record =>
+        record.itemName.includes(searchTerm) ||
+        record.itemCode.includes(searchTerm) ||
+        record.employeeName.includes(searchTerm)
     );
 
     return (
@@ -93,25 +86,25 @@ const MyCustodyPage = () => {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredAssets.map((asset) => (
-                                    <TableRow key={asset.id}>
-                                        <TableCell className="font-medium">{asset.assetName}</TableCell>
+                                filteredAssets.map((record) => (
+                                    <TableRow key={record.id}>
+                                        <TableCell className="font-medium">{record.itemName}</TableCell>
                                         <TableCell>
-                                            <code className="bg-muted px-2 py-1 rounded text-sm">{asset.assetCode}</code>
+                                            <code className="bg-muted px-2 py-1 rounded text-sm">{record.itemCode}</code>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <UserCircle className="h-4 w-4 text-muted-foreground" />
-                                                {asset.employeeName}
+                                                {record.employeeName}
                                             </div>
                                         </TableCell>
-                                        <TableCell>{typeof asset.startDate === 'string' ? asset.startDate : asset.startDate.toLocaleDateString('ar-SA')}</TableCell>
+                                        <TableCell>{new Date(record.receivedDate).toLocaleDateString('ar-SA')}</TableCell>
                                         <TableCell>
-                                            <Badge variant={asset.condition === 'excellent' ? 'default' : 'secondary'}>
-                                                {asset.condition === 'excellent' ? 'ممتاز' : 'جيد'}
+                                            <Badge variant={record.condition === 'excellent' ? 'default' : 'secondary'}>
+                                                {record.condition === 'excellent' ? 'ممتاز' : record.condition === 'good' ? 'جيد' : 'مقبول'}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-muted-foreground text-sm">{asset.notes || '-'}</TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">{record.notes || '-'}</TableCell>
                                     </TableRow>
                                 ))
                             )}

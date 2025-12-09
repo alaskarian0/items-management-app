@@ -50,6 +50,38 @@ export interface DocumentRecord {
     createdAt: Date;
 }
 
+export interface RequestRecord {
+    id?: number;
+    departmentId: number;
+    divisionId?: number;
+    unitId?: number;
+    requestedBy: string;
+    items: { itemId: number; quantity: number; notes?: string }[];
+    status: 'pending' | 'approved' | 'rejected';
+    notes?: string;
+    createdAt: Date;
+    processedAt?: Date;
+    processedBy?: string;
+}
+
+export interface CustodyRecord {
+    id?: number;
+    itemId: number;
+    itemCode: string;
+    itemName: string;
+    departmentId: number;
+    divisionId?: number;
+    unitId?: number;
+    employeeId?: string;
+    employeeName: string;
+    quantity: number;
+    receivedDate: Date;
+    condition: 'excellent' | 'good' | 'fair' | 'poor';
+    status: 'active' | 'transferred' | 'returned';
+    notes?: string;
+    docId?: number; // Reference to issuance document
+}
+
 export class InventoryDB extends Dexie {
     items!: Table<Item, number>;
     warehouses!: Table<Warehouse, number>;
@@ -63,9 +95,13 @@ export class InventoryDB extends Dexie {
     units!: Table<any, number>;
     suppliers!: Table<any, number>;
 
+    // Department Portal tables
+    requests!: Table<RequestRecord, number>;
+    custody!: Table<CustodyRecord, number>;
+
     constructor() {
         super('InventoryDB');
-        this.version(1).stores({
+        this.version(2).stores({
             items: '++id, code, name, category',
             warehouses: '++id, code, name',
             inventory: '++id, [warehouseId+itemId], warehouseId, itemId',
@@ -74,7 +110,9 @@ export class InventoryDB extends Dexie {
             departments: '++id, name',
             divisions: '++id, name, departmentId',
             units: '++id, name, divisionId',
-            suppliers: '++id, name'
+            suppliers: '++id, name',
+            requests: '++id, departmentId, status, createdAt',
+            custody: '++id, itemId, departmentId, employeeId, status'
         });
     }
 

@@ -174,3 +174,53 @@ export function useMovements(warehouseId: number) {
         });
     }, [warehouseId]);
 }
+
+// Department Portal Hooks
+
+// Fetch Requests for a Department
+export function useRequests(departmentId?: number) {
+    return useLiveQuery(async () => {
+        if (!departmentId) return [];
+
+        const requests = await db.requests
+            .where("departmentId")
+            .equals(departmentId)
+            .reverse()
+            .toArray();
+
+        return requests;
+    }, [departmentId]);
+}
+
+// Fetch All Pending Requests (for warehouse view)
+export function useAllPendingRequests() {
+    return useLiveQuery(async () => {
+        return db.requests
+            .where("status")
+            .equals("pending")
+            .reverse()
+            .toArray();
+    });
+}
+
+// Fetch Custody Records for a Department
+export function useCustody(departmentId?: number) {
+    return useLiveQuery(async () => {
+        if (!departmentId) return [];
+
+        return db.custody
+            .where("departmentId")
+            .equals(departmentId)
+            .and(record => record.status === 'active')
+            .toArray();
+    }, [departmentId]);
+}
+
+// Save Request
+export const saveRequest = async (requestData: Omit<import('@/lib/db').RequestRecord, 'id' | 'createdAt'>) => {
+    return db.requests.add({
+        ...requestData,
+        createdAt: new Date(),
+        status: 'pending'
+    });
+};

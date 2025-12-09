@@ -13,6 +13,9 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Check, X, ArrowRightLeft, User } from "lucide-react";
+import { useAllPendingRequests } from "@/hooks/use-inventory";
+import { db } from "@/lib/db";
+import { toast } from "sonner";
 
 // Mock Data for Requests
 type TransferRequest = {
@@ -26,49 +29,23 @@ type TransferRequest = {
     reason?: string;
 };
 
-const initialRequests: TransferRequest[] = [
-    {
-        id: 1,
-        assetName: "طابعة ليزرية HP Pro",
-        assetCode: "IT-PRT-022",
-        fromDepartment: "المخزن الرئيسي",
-        fromUser: "أمين المخزن",
-        date: "2024-03-10",
-        status: "pending",
-        reason: "تجهيز مكتبي حسب الطلب رقم 44"
-    },
-    {
-        id: 2,
-        assetName: "مكتب خشب زان 160سم",
-        assetCode: "FUR-DSK-105",
-        fromDepartment: "قسم الشؤون الإدارية",
-        fromUser: "أحمد علي",
-        date: "2024-03-11",
-        status: "pending",
-        reason: "فائض عن الحاجة - نقل ملكية"
-    },
-    {
-        id: 3,
-        assetName: "كرسي دوار طبي",
-        assetCode: "FUR-CHR-088",
-        fromDepartment: "شعبة الصيانة",
-        fromUser: "سعيد محمد",
-        date: "2024-03-09",
-        status: "pending",
-        reason: "استبدال تالف"
-    }
-];
 
 const DepartmentRequestsPage = () => {
-    const [requests, setRequests] = useState<TransferRequest[]>(initialRequests);
+    const requests = useAllPendingRequests() || [];
 
-    const handleAction = (id: number, action: 'approve' | 'reject') => {
-        // In a real app, this would call an API
-        setRequests(requests.map(req =>
-            req.id === id ? { ...req, status: action === 'approve' ? 'approved' : 'rejected' } : req
-        ));
-        // For prototype visualization, we keep them in the list but update status
-        // Or filter them out: setRequests(requests.filter(req => req.id !== id));
+    const handleAction = async (id: number, action: 'approve' | 'reject') => {
+        try {
+            await db.requests.update(id, {
+                status: action === 'approve' ? 'approved' : 'rejected',
+                processedAt: new Date(),
+                processedBy: 'Current User' // In real app, get from auth
+            });
+
+            toast.success(action === 'approve' ? 'تم قبول الطلب' : 'تم رفض الطلب');
+        } catch (error) {
+            console.error(error);
+            toast.error('حدث خطأ أثناء معالجة الطلب');
+        }
     };
 
     return (
@@ -91,12 +68,11 @@ const DepartmentRequestsPage = () => {
                     <Table dir="rtl">
                         <TableHeader>
                             <TableRow>
-                                <TableHead>المادة</TableHead>
-                                <TableHead>الرمز</TableHead>
-                                <TableHead>جهة الإرسال</TableHead>
-                                <TableHead>المرسل</TableHead>
+                                <TableHead>المواد المطلوبة</TableHead>
+                                <TableHead>القسم</TableHead>
+                                <TableHead>طالب الطلب</TableHead>
                                 <TableHead>التاريخ</TableHead>
-                                <TableHead>السبب</TableHead>
+                                <TableHead>الملاحظات</TableHead>
                                 <TableHead>الحالة</TableHead>
                                 <TableHead className="text-center">الإجراء</TableHead>
                             </TableRow>
@@ -104,26 +80,25 @@ const DepartmentRequestsPage = () => {
                         <TableBody>
                             {requests.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                         لا توجد طلبات معلقة
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 requests.map((request) => (
                                     <TableRow key={request.id} className={request.status !== 'pending' ? 'bg-muted/50' : ''}>
-                                        <TableCell className="font-medium">{request.assetName}</TableCell>
-                                        <TableCell>
-                                            <code className="bg-muted px-2 py-1 rounded text-sm">{request.assetCode}</code>
+                                        <TableCell className="font-medium">
+                                            {request.items?.length || 0} مادة
                                         </TableCell>
-                                        <TableCell>{request.fromDepartment}</TableCell>
+                                        <TableCell>قسم #{request.departmentId}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
                                                 <User className="h-4 w-4 text-muted-foreground" />
-                                                {request.fromUser}
+                                                {request.requestedBy}
                                             </div>
                                         </TableCell>
-                                        <TableCell>{request.date}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">{request.reason}</TableCell>
+                                        <TableCell>{new Date(request.createdAt).toLocaleDateString('ar-SA')}</TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">{request.notes || '-'}</TableCell>
                                         <TableCell>
                                             {request.status === 'pending' && <Badge variant="outline" className="border-orange-500 text-orange-600">قيد الانتظار</Badge>}
                                             {request.status === 'approved' && <Badge variant="default" className="bg-green-600">تم القبول</Badge>}
@@ -135,7 +110,7 @@ const DepartmentRequestsPage = () => {
                                                     <Button
                                                         size="sm"
                                                         className="bg-green-600 hover:bg-green-700"
-                                                        onClick={() => handleAction(request.id, 'approve')}
+                                                        onClick={() => handleAction(request.id!, 'approve')}
                                                     >
                                                         <Check className="h-4 w-4 ml-1" />
                                                         قبول
@@ -143,7 +118,7 @@ const DepartmentRequestsPage = () => {
                                                     <Button
                                                         size="sm"
                                                         variant="destructive"
-                                                        onClick={() => handleAction(request.id, 'reject')}
+                                                        onClick={() => handleAction(request.id!, 'reject')}
                                                     >
                                                         <X className="h-4 w-4 ml-1" />
                                                         رفض
