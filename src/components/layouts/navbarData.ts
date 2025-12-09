@@ -129,83 +129,25 @@ export const navbarData: NavbarData = {
       icon: Settings,
       items: [
         {
-          title: "البيانات الأساسية",
-          url: "/settings/basic-data",
-          icon: Settings,
-          items: [
-            {
-              title: "الأقسام والشعب",
-              url: "/settings/departments",
-              icon: Building2,
-            },
-            {
-              title: "الموردين",
-              url: "/settings/suppliers",
-              icon: Truck,
-            },
-            {
-              title: "العملاء",
-              url: "/settings/customers",
-              icon: Users,
-            },
-            {
-              title: "وحدات القياس",
-              url: "/settings/units",
-              icon: Ruler,
-            },
-          ],
+          title: "الأقسام والشعب",
+          url: "/settings/departments",
+          icon: Building2,
         },
         {
-          title: "إدارة المستخدمين",
+          title: "الموردين",
+          url: "/settings/suppliers",
+          icon: Truck,
+        },
+        {
+          title: "وحدات القياس",
+          url: "/settings/units",
+          icon: Ruler,
+        },
+        {
+          title: "المستخدمين",
           url: "/settings/users",
           icon: Users,
           roles: ["admin"],
-          items: [
-            {
-              title: "المستخدمين",
-              url: "/settings/users",
-              icon: Users,
-              roles: ["admin"],
-            },
-            {
-              title: "الصلاحيات",
-              url: "/settings/permissions",
-              icon: Settings,
-              roles: ["admin"],
-            },
-            {
-              title: "الأدوار",
-              url: "/settings/roles",
-              icon: Users,
-              roles: ["admin"],
-            },
-          ],
-        },
-        {
-          title: "إعدادات النظام",
-          url: "/settings/system",
-          icon: Settings,
-          roles: ["admin"],
-          items: [
-            {
-              title: "الإعدادات العامة",
-              url: "/settings/general",
-              icon: Settings,
-              roles: ["admin"],
-            },
-            {
-              title: "النسخ الاحتياطي",
-              url: "/settings/backup",
-              icon: Settings,
-              roles: ["admin"],
-            },
-            {
-              title: "سجول النظام",
-              url: "/settings/logs",
-              icon: Settings,
-              roles: ["admin"],
-            },
-          ],
         },
       ],
     },

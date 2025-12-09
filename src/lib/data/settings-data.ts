@@ -548,3 +548,11 @@ export const getSettingByKey = (key: string): SystemSetting | undefined => {
 export const getSettingsByCategory = (category: string): SystemSetting[] => {
   return systemSettings.filter(setting => setting.category === category);
 };
+
+// Supplier categories for form dropdowns
+export const SUPPLIER_CATEGORIES = [
+  "الأثاث والمعدات المكتبي",
+  "تكنولوجيا المعلومات",
+  "الخدمات",
+  "المواد الخام"
+];

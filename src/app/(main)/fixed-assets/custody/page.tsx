@@ -46,101 +46,41 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type CustodyRecord = {
-  id: string;
+// Import shared data and types
+import {
+  assetCustodies,
+  fixedAssets,
+  getAssetById,
+  type AssetCustody,
+  type FixedAsset
+} from "@/lib/data/fixed-assets-data";
+
+// View model for custody records display
+type CustodyRecordView = AssetCustody & {
   assetName: string;
   assetCode: string;
-  employeeName: string;
-  employeeId: string;
-  department: string;
-  assignDate: string;
-  returnDate?: string;
-  status: "active" | "returned";
-  condition: "excellent" | "good" | "fair" | "poor";
-  notes?: string;
+  assetCategory?: string;
 };
 
-// Mock data for departments and employees
-const departments = [
-  "قسم تقنية المعلومات",
-  "قسم المحاسبة",
-  "قسم الإعلام",
-  "قسم التدريب",
-  "قسم الشؤون الإدارية",
-  "قسم الموارد البشرية",
-  "قسم الهندسة",
-  "قسم المبيعات",
-];
-
-const employees = [
-  { id: "EMP-001", name: "أحمد محمد علي", department: "قسم تقنية المعلومات" },
-  { id: "EMP-002", name: "فاطمة حسن", department: "قسم المحاسبة" },
-  { id: "EMP-003", name: "محمد خالد", department: "قسم الإعلام" },
-  { id: "EMP-004", name: "سارة أحمد", department: "قسم التدريب" },
-  { id: "EMP-005", name: "علي حسين", department: "قسم الشؤون الإدارية" },
-  { id: "EMP-006", name: "نورا أحمد", department: "قسم الموارد البشرية" },
-  { id: "EMP-007", name: "خالد إبراهيم", department: "قسم الهندسة" },
-  { id: "EMP-008", name: "مريم سعيد", department: "قسم المبيعات" },
-];
-
-const mockCustodyRecords: CustodyRecord[] = [
-  {
-    id: "1",
-    assetName: "جهاز حاسوب محمول Dell",
-    assetCode: "BC-001-2024",
-    employeeName: "أحمد محمد علي",
-    employeeId: "EMP-001",
-    department: "قسم تقنية المعلومات",
-    assignDate: "2024-01-15",
-    status: "active",
-    condition: "excellent",
-    notes: "تم التسليم بحالة ممتازة",
-  },
-  {
-    id: "2",
-    assetName: "طابعة ليزر HP",
-    assetCode: "BC-002-2024",
-    employeeName: "فاطمة حسن",
-    employeeId: "EMP-002",
-    department: "قسم المحاسبة",
-    assignDate: "2024-02-10",
-    status: "active",
-    condition: "good",
-  },
-  {
-    id: "3",
-    assetName: "كاميرا رقمية Canon",
-    assetCode: "BC-003-2024",
-    employeeName: "محمد خالد",
-    employeeId: "EMP-003",
-    department: "قسم الإعلام",
-    assignDate: "2024-01-20",
-    returnDate: "2024-03-15",
-    status: "returned",
-    condition: "good",
-    notes: "تم الإرجاع بنفس الحالة",
-  },
-  {
-    id: "4",
-    assetName: "جهاز عرض Projector",
-    assetCode: "BC-004-2024",
-    employeeName: "سارة أحمد",
-    employeeId: "EMP-004",
-    department: "قسم التدريب",
-    assignDate: "2024-03-01",
-    status: "active",
-    condition: "excellent",
-  },
-];
+// Convert custody data to view model
+const custodyRecordsView: CustodyRecordView[] = assetCustodies.map(custody => {
+  const asset = getAssetById(custody.assetId);
+  return {
+    ...custody,
+    assetName: asset?.name || 'غير معروف',
+    assetCode: asset?.assetCode || 'غير معروف',
+    assetCategory: asset?.category
+  };
+});
 
 const CustodyPage = () => {
-  const [records, setRecords] = useState<CustodyRecord[]>(mockCustodyRecords);
+  const [records, setRecords] = useState<CustodyRecordView[]>(custodyRecordsView);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<
     "all" | "active" | "returned"
   >("all");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
-  const [selectedRecord, setSelectedRecord] = useState<CustodyRecord | null>(
+  const [selectedRecord, setSelectedRecord] = useState<CustodyRecordView | null>(
     null
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -158,16 +98,13 @@ const CustodyPage = () => {
   const recordDepartments = Array.from(
     new Set(records.map((r) => r.department))
   );
-  const filteredEmployees = transferDepartment
-    ? employees.filter((emp) => emp.department === transferDepartment)
-    : employees;
 
   const filteredRecords = records.filter((record) => {
     const matchesSearch =
       record.assetName.includes(searchTerm) ||
       record.employeeName.includes(searchTerm) ||
       record.assetCode.includes(searchTerm) ||
-      record.employeeId.includes(searchTerm);
+      record.custodyNumber.includes(searchTerm);
     const matchesStatus =
       filterStatus === "all" || record.status === filterStatus;
     const matchesDepartment =
@@ -175,18 +112,18 @@ const CustodyPage = () => {
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
-  const handleViewDetails = (record: CustodyRecord) => {
+  const handleViewDetails = (record: CustodyRecordView) => {
     setSelectedRecord(record);
     setIsDialogOpen(true);
   };
 
-  const handleReturnAsset = (record: CustodyRecord) => {
+  const handleReturnAsset = (record: CustodyRecordView) => {
     setSelectedRecord(record);
     setReturnNotes("");
     setIsReturnDialogOpen(true);
   };
 
-  const handleTransferAsset = (record: CustodyRecord) => {
+  const handleTransferAsset = (record: CustodyRecordView) => {
     setSelectedRecord(record);
     setTransferDepartment(undefined);
     setTransferEmployee(undefined);
@@ -202,7 +139,7 @@ const CustodyPage = () => {
             ? {
                 ...record,
                 status: "returned" as const,
-                returnDate: new Date().toISOString().split("T")[0],
+                endDate: new Date(),
                 notes: returnNotes || record.notes,
               }
             : record
@@ -216,32 +153,22 @@ const CustodyPage = () => {
 
   const handleConfirmTransfer = () => {
     if (selectedRecord && transferDepartment && transferEmployee) {
-      const selectedEmployee = employees.find(
-        (emp) => emp.id === transferEmployee
-      );
-      if (selectedEmployee) {
-        setRecords(
-          records.map((record) =>
-            record.id === selectedRecord.id
-              ? {
-                  ...record,
-                  employeeName: selectedEmployee.name,
-                  employeeId: selectedEmployee.id,
-                  department: selectedEmployee.department,
-                  assignDate: new Date().toISOString().split("T")[0],
+      setRecords(
+        records.map((record) =>
+          record.id === selectedRecord.id
+            ? {
+                ...record,
+                  employeeName: transferEmployee,
+                  department: transferDepartment,
                   notes: transferNotes
                     ? `${
                         record.notes ? record.notes + " | " : ""
-                      }تم التحويل إلى ${
-                        selectedEmployee.name
-                      }: ${transferNotes}`
-                    : (record.notes || "") +
-                      ` تم التحويل إلى ${selectedEmployee.name}`,
+                      }تم التحويل: ${transferNotes}`
+                    : (record.notes || "تم التحويل"),
                 }
               : record
           )
         );
-      }
       setIsTransferDialogOpen(false);
       setSelectedRecord(null);
       setTransferDepartment(undefined);
@@ -408,8 +335,9 @@ const CustodyPage = () => {
                   <TableHead className="text-right">رمز الموجود</TableHead>
                   <TableHead className="text-right">اسم الموظف</TableHead>
                   <TableHead className="text-right">القسم</TableHead>
-                  <TableHead className="text-right">تاريخ التسليم</TableHead>
-                  <TableHead className="text-right">تاريخ الإرجاع</TableHead>
+                  <TableHead className="text-right">رقم الذمة</TableHead>
+                  <TableHead className="text-right">تاريخ البدء</TableHead>
+                  <TableHead className="text-right">تاريخ الانتهاء</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">الوضع</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
@@ -439,6 +367,11 @@ const CustodyPage = () => {
                           </code>
                         </TableCell>
                         <TableCell>
+                          <code className="px-2 py-1 bg-muted rounded text-sm">
+                            {record.custodyNumber}
+                          </code>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
                             <UserCircle className="h-4 w-4 text-muted-foreground" />
                             <div>
@@ -446,7 +379,7 @@ const CustodyPage = () => {
                                 {record.employeeName}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {record.employeeId}
+                                {record.position}
                               </div>
                             </div>
                           </div>
@@ -455,14 +388,18 @@ const CustodyPage = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {record.assignDate}
+                            {record.startDate instanceof Date
+                              ? record.startDate.toLocaleDateString('ar-SA')
+                              : new Date(record.startDate).toLocaleDateString('ar-SA')}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {record.returnDate ? (
+                          {record.endDate ? (
                             <div className="flex items-center gap-2">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
-                              {record.returnDate}
+                              {record.endDate instanceof Date
+                                ? record.endDate.toLocaleDateString('ar-SA')
+                                : new Date(record.endDate).toLocaleDateString('ar-SA')}
                             </div>
                           ) : (
                             <span className="text-muted-foreground text-sm">

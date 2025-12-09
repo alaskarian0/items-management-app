@@ -503,7 +503,7 @@ const QuickEntryPage = () => {
                                             }}
                                           >
                                             <PlusCircle className="ml-2 h-4 w-4" />
-                                            إضافة "{searchValue}" كمادة جديدة
+                                            إضافة &quot;{searchValue}&quot; كمادة جديدة
                                           </Button>
                                         </div>
                                       </CommandEmpty>

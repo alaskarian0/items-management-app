@@ -32,20 +32,18 @@ import { produce } from 'immer';
 
 // Import shared data and types
 import {
-  warehouseStores,
   warehouses,
-  type WarehouseStore,
   type Warehouse
 } from "@/lib/data/warehouse-data";
 
-// Convert warehouse data to hierarchical structure for display
-const initialWarehouseData: WarehouseStore[] = warehouseStores;
+// Use hierarchical warehouse data for display
+const initialWarehouseData: Warehouse[] = warehouses;
 
 // --- MODAL STATE TYPE ---
 type ModalState = {
   isOpen: boolean;
   mode: 'add' | 'edit';
-  data?: { id: string; name: string; parentId?: string };
+  data?: { id: number; name: string; parentId?: number };
 };
 
 // --- RECURSIVE WAREHOUSE NODE COMPONENT ---
@@ -58,7 +56,7 @@ const WarehouseNode = ({
 }: {
   warehouse: Warehouse;
   onOpenModal: (mode: 'add' | 'edit', data: any) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   level?: number;
   searchTerm?: string;
 }) => {
@@ -69,7 +67,7 @@ const WarehouseNode = ({
     if (!term) return true;
     const lowerTerm = term.toLowerCase();
     if (wh.name.toLowerCase().includes(lowerTerm)) return true;
-    return wh.children.some(child => matchesSearch(child, term));
+    return wh.children && wh.children.length > 0 && wh.children.some(child => matchesSearch(child, term));
   };
 
   const isVisible = matchesSearch(warehouse, searchTerm);
@@ -101,9 +99,9 @@ const WarehouseNode = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0"
-            disabled={warehouse.children.length === 0}
+            disabled={!warehouse.children || warehouse.children.length === 0}
           >
-            {warehouse.children.length > 0 ? (
+            {warehouse.children && warehouse.children.length > 0 ? (
               isOpen ? (
                 <ChevronDown className="h-3.5 w-3.5" />
               ) : (
@@ -127,7 +125,7 @@ const WarehouseNode = ({
             <Badge variant="outline" className="text-xs h-5">
               {getLevelBadge(level)}
             </Badge>
-            {warehouse.children.length > 0 && (
+            {warehouse.children && warehouse.children.length > 0 && (
               <Badge variant="secondary" className="text-xs h-5">
                 {warehouse.children.length} فرع
               </Badge>
@@ -172,7 +170,7 @@ const WarehouseNode = ({
         </div>
       </div>
 
-      {warehouse.children.length > 0 && (
+      {warehouse.children && warehouse.children.length > 0 && (
         <CollapsibleContent className="pr-4 border-r-2 border-dashed border-muted-foreground/20 mr-3">
           {warehouse.children.map((child) => (
             <WarehouseNode
@@ -217,7 +215,9 @@ const ManageWarehousesPage = () => {
         if (depth > 0) sub++;
         if (node.itemCount) totalItems += node.itemCount;
         maxDepth = Math.max(maxDepth, depth);
-        node.children.forEach((child) => traverse(child, depth + 1));
+        if (node.children && node.children.length > 0) {
+          node.children.forEach((child) => traverse(child, depth + 1));
+        }
       };
 
       nodes.forEach((node) => traverse(node, 0));
@@ -258,7 +258,7 @@ const ManageWarehousesPage = () => {
         if (currentLevel === targetLevel) {
           result.push(node);
         }
-        if (node.children.length > 0) {
+        if (node.children && node.children.length > 0) {
           collectLevel(node.children, currentLevel + 1);
         }
       });
@@ -280,7 +280,7 @@ const ManageWarehousesPage = () => {
 
   const findAndModify = (
     nodes: Warehouse[],
-    id: string,
+    id: number,
     action: (node: Warehouse, parent: Warehouse | null, index: number) => void,
     parent: Warehouse | null = null
   ) => {
@@ -316,6 +316,9 @@ const ManageWarehousesPage = () => {
           if (data.parentId) {
             // Adding a child
             findAndModify(draft, data.parentId, (node) => {
+              if (!node.children) {
+                node.children = [];
+              }
               node.children.push(newWarehouse);
             });
           } else {

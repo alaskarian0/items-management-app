@@ -69,29 +69,85 @@ export const warehouses: Warehouse[] = [
     name: "المخزن الرئيسي",
     code: "WH-001",
     address: "شارع فلسطين، بغداد",
-    isActive: true
-  },
-  {
-    id: 2,
-    name: "مخزن المواد الكهربائية",
-    code: "WH-002",
-    address: "منطقة المنصور",
-    isActive: true
-  },
-  {
-    id: 3,
-    name: "مخزن الأثاث والمعدات",
-    code: "WH-003",
-    address: "منطقة الكرادة",
-    isActive: false
+    isActive: true,
+    level: 0,
+    itemCount: 500,
+    children: [
+      {
+        id: 2,
+        name: "مخزن المواد الكهربائية",
+        code: "WH-002",
+        address: "منطقة المنصور",
+        isActive: true,
+        level: 1,
+        itemCount: 150,
+        children: [
+          {
+            id: 6,
+            name: "مخزن الكابلات والأسلاك",
+            code: "WH-006",
+            address: "الطابق الأول",
+            isActive: true,
+            level: 2,
+            itemCount: 45,
+            children: []
+          },
+          {
+            id: 7,
+            name: "مخزن المعدات الإلكترونية",
+            code: "WH-007",
+            address: "الطابق الثاني",
+            isActive: true,
+            level: 2,
+            itemCount: 38,
+            children: []
+          }
+        ]
+      },
+      {
+        id: 3,
+        name: "مخزن الأثاث والمعدات",
+        code: "WH-003",
+        address: "منطقة الكرادة",
+        isActive: true,
+        level: 1,
+        itemCount: 200,
+        children: [
+          {
+            id: 8,
+            name: "مخزن المكاتب والكراسي",
+            code: "WH-008",
+            address: "الجناح الشرقي",
+            isActive: true,
+            level: 2,
+            itemCount: 85,
+            children: []
+          }
+        ]
+      }
+    ]
   },
   {
     id: 4,
-    name: "مخزن المواد الاستهلاكية",
+    name: "مخزن المواد الميكانيكية",
     code: "WH-004",
     address: "منطقة الجادرية",
-    isActive: true
-  },
+    isActive: true,
+    level: 0,
+    itemCount: 300,
+    children: [
+      {
+        id: 9,
+        name: "مخزن المحركات والمضخات",
+        code: "WH-009",
+        address: "المبنى A",
+        isActive: true,
+        level: 1,
+        itemCount: 120,
+        children: []
+      }
+    ]
+  }
 ];
 
 // Items

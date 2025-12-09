@@ -52,6 +52,7 @@ import {
 } from "@/lib/data/fixed-assets-data";
 
 const CodingPage = () => {
+  const [assets, setAssets] = useState<FixedAsset[]>(fixedAssets);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'coded' | 'pending'>('all');
   const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null);
@@ -60,7 +61,7 @@ const CodingPage = () => {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedAssetsForPrint, setSelectedAssetsForPrint] = useState<string[]>([]);
 
-  const filteredAssets = fixedAssets.filter(asset => {
+  const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.name.includes(searchTerm) ||
                          asset.serialNumber?.includes(searchTerm) ||
                          asset.barcode?.includes(searchTerm);
@@ -95,7 +96,7 @@ const CodingPage = () => {
   };
 
   const handlePrintBarcodes = () => {
-    const codedAssets = fixedAssets.filter(a => a.barcode);
+    const codedAssets = assets.filter(a => a.barcode);
     if (codedAssets.length === 0) {
       alert('لا توجد موجودات مرمزة للطباعة');
       return;
@@ -105,7 +106,7 @@ const CodingPage = () => {
   };
 
   const handlePrintQRCodes = () => {
-    const codedAssets = fixedAssets.filter(a => a.barcode);
+    const codedAssets = assets.filter(a => a.barcode);
     if (codedAssets.length === 0) {
       alert('لا توجد موجودات مرمزة لطباعة QR Code');
       return;
@@ -115,9 +116,9 @@ const CodingPage = () => {
   };
 
   const stats = {
-    total: fixedAssets.length,
-    coded: fixedAssets.filter(a => a.barcode).length,
-    pending: fixedAssets.filter(a => !a.barcode).length,
+    total: assets.length,
+    coded: assets.filter(a => a.barcode).length,
+    pending: assets.filter(a => !a.barcode).length,
   };
 
   return (

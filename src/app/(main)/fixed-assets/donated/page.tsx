@@ -42,94 +42,40 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type DonatedAsset = {
-  id: string;
+// Import shared data and types
+import {
+  assetDonated,
+  fixedAssets,
+  getAssetById,
+  type AssetDonated
+} from "@/lib/data/fixed-assets-data";
+
+// View model for donated assets display
+type DonatedAssetView = AssetDonated & {
   assetName: string;
   assetCode: string;
   category: string;
-  value: number;
-  donationDate: string;
-  recipientOrganization: string;
-  recipientContact: string;
-  donationReason: string;
-  approvedBy: string;
-  documentNumber: string;
-  status: 'pending' | 'approved' | 'delivered';
-  condition: 'excellent' | 'good' | 'fair';
-  notes?: string;
 };
 
-const mockDonatedAssets: DonatedAsset[] = [
-  {
-    id: '1',
-    assetName: 'أجهزة حاسوب مكتبية (5 وحدات)',
-    assetCode: 'BC-201-2024',
-    category: 'أجهزة إلكترونية',
-    value: 5000000,
-    donationDate: '2024-01-20',
-    recipientOrganization: 'مدرسة الأمل الابتدائية',
-    recipientContact: 'أحمد حسن - 07701234567',
-    donationReason: 'دعم التعليم الإلكتروني',
-    approvedBy: 'مدير عام الدائرة',
-    documentNumber: 'DON-2024-001',
-    status: 'delivered',
-    condition: 'good',
-    notes: 'تم التسليم بحالة جيدة'
-  },
-  {
-    id: '2',
-    assetName: 'مكاتب دراسية خشبية (10 وحدات)',
-    assetCode: 'BC-202-2024',
-    category: 'أثاث',
-    value: 3000000,
-    donationDate: '2024-02-15',
-    recipientOrganization: 'دار الأيتام الخيرية',
-    recipientContact: 'فاطمة محمد - 07709876543',
-    donationReason: 'دعم الأعمال الخيرية',
-    approvedBy: 'نائب المدير العام',
-    documentNumber: 'DON-2024-002',
-    status: 'approved',
-    condition: 'excellent',
-  },
-  {
-    id: '3',
-    assetName: 'طابعات ليزر (3 وحدات)',
-    assetCode: 'BC-203-2024',
-    category: 'أجهزة إلكترونية',
-    value: 1500000,
-    donationDate: '2024-03-10',
-    recipientOrganization: 'جمعية النور للمكفوفين',
-    recipientContact: 'محمد علي - 07705551234',
-    donationReason: 'دعم ذوي الاحتياجات الخاصة',
-    approvedBy: 'مدير عام الدائرة',
-    documentNumber: 'DON-2024-003',
-    status: 'delivered',
-    condition: 'good',
-    notes: 'تم تجديد الطابعات قبل التسليم'
-  },
-  {
-    id: '4',
-    assetName: 'كراسي مكتبية (20 وحدة)',
-    assetCode: 'BC-204-2024',
-    category: 'أثاث',
-    value: 2000000,
-    donationDate: '2024-04-05',
-    recipientOrganization: 'مركز الشباب الثقافي',
-    recipientContact: 'سارة أحمد - 07702223344',
-    donationReason: 'دعم الأنشطة الثقافية',
-    approvedBy: 'مدير الشؤون الإدارية',
-    documentNumber: 'DON-2024-004',
-    status: 'pending',
-    condition: 'fair',
-  },
-];
+// Convert donated assets data to view model
+const donatedAssetsView: DonatedAssetView[] = assetDonated.map(donation => {
+  const asset = getAssetById(donation.assetId);
+  return {
+    ...donation,
+    assetName: asset?.name || 'غير معروف',
+    assetCode: asset?.assetCode || 'غير معروف',
+    category: asset?.category || 'غير معروف',
+    // Map fairMarketValue to value for backward compatibility
+    value: donation.fairMarketValue
+  };
+});
 
 const DonatedPage = () => {
-  const [assets, setAssets] = useState<DonatedAsset[]>(mockDonatedAssets);
+  const [assets, setAssets] = useState<DonatedAssetView[]>(donatedAssetsView);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'delivered'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [selectedAsset, setSelectedAsset] = useState<DonatedAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<DonatedAssetView | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const categories = Array.from(new Set(assets.map(a => a.category)));
@@ -137,14 +83,15 @@ const DonatedPage = () => {
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetName.includes(searchTerm) ||
                          asset.assetCode.includes(searchTerm) ||
-                         asset.recipientOrganization.includes(searchTerm) ||
-                         asset.documentNumber.includes(searchTerm);
+                         asset.donatedTo.includes(searchTerm) ||
+                         asset.receiptNumber?.includes(searchTerm) ||
+                         asset.donationReason.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || asset.status === filterStatus;
     const matchesCategory = filterCategory === 'all' || asset.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const handleViewDetails = (asset: DonatedAsset) => {
+  const handleViewDetails = (asset: DonatedAssetView) => {
     setSelectedAsset(asset);
     setIsDialogOpen(true);
   };
@@ -155,7 +102,7 @@ const DonatedPage = () => {
     delivered: assets.filter(a => a.status === 'delivered').length,
     approved: assets.filter(a => a.status === 'approved').length,
     pending: assets.filter(a => a.status === 'pending').length,
-    organizations: new Set(assets.map(a => a.recipientOrganization)).size,
+    organizations: new Set(assets.map(a => a.donatedTo)).size,
   };
 
   const getStatusBadge = (status: string) => {
@@ -292,7 +239,7 @@ const DonatedPage = () => {
                   <TableHead>اسم الموجود</TableHead>
                   <TableHead>الرمز</TableHead>
                   <TableHead>الجهة المستلمة</TableHead>
-                  <TableHead>رقم الوثيقة</TableHead>
+                  <TableHead>رقم الإيصال</TableHead>
                   <TableHead>القيمة (دينار)</TableHead>
                   <TableHead>تاريخ المنح</TableHead>
                   <TableHead>الحالة</TableHead>
@@ -324,19 +271,21 @@ const DonatedPage = () => {
                           <div className="flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="font-medium">{asset.recipientOrganization}</div>
-                              <div className="text-xs text-muted-foreground">{asset.recipientContact}</div>
+                              <div className="font-medium">{asset.donatedTo}</div>
+                              <div className="text-xs text-muted-foreground">{asset.donationType}</div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <code className="text-xs">{asset.documentNumber}</code>
+                          <code className="text-xs">{asset.receiptNumber || '-'}</code>
                         </TableCell>
-                        <TableCell className="font-medium">{asset.value.toLocaleString()}</TableCell>
+                        <TableCell className="font-medium">{asset.fairMarketValue.toLocaleString()}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {asset.donationDate}
+                            {asset.donationDate instanceof Date
+                              ? asset.donationDate.toLocaleDateString('ar-SA')
+                              : new Date(asset.donationDate).toLocaleDateString('ar-SA')}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -398,9 +347,9 @@ const DonatedPage = () => {
                     <div className="font-medium">{selectedAsset.category}</div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">القيمة</Label>
+                    <Label className="text-muted-foreground">القيمة التقديرية</Label>
                     <div className="font-medium text-green-600">
-                      {selectedAsset.value.toLocaleString()} دينار
+                      {selectedAsset.fairMarketValue.toLocaleString()} دينار
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -419,12 +368,12 @@ const DonatedPage = () => {
                 <h3 className="font-semibold mb-3 text-sm text-muted-foreground">معلومات الجهة المستلمة</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">اسم الجهة</Label>
-                    <div className="font-medium">{selectedAsset.recipientOrganization}</div>
+                    <Label className="text-muted-foreground">الجهة المستلمة</Label>
+                    <div className="font-medium">{selectedAsset.donatedTo}</div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">جهة الاتصال</Label>
-                    <div className="font-medium">{selectedAsset.recipientContact}</div>
+                    <Label className="text-muted-foreground">نوع المنح</Label>
+                    <div className="font-medium">{selectedAsset.donationType === 'individual' ? 'فردي' : selectedAsset.donationType === 'organization' ? 'منظمة' : 'حكومي'}</div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">سبب المنح</Label>

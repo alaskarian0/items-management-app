@@ -56,85 +56,40 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type ConsumedAsset = {
-  id: string;
+// Import shared data and types
+import {
+  assetConsumed,
+  fixedAssets,
+  getAssetById,
+  type AssetConsumed
+} from "@/lib/data/fixed-assets-data";
+
+// View model for consumed assets display
+type ConsumedAssetView = AssetConsumed & {
   assetName: string;
   assetCode: string;
   category: string;
-  originalValue: number;
-  consumedDate: string;
-  consumedBy: string;
-  department: string;
-  reason: string;
-  status: 'partial' | 'complete';
   remainingValue: number;
-  notes?: string;
 };
 
-const mockConsumedAssets: ConsumedAsset[] = [
-  {
-    id: '1',
-    assetName: 'حبر طابعة HP Laser',
-    assetCode: 'BC-101-2024',
-    category: 'مستهلكات مكتبية',
-    originalValue: 150000,
-    consumedDate: '2024-03-15',
-    consumedBy: 'أحمد محمد',
-    department: 'قسم المحاسبة',
-    reason: 'انتهاء الحبر',
-    status: 'complete',
-    remainingValue: 0,
-    notes: 'تم الاستهلاك الكامل'
-  },
-  {
-    id: '2',
-    assetName: 'ورق طباعة A4',
-    assetCode: 'BC-102-2024',
-    category: 'مستهلكات مكتبية',
-    originalValue: 50000,
-    consumedDate: '2024-04-01',
-    consumedBy: 'فاطمة حسن',
-    department: 'قسم السكرتارية',
-    reason: 'استهلاك عادي',
-    status: 'partial',
-    remainingValue: 20000,
-    notes: 'تم استهلاك 60%'
-  },
-  {
-    id: '3',
-    assetName: 'بطارية UPS',
-    assetCode: 'BC-103-2024',
-    category: 'قطع غيار إلكترونية',
-    originalValue: 300000,
-    consumedDate: '2024-05-10',
-    consumedBy: 'خالد عمر',
-    department: 'قسم تقنية المعلومات',
-    reason: 'انتهاء العمر الافتراضي',
-    status: 'complete',
-    remainingValue: 0,
-  },
-  {
-    id: '4',
-    assetName: 'مواد تنظيف',
-    assetCode: 'BC-104-2024',
-    category: 'مستهلكات عامة',
-    originalValue: 75000,
-    consumedDate: '2024-06-01',
-    consumedBy: 'سارة أحمد',
-    department: 'قسم الخدمات',
-    reason: 'استهلاك عادي',
-    status: 'partial',
-    remainingValue: 25000,
-    notes: 'متبقي كمية قليلة'
-  },
-];
+// Convert asset consumed data to view model
+const consumedAssetsView: ConsumedAssetView[] = assetConsumed.map(item => {
+  const asset = getAssetById(item.assetId);
+  return {
+    ...item,
+    assetName: asset?.name || 'غير معروف',
+    assetCode: asset?.assetCode || 'غير معروف',
+    category: asset?.category || 'غير معروف',
+    remainingValue: item.estimatedValue // For view purposes
+  };
+});
 
 const ConsumedPage = () => {
-  const [assets, setAssets] = useState<ConsumedAsset[]>(mockConsumedAssets);
+  const [assets, setAssets] = useState<ConsumedAssetView[]>(consumedAssetsView);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'partial' | 'complete'>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [selectedAsset, setSelectedAsset] = useState<ConsumedAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<ConsumedAssetView | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const categories = Array.from(new Set(assets.map(a => a.category)));
@@ -142,55 +97,58 @@ const ConsumedPage = () => {
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetName.includes(searchTerm) ||
                          asset.assetCode.includes(searchTerm) ||
-                         asset.consumedBy.includes(searchTerm);
-    const matchesStatus = filterStatus === 'all' || asset.status === filterStatus;
+                         asset.consumedBy?.includes(searchTerm) ||
+                         asset.consumptionReason.includes(searchTerm);
+    const matchesStatus = filterStatus === 'all' ||
+                         (filterStatus === 'complete' && asset.consumptionMethod === 'end-of-life') ||
+                         (filterStatus === 'partial' && asset.consumptionMethod !== 'end-of-life');
     const matchesCategory = filterCategory === 'all' || asset.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const handleViewDetails = (asset: ConsumedAsset) => {
+  const handleViewDetails = (asset: ConsumedAssetView) => {
     setSelectedAsset(asset);
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (asset: ConsumedAsset) => {
+  const handleEdit = (asset: ConsumedAssetView) => {
     console.log('Edit asset:', asset);
     // TODO: Implement edit functionality
   };
 
-  const handleDelete = (asset: ConsumedAsset) => {
+  const handleDelete = (asset: ConsumedAssetView) => {
     if (confirm(`هل أنت متأكد من حذف "${asset.assetName}"؟`)) {
       setAssets(assets.filter(a => a.id !== asset.id));
     }
   };
 
-  const handlePrint = (asset: ConsumedAsset) => {
+  const handlePrint = (asset: ConsumedAssetView) => {
     console.log('Print asset:', asset);
     // TODO: Implement print functionality
     window.print();
   };
 
-  const handleExportPDF = (asset: ConsumedAsset) => {
+  const handleExportPDF = (asset: ConsumedAssetView) => {
     console.log('Export PDF for:', asset);
     // TODO: Implement PDF export functionality
   };
 
-  const handleViewHistory = (asset: ConsumedAsset) => {
+  const handleViewHistory = (asset: ConsumedAssetView) => {
     console.log('View history for:', asset);
     // TODO: Implement history view functionality
   };
 
-  const handleCreateReport = (asset: ConsumedAsset) => {
+  const handleCreateReport = (asset: ConsumedAssetView) => {
     console.log('Create report for:', asset);
     // TODO: Implement report creation functionality
   };
 
   const stats = {
     total: assets.length,
-    totalValue: assets.reduce((sum, a) => sum + a.originalValue, 0),
-    consumedValue: assets.reduce((sum, a) => sum + (a.originalValue - a.remainingValue), 0),
-    complete: assets.filter(a => a.status === 'complete').length,
-    partial: assets.filter(a => a.status === 'partial').length,
+    totalValue: assets.reduce((sum, a) => sum + a.estimatedValue, 0),
+    consumedValue: assets.reduce((sum, a) => sum + a.estimatedValue, 0),
+    complete: assets.filter(a => a.consumptionMethod === 'end-of-life').length,
+    partial: assets.filter(a => a.consumptionMethod !== 'end-of-life').length,
   };
 
   return (
@@ -312,7 +270,7 @@ const ConsumedPage = () => {
                   <TableHead className="text-right">القيمة المستهلكة</TableHead>
                   <TableHead className="text-right">القيمة المتبقية</TableHead>
                   <TableHead className="text-right">تاريخ الاستهلاك</TableHead>
-                  <TableHead className="text-right">القسم</TableHead>
+                  <TableHead className="text-right">سبب الاستهلاك</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
@@ -326,8 +284,10 @@ const ConsumedPage = () => {
                   </TableRow>
                 ) : (
                   filteredAssets.map((asset) => {
-                    const consumedValue = asset.originalValue - asset.remainingValue;
-                    const consumedPercentage = (consumedValue / asset.originalValue * 100).toFixed(0);
+                    const isComplete = asset.consumptionMethod === 'end-of-life';
+                    const consumedDate = asset.consumptionDate instanceof Date
+                      ? asset.consumptionDate.toLocaleDateString('ar-SA')
+                      : new Date(asset.consumptionDate).toLocaleDateString('ar-SA');
 
                     return (
                       <TableRow key={asset.id}>
@@ -338,32 +298,32 @@ const ConsumedPage = () => {
                           </code>
                         </TableCell>
                         <TableCell className="text-right">{asset.category}</TableCell>
-                        <TableCell className="text-right">{asset.originalValue.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">{asset.estimatedValue.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex flex-col">
                             <span className="font-medium text-red-600">
-                              {consumedValue.toLocaleString()}
+                              {asset.estimatedValue.toLocaleString()}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {consumedPercentage}%
+                              {isComplete ? '100%' : 'جزئي'}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className={asset.remainingValue > 0 ? 'text-green-600' : 'text-muted-foreground'}>
-                            {asset.remainingValue.toLocaleString()}
+                          <span className={isComplete ? 'text-muted-foreground' : 'text-green-600'}>
+                            {isComplete ? '0' : asset.estimatedValue.toLocaleString()}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center gap-2 justify-end">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {asset.consumedDate}
+                            {consumedDate}
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">{asset.department}</TableCell>
+                        <TableCell className="text-right">{asset.consumptionReason}</TableCell>
                         <TableCell className="text-right">
-                          <Badge variant={asset.status === 'complete' ? 'destructive' : 'outline'}>
-                            {asset.status === 'complete' ? 'استهلاك كامل' : 'استهلاك جزئي'}
+                          <Badge variant={isComplete ? 'destructive' : 'outline'}>
+                            {isComplete ? 'استهلاك كامل' : 'استهلاك جزئي'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -446,42 +406,30 @@ const ConsumedPage = () => {
                   <div className="font-medium">{selectedAsset.category}</div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">القيمة الأصلية</Label>
-                  <div className="font-medium">{selectedAsset.originalValue.toLocaleString()} دينار</div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">القيمة المستهلكة</Label>
-                  <div className="font-medium text-red-600">
-                    {(selectedAsset.originalValue - selectedAsset.remainingValue).toLocaleString()} دينار
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">القيمة المتبقية</Label>
-                  <div className="font-medium text-green-600">
-                    {selectedAsset.remainingValue.toLocaleString()} دينار
-                  </div>
+                  <Label className="text-muted-foreground">القيمة التقديرية</Label>
+                  <div className="font-medium">{selectedAsset.estimatedValue.toLocaleString()} دينار</div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">تاريخ الاستهلاك</Label>
-                  <div className="font-medium">{selectedAsset.consumedDate}</div>
+                  <div className="font-medium">
+                    {selectedAsset.consumptionDate instanceof Date
+                      ? selectedAsset.consumptionDate.toLocaleDateString('ar-SA')
+                      : new Date(selectedAsset.consumptionDate).toLocaleDateString('ar-SA')}
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">المستهلك من قبل</Label>
-                  <div className="font-medium">{selectedAsset.consumedBy}</div>
+                  <Label className="text-muted-foreground">سبب الاستهلاك</Label>
+                  <div className="font-medium">{selectedAsset.consumptionReason}</div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">القسم</Label>
-                  <div className="font-medium">{selectedAsset.department}</div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-muted-foreground">السبب</Label>
-                  <div className="font-medium">{selectedAsset.reason}</div>
+                  <Label className="text-muted-foreground">طريقة الاستهلاك</Label>
+                  <div className="font-medium">{selectedAsset.consumptionMethod}</div>
                 </div>
                 <div className="space-y-2 col-span-2">
                   <Label className="text-muted-foreground">الحالة</Label>
                   <div>
-                    <Badge variant={selectedAsset.status === 'complete' ? 'destructive' : 'outline'}>
-                      {selectedAsset.status === 'complete' ? 'استهلاك كامل' : 'استهلاك جزئي'}
+                    <Badge variant={selectedAsset.status === 'approved' ? 'destructive' : 'outline'}>
+                      {selectedAsset.status === 'approved' ? 'موافق عليه' : 'قيد الانتظار'}
                     </Badge>
                   </div>
                 </div>

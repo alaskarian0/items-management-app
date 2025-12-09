@@ -34,6 +34,9 @@ export interface Warehouse {
   code: string;
   address?: string;
   isActive: boolean;
+  children?: Warehouse[];
+  level?: number;
+  itemCount?: number;
 }
 
 export interface Item {
