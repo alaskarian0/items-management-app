@@ -48,6 +48,9 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { useItems, useSuppliers, saveDocument } from "@/hooks/use-inventory";
+import { useNotificationStore } from "@/context/notification-store";
+import { useRouter } from "next/navigation";
 
 // --- MOCK DATA ---
 const departments = [
@@ -73,32 +76,8 @@ const units = [
   { id: 6, name: "وحدة الموارد البشرية", divisionId: 4 },
 ];
 
-const availableItems = [
-  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة", stock: 50, price: 25000, lastEntryDate: "2024-01-15", expiryDate: null, specs: "جلد، لون أسود، دوار" },
-  {
-    id: 2,
-    name: "طاولة اجتماعات",
-    code: "FUR-TBL-001",
-    unit: "قطعة",
-    stock: 10,
-    price: 150000,
-    lastEntryDate: "2024-02-01",
-    expiryDate: null,
-    specs: "خشب بلوط، 200x100 سم"
-  },
-  { id: 3, name: "مكتب خشبي", code: "FUR-DSK-001", unit: "قطعة", stock: 35 },
-  { id: 4, name: "خزانة ملفات", code: "FUR-CAB-001", unit: "قطعة", stock: 15 },
-  {
-    id: 5,
-    name: "ورق طباعة A4",
-    code: "OFF-PAP-001",
-    unit: "حزمة",
-    stock: 200,
-  },
-  { id: 6, name: "حاسوب محمول", code: "TEC-LAP-001", unit: "جهاز", stock: 25 },
-  { id: 7, name: "طابعة ليزر", code: "TEC-PRN-001", unit: "جهاز", stock: 12 },
-  { id: 8, name: "أقلام حبر", code: "OFF-PEN-001", unit: "علبة", stock: 150 },
-];
+// Removed mock items
+
 
 type DirectEntryItem = {
   id: number;
@@ -129,9 +108,15 @@ const QuickEntryPage = () => {
   const [searchValue, setSearchValue] = useState("");
   const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
 
+  const items = useItems() || [];
+  const suppliersList = useSuppliers() || [];
+  const { addNotification } = useNotificationStore();
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+
   // Get currently focused item details
   const focusedItem = focusedItemIndex !== null && itemsList[focusedItemIndex]?.itemId
-    ? availableItems.find(i => i.id === itemsList[focusedItemIndex].itemId)
+    ? items.find(i => i.id === itemsList[focusedItemIndex].itemId)
     : null;
 
   // Mock suppliers data for autocomplete
@@ -179,20 +164,54 @@ const QuickEntryPage = () => {
       }
     });
   };
-
   const handleRemoveItem = (index: number) => {
     updateItemsList((draft) => {
       draft.splice(index, 1);
     });
   };
 
-  const filteredItems = availableItems.filter(
+  const handleSave = async () => {
+    if (!selectedWarehouse || itemsList.length === 0 || !date) return;
+
+    try {
+      setIsSaving(true);
+      await saveDocument({
+        docNumber,
+        type: 'entry',
+        entryType: entryType || 'purchases',
+        date: date,
+        warehouseId: selectedWarehouse.id,
+        departmentId: department ? Number(department) : undefined,
+        divisionId: division ? Number(division) : undefined,
+        unitId: unit ? Number(unit) : undefined,
+        recipientName,
+        itemCount: itemsList.length,
+        status: 'approved',
+        notes: generalNotes,
+      }, itemsList.map(i => ({ ...i, vendorName: supplierName })));
+
+      addNotification("تم الحفظ بنجاح", `تم إنشاء مستند الإدخال رقم ${docNumber}`, "success");
+
+      // Reset Form
+      updateItemsList([]);
+      setDocNumber((prev) => String(Number(prev) + 1));
+      setRecipientName("");
+
+    } catch (error) {
+      console.error(error);
+      addNotification("خطأ في الحفظ", "حدث خطأ أثناء حفظ المستند", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredItems = (items || []).filter(
     (item) =>
       item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       item.code.toLowerCase().includes(searchValue.toLowerCase())
   );
 
-  const filteredSuppliers = suppliers.filter((supplier) =>
+  const filteredSuppliers = (suppliersList || []).filter((supplier) =>
     supplier.name.toLowerCase().includes(supplierSearchValue.toLowerCase())
   );
 
@@ -657,10 +676,11 @@ const QuickEntryPage = () => {
             <Button variant="outline">مستند جديد</Button>
             <Button
               disabled={
-                itemsList.length === 0 || !department || !selectedWarehouse
+                itemsList.length === 0 || !department || !selectedWarehouse || isSaving
               }
+              onClick={handleSave}
             >
-              حفظ الإدخال المباشر
+              {isSaving ? "جاري الحفظ..." : "حفظ الإدخال المباشر"}
             </Button>
           </CardFooter>
         </Card>

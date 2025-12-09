@@ -66,9 +66,11 @@ import {
   getDivisionsByDepartment,
   getUnitsByDivision,
   searchItems,
-  type DocumentItem,
-  type IssuanceFormData
 } from "@/lib/data/warehouse-data";
+import { DocumentItem } from "@/lib/types/warehouse";
+import { useItems, saveDocument, useStock } from "@/hooks/use-inventory";
+import { useNotificationStore } from "@/context/notification-store";
+import { useRouter } from "next/navigation";
 
 const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
@@ -83,6 +85,14 @@ const ItemIssuancePage = () => {
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+
+  const items = useItems() || [];
+  const { addNotification } = useNotificationStore();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Helper to get stock for a specific item (can be optimized)
+  // For now, we rely on the item selection to populate initial stock, 
+  // but real applications might want a bulk stock query.
 
   const handleAddItem = () => {
     updateItemsList((draft) => {
@@ -114,7 +124,8 @@ const ItemIssuancePage = () => {
           if (selectedItem) {
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
-            item.stock = selectedItem.stock;
+            // Ideally fetch real stock here, for now use static or 0
+            item.stock = (selectedItem as any).stock || 0;
           }
         }
       }
@@ -127,7 +138,45 @@ const ItemIssuancePage = () => {
     });
   };
 
-  const filteredItems = searchItems(searchValue);
+  const handleSave = async () => {
+    if (!selectedWarehouse || itemsList.length === 0 || !date) return;
+
+    try {
+      setIsSaving(true);
+      await saveDocument({
+        docNumber,
+        type: 'issuance',
+        date: date,
+        warehouseId: selectedWarehouse.id,
+        departmentId: department ? Number(department) : undefined,
+        divisionId: division ? Number(division) : undefined,
+        unitId: unit ? Number(unit) : undefined,
+        recipientName,
+        itemCount: itemsList.length,
+        status: 'approved',
+        notes: generalNotes,
+        refDocNumber: refDocNumber
+      }, itemsList);
+
+      addNotification("تم الحفظ بنجاح", `تم إنشاء مستند الصرف رقم ${docNumber}`, "success");
+
+      // Reset
+      updateItemsList([]);
+      setDocNumber((prev) => String(Number(prev) + 1));
+
+    } catch (error) {
+      console.error(error);
+      addNotification("خطأ في الحفظ", "حدث خطأ أثناء حفظ المستند", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredItems = (items || []).filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      item.code.toLowerCase().includes(searchValue.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -572,10 +621,11 @@ const ItemIssuancePage = () => {
           <CardFooter className="flex justify-end gap-2">
             <Button variant="outline">مستند جديد</Button>
             <Button
-              disabled={itemsList.some(item => item.quantity > (item.stock ?? 0))}
+              onClick={handleSave}
+              disabled={itemsList.some(item => item.quantity > (item.stock ?? 0)) || isSaving}
               title={itemsList.some(item => item.quantity > (item.stock ?? 0)) ? "لا يمكن الحفظ: الكمية المطلوبة أكبر من الرصيد" : ""}
             >
-              حفظ المستند
+              {isSaving ? "جاري الحفظ..." : "حفظ المستند"}
             </Button>
           </CardFooter>
         </Card>
