@@ -40,61 +40,34 @@ import {
   Trash2,
   AlertCircle,
   PackageMinus,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useImmer } from "use-immer";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
-// --- MOCK DATA (to be replaced with API calls) ---
-const divisions = [
-  { id: 1, name: "شعبة الهندسة المدنية" },
-  { id: 2, name: "شعبة الهندسة الكهربائية" },
-  { id: 3, name: "شعبة الهندسة الميكانيكية" },
-  { id: 4, name: "شعبة الشؤون الإدارية" },
-];
-
-const units = [
-  { id: 1, name: "وحدة التخطيط", divisionId: 1 },
-  { id: 2, name: "وحدة التنفيذ", divisionId: 1 },
-  { id: 3, name: "وحدة الصيانة الكهربائية", divisionId: 2 },
-  { id: 4, name: "وحدة الصيانة الميكانيكية", divisionId: 3 },
-  { id: 5, name: "وحدة الشؤون المالية", divisionId: 4 },
-  { id: 6, name: "وحدة الموارد البشرية", divisionId: 4 },
-];
-
-const departments = [
-  { id: 1, name: "قسم الشؤون الهندسية" },
-  { id: 2, name: "قسم الشؤون الإدارية" },
-];
-const items = [
-  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة", stock: 50 },
-  {
-    id: 2,
-    name: "طاولة اجتماعات",
-    code: "FUR-TBL-001",
-    unit: "قطعة",
-    stock: 10,
-  },
-  {
-    id: 3,
-    name: "سجاد صحراوي 2*3 م",
-    code: "CRP-IND-001",
-    unit: "قطعة",
-    stock: 120,
-  },
-];
-
-type DocumentItem = {
-  id: number;
-  itemId: number | null;
-  itemName: string;
-  unit: string;
-  quantity: number;
-  stock: number;
-  notes?: string;
-};
+// Import shared data and types
+import {
+  departments,
+  divisions,
+  units,
+  items,
+  getDivisionsByDepartment,
+  getUnitsByDivision,
+  searchItems,
+  type DocumentItem,
+  type IssuanceFormData
+} from "@/lib/data/warehouse-data";
 
 const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
@@ -106,12 +79,15 @@ const ItemIssuancePage = () => {
   const [recipientName, setRecipientName] = useState("");
   const [generalNotes, setGeneralNotes] = useState("");
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
+  const [searchOpen, setSearchOpen] = useState<number | false>(false);
+  const [searchValue, setSearchValue] = useState("");
 
   const handleAddItem = () => {
     updateItemsList((draft) => {
       draft.push({
         id: Date.now(),
         itemId: null,
+        itemCode: "",
         itemName: "",
         unit: "",
         quantity: 1,
@@ -146,6 +122,8 @@ const ItemIssuancePage = () => {
       draft.splice(index, 1);
     });
   };
+
+  const filteredItems = searchItems(searchValue);
 
   return (
     <div className="space-y-6">
@@ -317,8 +295,12 @@ const ItemIssuancePage = () => {
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-2/5 text-right">المادة</TableHead>
+                    <TableHead className="w-2/5 text-right">
+                      كود المادة
+                    </TableHead>
+                    <TableHead className="text-right">اسم المادة</TableHead>
                     <TableHead className="text-right">الوحدة</TableHead>
+                    <TableHead className="text-right">الرصيد المتوفر</TableHead>
                     <TableHead className="text-right">
                       الكمية المطلوبة
                     </TableHead>
@@ -330,53 +312,173 @@ const ItemIssuancePage = () => {
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={7}
                         className="text-center text-muted-foreground h-24"
                       >
-                        لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; لإضافة مادة
-                        جديدة
+                        لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
                       </TableCell>
                     </TableRow>
                   ) : (
                     itemsList.map((item, index) => (
                       <TableRow key={item.id}>
-                        <TableCell>
-                          <Select
-                            onValueChange={(value) =>
-                              handleItemChange(index, "itemName", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر المادة..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {items.map((i) => (
-                                <SelectItem key={i.id} value={i.name}>
-                                  {i.name} ({i.code})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {item.stock > 0 && (
-                            <p
-                              className={`text-xs mt-1 ${
-                                item.quantity > item.stock
-                                  ? "text-red-500"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              الرصيد المتوفر: {item.stock}
-                            </p>
+                        <TableCell className="text-right">
+                          {item.itemId ? (
+                            <div className="font-mono text-sm font-medium">
+                              {item.itemCode}
+                            </div>
+                          ) : (
+                            <Input
+                              value={item.itemCode || ""}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "itemCode",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="أدخل كود المادة"
+                              className="text-right"
+                            />
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Input
-                            readOnly
-                            value={item.unit}
-                            className="w-24"
-                          />
+                        <TableCell className="text-right">
+                          {item.itemId ? (
+                            <div className="font-medium">{item.itemName}</div>
+                          ) : (
+                            <div className="space-y-2">
+                              <Popover
+                                open={searchOpen === index}
+                                onOpenChange={(open) =>
+                                  setSearchOpen(open ? index : false)
+                                }
+                              >
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-right text-muted-foreground"
+                                  >
+                                    <Search className="ml-2 h-4 w-4" />
+                                    {item.itemName ||
+                                      "ابحث أو أضف مادة جديدة..."}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="p-0"
+                                  align="start"
+                                  style={{
+                                    width: "var(--radix-popover-trigger-width)",
+                                  }}
+                                >
+                                  <Command>
+                                    <CommandInput
+                                      placeholder="ابحث بالاسم أو الكود..."
+                                      value={searchValue}
+                                      onValueChange={setSearchValue}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>
+                                        <div className="p-2">
+                                          <p className="text-sm text-muted-foreground mb-2">
+                                            لم يتم العثور على مواد
+                                          </p>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                              // Create new material with search value
+                                              const newCode = searchValue
+                                                .toUpperCase()
+                                                .replace(/\s/g, "-");
+                                              updateItemsList((draft) => {
+                                                draft[index].itemName =
+                                                  searchValue;
+                                                draft[index].itemCode = newCode;
+                                                draft[index].unit = "قطعة";
+                                                draft[index].stock = 0;
+                                              });
+                                              setSearchOpen(false);
+                                              setSearchValue("");
+                                            }}
+                                          >
+                                            <PlusCircle className="ml-2 h-4 w-4" />
+                                            إضافة "{searchValue}" كمادة جديدة
+                                          </Button>
+                                        </div>
+                                      </CommandEmpty>
+                                      <CommandGroup>
+                                        {filteredItems.map((itemData) => (
+                                          <CommandItem
+                                            key={itemData.id}
+                                            onSelect={() => {
+                                              updateItemsList((draft) => {
+                                                draft[index].itemId =
+                                                  itemData.id;
+                                                draft[index].itemName =
+                                                  itemData.name;
+                                                draft[index].itemCode =
+                                                  itemData.code;
+                                                draft[index].unit =
+                                                  itemData.unit;
+                                                draft[index].stock =
+                                                  itemData.stock;
+                                              });
+                                              setSearchOpen(false);
+                                              setSearchValue("");
+                                            }}
+                                            className="flex items-center justify-between"
+                                          >
+                                            <div>
+                                              <div className="font-medium">
+                                                {itemData.name}
+                                              </div>
+                                              <div className="text-xs text-muted-foreground">
+                                                {itemData.code} •{" "}
+                                                {itemData.unit}
+                                              </div>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground ml-4">
+                                              الرصيد: {itemData.stock}
+                                            </div>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                          )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
+                          {item.itemId ? (
+                            <span className="font-mono text-sm">
+                              {item.unit}
+                            </span>
+                          ) : (
+                            <Input
+                              value={item.unit || ""}
+                              onChange={(e) =>
+                                handleItemChange(index, "unit", e.target.value)
+                              }
+                              placeholder="الوحدة"
+                              className="w-20 text-right"
+                            />
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span
+                            className={`font-medium ${
+                              item.quantity > item.stock
+                                ? "text-red-500"
+                                : item.itemId && item.stock > 0
+                                ? "text-green-600"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            {item.stock}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
                           <Input
                             type="number"
                             value={item.quantity}
@@ -387,18 +489,21 @@ const ItemIssuancePage = () => {
                                 Number(e.target.value)
                               )
                             }
-                            className="w-24"
+                            className="w-24 text-right"
+                            min="1"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
                           <Input
                             value={item.notes || ""}
                             onChange={(e) =>
                               handleItemChange(index, "notes", e.target.value)
                             }
+                            placeholder="ملاحظات..."
+                            className="text-right"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="icon"

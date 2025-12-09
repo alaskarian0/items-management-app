@@ -40,148 +40,124 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type User = {
-  id: number;
-  name: string;
-  username: string;
-  email: string;
-  role: "admin" | "manager" | "user";
-  department?: string;
-  isActive: boolean;
-};
-
-const mockUsers: User[] = [
-  {
-    id: 1,
-    name: "أحمد محمد علي",
-    username: "ahmad.mohammad",
-    email: "ahmad.mohammad@company.com",
-    role: "admin",
-    department: "قسم تقنية المعلومات",
-    isActive: true,
-  },
-  {
-    id: 2,
-    name: "فاطمة حسن",
-    username: "fatima.hassan",
-    email: "fatima.hassan@company.com",
-    role: "manager",
-    department: "قسم المحاسبة",
-    isActive: true,
-  },
-  {
-    id: 3,
-    name: "علي عبد الله",
-    username: "ali.abdullah",
-    email: "ali.abdullah@company.com",
-    role: "user",
-    department: "قسم الشؤون الهندسية",
-    isActive: true,
-  },
-  {
-    id: 4,
-    name: "سارة أحمد",
-    username: "sara.ahmad",
-    email: "sara.ahmad@company.com",
-    role: "user",
-    department: "قسم الموارد البشرية",
-    isActive: false,
-  },
-  {
-    id: 5,
-    name: "محمد حسين",
-    username: "mohammad.hussein",
-    email: "mohammad.hussein@company.com",
-    role: "manager",
-    department: "قسم الشؤون الإدارية",
-    isActive: true,
-  },
-];
-
-const roleLabels = {
-  admin: "مدير النظام",
-  manager: "مدير",
-  user: "مستخدم",
-};
-
-const roleColors = {
-  admin: "bg-red-100 text-red-700",
-  manager: "bg-blue-100 text-blue-700",
-  user: "bg-green-100 text-green-700",
-};
+// Import shared data and types
+import {
+  systemUsers,
+  userRoles,
+  getUserByUsername,
+  getActiveUsers,
+  getUsersByRole,
+  type SystemUser,
+  type UserRole
+} from "@/lib/data/settings-data";
+import { USER_ROLES } from "@/lib/types/settings";
 
 const UsersPage = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [usersList, setUsersList] = useState<SystemUser[]>(systemUsers);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<SystemUser | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
   const [formData, setFormData] = useState({
-    name: "",
     username: "",
     email: "",
-    role: "user" as "admin" | "manager" | "user",
+    fullName: "",
+    nationalId: "",
+    phone: "",
     department: "",
+    division: "",
+    unit: "",
+    position: "",
+    role: "",
+    warehouse: "",
     isActive: true,
+    twoFactorEnabled: false,
+    passwordChangeRequired: false,
+    notes: ""
   });
 
   // Filter users
   const filteredUsers = useMemo(() => {
-    return users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    return usersList.filter(
+      (user) => {
+        const matchesSearch =
+          user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.role?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesRole = filterRole === "all" || user.role === filterRole;
+        return matchesSearch && matchesRole;
+      }
     );
-  }, [users, searchTerm]);
+  }, [usersList, searchTerm, filterRole]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const totalUsers = users.length;
-    const activeUsers = users.filter((u) => u.isActive).length;
-    const adminUsers = users.filter((u) => u.role === "admin").length;
+    const totalUsers = usersList.length;
+    const activeUsers = usersList.filter((u) => u.isActive).length;
+    const adminUsers = usersList.filter((u) => u.role === "مدير نظام").length;
     return { totalUsers, activeUsers, adminUsers };
-  }, [users]);
+  }, [usersList]);
 
   const handleAddNew = () => {
     setCurrentUser(null);
     setFormData({
-      name: "",
       username: "",
       email: "",
-      role: "user",
+      fullName: "",
+      nationalId: "",
+      phone: "",
       department: "",
+      division: "",
+      unit: "",
+      position: "",
+      role: "",
+      warehouse: "",
       isActive: true,
+      twoFactorEnabled: false,
+      passwordChangeRequired: false,
+      notes: ""
     });
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: SystemUser) => {
     setCurrentUser(user);
     setFormData({
-      name: user.name,
       username: user.username,
       email: user.email,
+      fullName: user.fullName,
+      nationalId: user.nationalId || "",
+      phone: user.phone,
+      department: user.department,
+      division: user.division || "",
+      unit: user.unit || "",
+      position: user.position,
       role: user.role,
-      department: user.department || "",
+      warehouse: user.warehouse || "",
       isActive: user.isActive,
+      twoFactorEnabled: user.twoFactorEnabled,
+      passwordChangeRequired: user.passwordChangeRequired,
+      notes: user.notes || ""
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا المستخدم؟")) {
-      setUsers(users.filter((u) => u.id !== id));
+      setUsersList(usersList.filter((u) => u.id !== id));
     }
   };
 
   const handleSave = () => {
-    if (!formData.name.trim()) {
-      alert("الرجاء إدخال اسم المستخدم");
+    if (!formData.fullName.trim()) {
+      alert("الرجاء إدخال الاسم الكامل");
       return;
     }
     if (!formData.username.trim()) {
-      alert("الرجاء إدخال اسم المستخدم للنظام");
+      alert("الرجاء إدخال اسم المستخدم");
       return;
     }
     if (!formData.email.trim()) {
@@ -191,24 +167,81 @@ const UsersPage = () => {
 
     if (currentUser) {
       // Edit
-      setUsers(
-        users.map((u) =>
-          u.id === currentUser.id ? { ...u, ...formData } : u
+      setUsersList(
+        usersList.map((u) =>
+          u.id === currentUser.id
+            ? {
+                ...u,
+                username: formData.username,
+                email: formData.email,
+                fullName: formData.fullName,
+                nationalId: formData.nationalId,
+                phone: formData.phone,
+                department: formData.department,
+                division: formData.division,
+                unit: formData.unit,
+                position: formData.position,
+                role: formData.role,
+                warehouse: formData.warehouse,
+                isActive: formData.isActive,
+                twoFactorEnabled: formData.twoFactorEnabled,
+                passwordChangeRequired: formData.passwordChangeRequired,
+                notes: formData.notes,
+                updatedAt: new Date().toISOString()
+              }
+            : u
         )
       );
     } else {
       // Add
-      const newId = users.length > 0 ? Math.max(...users.map((d) => d.id)) + 1 : 1;
-      setUsers([...users, { id: newId, ...formData }]);
+      const newId =
+        usersList.length > 0
+          ? Math.max(...usersList.map((u) => u.id)) + 1
+          : 1;
+      const selectedRole = userRoles.find(r => r.name === formData.role);
+      setUsersList([
+        ...usersList,
+        {
+          id: newId,
+          username: formData.username,
+          email: formData.email,
+          fullName: formData.fullName,
+          nationalId: formData.nationalId,
+          phone: formData.phone,
+          department: formData.department,
+          division: formData.division,
+          unit: formData.unit,
+          position: formData.position,
+          role: formData.role,
+          avatar: "",
+          isActive: formData.isActive,
+          warehouse: formData.warehouse,
+          permissions: selectedRole?.permissions || [],
+          twoFactorEnabled: formData.twoFactorEnabled,
+          passwordChangeRequired: formData.passwordChangeRequired,
+          notes: formData.notes,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+      ]);
     }
     setIsDialogOpen(false);
     setFormData({
-      name: "",
       username: "",
       email: "",
-      role: "user",
+      fullName: "",
+      nationalId: "",
+      phone: "",
       department: "",
+      division: "",
+      unit: "",
+      position: "",
+      role: "",
+      warehouse: "",
       isActive: true,
+      twoFactorEnabled: false,
+      passwordChangeRequired: false,
+      notes: ""
     });
     setCurrentUser(null);
   };
@@ -284,30 +317,47 @@ const UsersPage = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="ابحث عن مستخدم بالاسم أو البريد أو القسم..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="ابحث عن مستخدم بالاسم أو البريد أو القسم..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            <div className="w-full sm:w-64">
+              <Select value={filterRole} onValueChange={setFilterRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر الدور..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأدوار</SelectItem>
+                  {USER_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Table */}
           <div className="border rounded-md">
-            <Table>
+            <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead>الرقم</TableHead>
-                  <TableHead>الاسم</TableHead>
-                  <TableHead>اسم المستخدم</TableHead>
-                  <TableHead>البريد الإلكتروني</TableHead>
-                  <TableHead>الصلاحية</TableHead>
-                  <TableHead>القسم</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead className="text-left">إجراءات</TableHead>
+                  <TableHead className="text-right">المعرف</TableHead>
+                  <TableHead className="text-right">الاسم الكامل</TableHead>
+                  <TableHead className="text-right">اسم المستخدم</TableHead>
+                  <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                  <TableHead className="text-right">القسم</TableHead>
+                  <TableHead className="text-right">الدور</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -329,7 +379,7 @@ const UsersPage = () => {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <UserCog className="h-4 w-4 text-purple-600" />
-                          {user.name}
+                          {user.fullName}
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm">
@@ -341,14 +391,14 @@ const UsersPage = () => {
                           {user.email}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={roleColors[user.role]}>
-                          <Shield className="h-3 w-3 ml-1" />
-                          {roleLabels[user.role]}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-sm">
                         {user.department || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          <Shield className="h-3 w-3 ml-1" />
+                          {user.role}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {user.isActive ? (
@@ -359,27 +409,27 @@ const UsersPage = () => {
                         ) : (
                           <Badge variant="secondary" className="bg-gray-100 text-gray-700">
                             <XCircle className="h-3 w-3 ml-1" />
-                            معطل
+                            متوقف
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-left">
-                        <div className="flex gap-2">
+                      <TableCell>
+                        <div className="flex justify-center gap-1">
                           <Button
+                            size="sm"
                             variant="ghost"
-                            size="icon"
                             onClick={() => handleEdit(user)}
                             title="تعديل"
                           >
-                            <Edit className="h-4 w-4 text-blue-600" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
+                            size="sm"
                             variant="ghost"
-                            size="icon"
                             onClick={() => handleDelete(user.id)}
                             title="حذف"
                           >
-                            <Trash2 className="h-4 w-4 text-red-600" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </TableCell>
@@ -394,7 +444,7 @@ const UsersPage = () => {
 
       {/* Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserCog className="h-5 w-5 text-purple-600" />
@@ -402,17 +452,30 @@ const UsersPage = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">الاسم الكامل *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, name: e.target.value }))
-                }
-                placeholder="مثال: أحمد محمد علي"
-                autoFocus
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">الاسم الكامل *</Label>
+                <Input
+                  id="fullName"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, fullName: e.target.value }))
+                  }
+                  placeholder="مثال: أحمد محمد علي"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nationalId">الرقم الوطني</Label>
+                <Input
+                  id="nationalId"
+                  value={formData.nationalId}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, nationalId: e.target.value }))
+                  }
+                  placeholder="رقم الهوية"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -441,23 +504,38 @@ const UsersPage = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="role">الصلاحية</Label>
+                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, phone: e.target.value }))
+                  }
+                  placeholder="+9647700000000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">الدور</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: "admin" | "manager" | "user") =>
+                  onValueChange={(value) =>
                     setFormData((f) => ({ ...f, role: value }))
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="اختر الدور..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">مدير النظام</SelectItem>
-                    <SelectItem value="manager">مدير</SelectItem>
-                    <SelectItem value="user">مستخدم</SelectItem>
+                    {USER_ROLES.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department">القسم</Label>
                 <Input
@@ -469,20 +547,96 @@ const UsersPage = () => {
                   placeholder="اسم القسم"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="position">المنصب</Label>
+                <Input
+                  id="position"
+                  value={formData.position}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, position: e.target.value }))
+                  }
+                  placeholder="المنصب الوظيفي"
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-2 space-x-reverse">
-              <input
-                type="checkbox"
-                id="isActive"
-                checked={formData.isActive}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, isActive: e.target.checked }))
-                }
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor="isActive" className="cursor-pointer">
-                تفعيل المستخدم
-              </Label>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="division">الشعبة</Label>
+                <Input
+                  id="division"
+                  value={formData.division}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, division: e.target.value }))
+                  }
+                  placeholder="اسم الشعبة"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="unit">الوحدة</Label>
+                <Input
+                  id="unit"
+                  value={formData.unit}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, unit: e.target.value }))
+                  }
+                  placeholder="اسم الوحدة"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="warehouse">المخزن</Label>
+                <Input
+                  id="warehouse"
+                  value={formData.warehouse}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, warehouse: e.target.value }))
+                  }
+                  placeholder="المخزن المسؤول"
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-4 space-x-reverse">
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={formData.isActive}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, isActive: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="isActive" className="cursor-pointer">
+                  تفعيل المستخدم
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <input
+                  type="checkbox"
+                  id="twoFactorEnabled"
+                  checked={formData.twoFactorEnabled}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, twoFactorEnabled: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="twoFactorEnabled" className="cursor-pointer">
+                  المصادقة الثنائية
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 space-x-reverse">
+                <input
+                  type="checkbox"
+                  id="passwordChangeRequired"
+                  checked={formData.passwordChangeRequired}
+                  onChange={(e) =>
+                    setFormData((f) => ({ ...f, passwordChangeRequired: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                <Label htmlFor="passwordChangeRequired" className="cursor-pointer">
+                  يتغير كلمة المرور
+                </Label>
+              </div>
             </div>
           </div>
           <DialogFooter>

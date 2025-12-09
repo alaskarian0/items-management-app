@@ -30,7 +30,13 @@ import {
   AlertTriangle,
   Calendar,
   DollarSign,
-  Package
+  Package,
+  Edit,
+  Trash2,
+  Printer,
+  Eye,
+  MoreHorizontal,
+  FileCheck
 } from "lucide-react";
 import {
   Select,
@@ -41,6 +47,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type ConsumedAsset = {
   id: string;
@@ -137,6 +151,38 @@ const ConsumedPage = () => {
   const handleViewDetails = (asset: ConsumedAsset) => {
     setSelectedAsset(asset);
     setIsDialogOpen(true);
+  };
+
+  const handleEdit = (asset: ConsumedAsset) => {
+    console.log('Edit asset:', asset);
+    // TODO: Implement edit functionality
+  };
+
+  const handleDelete = (asset: ConsumedAsset) => {
+    if (confirm(`هل أنت متأكد من حذف "${asset.assetName}"؟`)) {
+      setAssets(assets.filter(a => a.id !== asset.id));
+    }
+  };
+
+  const handlePrint = (asset: ConsumedAsset) => {
+    console.log('Print asset:', asset);
+    // TODO: Implement print functionality
+    window.print();
+  };
+
+  const handleExportPDF = (asset: ConsumedAsset) => {
+    console.log('Export PDF for:', asset);
+    // TODO: Implement PDF export functionality
+  };
+
+  const handleViewHistory = (asset: ConsumedAsset) => {
+    console.log('View history for:', asset);
+    // TODO: Implement history view functionality
+  };
+
+  const handleCreateReport = (asset: ConsumedAsset) => {
+    console.log('Create report for:', asset);
+    // TODO: Implement report creation functionality
   };
 
   const stats = {
@@ -256,18 +302,18 @@ const ConsumedPage = () => {
 
           {/* Table */}
           <div className="border rounded-lg">
-            <Table>
+            <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead>اسم الموجود</TableHead>
-                  <TableHead>الرمز</TableHead>
-                  <TableHead>الفئة</TableHead>
-                  <TableHead>القيمة الأصلية</TableHead>
-                  <TableHead>القيمة المستهلكة</TableHead>
-                  <TableHead>القيمة المتبقية</TableHead>
-                  <TableHead>تاريخ الاستهلاك</TableHead>
-                  <TableHead>القسم</TableHead>
-                  <TableHead>الحالة</TableHead>
+                  <TableHead className="text-right">اسم الموجود</TableHead>
+                  <TableHead className="text-right">الرمز</TableHead>
+                  <TableHead className="text-right">الفئة</TableHead>
+                  <TableHead className="text-right">القيمة الأصلية</TableHead>
+                  <TableHead className="text-right">القيمة المستهلكة</TableHead>
+                  <TableHead className="text-right">القيمة المتبقية</TableHead>
+                  <TableHead className="text-right">تاريخ الاستهلاك</TableHead>
+                  <TableHead className="text-right">القسم</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
@@ -285,15 +331,15 @@ const ConsumedPage = () => {
 
                     return (
                       <TableRow key={asset.id}>
-                        <TableCell className="font-medium">{asset.assetName}</TableCell>
-                        <TableCell>
+                        <TableCell className="font-medium text-right">{asset.assetName}</TableCell>
+                        <TableCell className="text-right">
                           <code className="px-2 py-1 bg-muted rounded text-sm">
                             {asset.assetCode}
                           </code>
                         </TableCell>
-                        <TableCell>{asset.category}</TableCell>
-                        <TableCell>{asset.originalValue.toLocaleString()}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">{asset.category}</TableCell>
+                        <TableCell className="text-right">{asset.originalValue.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
                           <div className="flex flex-col">
                             <span className="font-medium text-red-600">
                               {consumedValue.toLocaleString()}
@@ -303,31 +349,68 @@ const ConsumedPage = () => {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
                           <span className={asset.remainingValue > 0 ? 'text-green-600' : 'text-muted-foreground'}>
                             {asset.remainingValue.toLocaleString()}
                           </span>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                        <TableCell className="text-right">
+                          <div className="flex items-center gap-2 justify-end">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
                             {asset.consumedDate}
                           </div>
                         </TableCell>
-                        <TableCell>{asset.department}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">{asset.department}</TableCell>
+                        <TableCell className="text-right">
                           <Badge variant={asset.status === 'complete' ? 'destructive' : 'outline'}>
                             {asset.status === 'complete' ? 'استهلاك كامل' : 'استهلاك جزئي'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDetails(asset)}
-                          >
-                            <FileText className="h-4 w-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleViewDetails(asset)}>
+                                <Eye className="ml-2 h-4 w-4" />
+                                عرض التفاصيل
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEdit(asset)}>
+                                <Edit className="ml-2 h-4 w-4" />
+                                تعديل
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrint(asset)}>
+                                <Printer className="ml-2 h-4 w-4" />
+                                طباعة
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleExportPDF(asset)}>
+                                <Download className="ml-2 h-4 w-4" />
+                                تصدير PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleViewHistory(asset)}>
+                                <Calendar className="ml-2 h-4 w-4" />
+                                سجل التغييرات
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleCreateReport(asset)}>
+                                <FileCheck className="ml-2 h-4 w-4" />
+                                إنشاء تقرير
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(asset)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="ml-2 h-4 w-4" />
+                                حذف
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );

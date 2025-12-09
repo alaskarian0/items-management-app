@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogOverlay,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -41,65 +42,16 @@ import {
 import { BarcodeQRPrintModal } from "@/components/features/barcode-printing";
 import "@/styles/barcode-print.css";
 
-type FixedAsset = {
-  id: string;
-  name: string;
-  category: string;
-  serialNumber: string;
-  barcode?: string;
-  location: string;
-  status: 'coded' | 'pending';
-  purchaseDate: string;
-  value: number;
-};
-
-const mockAssets: FixedAsset[] = [
-  {
-    id: '1',
-    name: 'جهاز حاسوب HP EliteBook',
-    category: 'أجهزة إلكترونية',
-    serialNumber: 'SN-2024-001',
-    barcode: 'BC-001-2024',
-    location: 'قسم تقنية المعلومات',
-    status: 'coded',
-    purchaseDate: '2024-01-15',
-    value: 1500000
-  },
-  {
-    id: '2',
-    name: 'طاولة مكتبية خشبية',
-    category: 'أثاث',
-    serialNumber: 'SN-2024-002',
-    location: 'الإدارة العامة',
-    status: 'pending',
-    purchaseDate: '2024-02-20',
-    value: 350000
-  },
-  {
-    id: '3',
-    name: 'كرسي دوار',
-    category: 'أثاث',
-    serialNumber: 'SN-2024-003',
-    barcode: 'BC-003-2024',
-    location: 'قسم المحاسبة',
-    status: 'coded',
-    purchaseDate: '2024-03-10',
-    value: 200000
-  },
-  {
-    id: '4',
-    name: 'طابعة ليزر Canon',
-    category: 'أجهزة إلكترونية',
-    serialNumber: 'SN-2024-004',
-    location: 'قسم السكرتارية',
-    status: 'pending',
-    purchaseDate: '2024-04-05',
-    value: 800000
-  },
-];
+// Import shared data and types
+import {
+  fixedAssets,
+  getAssetByCode,
+  searchAssets,
+  type FixedAsset,
+  type AssetCoding
+} from "@/lib/data/fixed-assets-data";
 
 const CodingPage = () => {
-  const [assets, setAssets] = useState<FixedAsset[]>(mockAssets);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'coded' | 'pending'>('all');
   const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null);
@@ -108,11 +60,11 @@ const CodingPage = () => {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedAssetsForPrint, setSelectedAssetsForPrint] = useState<string[]>([]);
 
-  const filteredAssets = assets.filter(asset => {
+  const filteredAssets = fixedAssets.filter(asset => {
     const matchesSearch = asset.name.includes(searchTerm) ||
-                         asset.serialNumber.includes(searchTerm) ||
+                         asset.serialNumber?.includes(searchTerm) ||
                          asset.barcode?.includes(searchTerm);
-    const matchesFilter = filterStatus === 'all' || asset.status === filterStatus;
+    const matchesFilter = filterStatus === 'all' || (asset.barcode ? 'coded' : 'pending') === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
@@ -143,29 +95,29 @@ const CodingPage = () => {
   };
 
   const handlePrintBarcodes = () => {
-    const codedAssets = assets.filter(a => a.status === 'coded');
+    const codedAssets = fixedAssets.filter(a => a.barcode);
     if (codedAssets.length === 0) {
       alert('لا توجد موجودات مرمزة للطباعة');
       return;
     }
-    setSelectedAssetsForPrint(codedAssets.map(asset => asset.id));
+    setSelectedAssetsForPrint(codedAssets.map(asset => String(asset.id)));
     setIsPrintModalOpen(true);
   };
 
   const handlePrintQRCodes = () => {
-    const codedAssets = assets.filter(a => a.status === 'coded');
+    const codedAssets = fixedAssets.filter(a => a.barcode);
     if (codedAssets.length === 0) {
       alert('لا توجد موجودات مرمزة لطباعة QR Code');
       return;
     }
-    setSelectedAssetsForPrint(codedAssets.map(asset => asset.id));
+    setSelectedAssetsForPrint(codedAssets.map(asset => String(asset.id)));
     setIsPrintModalOpen(true);
   };
 
   const stats = {
-    total: assets.length,
-    coded: assets.filter(a => a.status === 'coded').length,
-    pending: assets.filter(a => a.status === 'pending').length,
+    total: fixedAssets.length,
+    coded: fixedAssets.filter(a => a.barcode).length,
+    pending: fixedAssets.filter(a => !a.barcode).length,
   };
 
   return (
@@ -295,10 +247,10 @@ const CodingPage = () => {
                         )}
                       </TableCell>
                       <TableCell className="text-right">{asset.location}</TableCell>
-                      <TableCell className="text-right">{asset.value.toLocaleString('ar-SA')}</TableCell>
+                      <TableCell className="text-right">{asset.purchaseValue.toLocaleString('ar-SA')}</TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={asset.status === 'coded' ? 'default' : 'secondary'}>
-                          {asset.status === 'coded' ? 'مرمز' : 'بانتظار الترميز'}
+                        <Badge variant={asset.barcode ? 'default' : 'secondary'}>
+                          {asset.barcode ? 'مرمز' : 'بانتظار الترميز'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
@@ -328,7 +280,8 @@ const CodingPage = () => {
 
       {/* Barcode Assignment Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogOverlay />
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>تعيين باركود</DialogTitle>
           </DialogHeader>

@@ -29,76 +29,95 @@ import {
   Hash,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-type Unit = {
-  id: number;
-  name: string;
-  abbreviation?: string;
-  category?: string;
-};
-
-const mockUnits: Unit[] = [
-  { id: 1, name: "قطعة", abbreviation: "قطع", category: "عد" },
-  { id: 2, name: "كيلوغرام", abbreviation: "كغم", category: "وزن" },
-  { id: 3, name: "غرام", abbreviation: "غم", category: "وزن" },
-  { id: 4, name: "متر", abbreviation: "م", category: "طول" },
-  { id: 5, name: "سنتيمتر", abbreviation: "سم", category: "طول" },
-  { id: 6, name: "لتر", abbreviation: "ل", category: "حجم" },
-  { id: 7, name: "مليلتر", abbreviation: "مل", category: "حجم" },
-  { id: 8, name: "كرتون", abbreviation: "كرتون", category: "حزمة" },
-  { id: 9, name: "حزمة", abbreviation: "حزمة", category: "حزمة" },
-  { id: 10, name: "علبة", abbreviation: "علبة", category: "حزمة" },
-];
-
-const categories = ["عد", "وزن", "طول", "حجم", "حزمة"];
+// Import shared data and types
+import {
+  measurementUnits,
+  getMeasurementUnitsByType,
+  type MeasurementUnit
+} from "@/lib/data/settings-data";
+import { UNIT_TYPES } from "@/lib/types/settings";
 
 const UnitsPage = () => {
-  const [units, setUnits] = useState<Unit[]>(mockUnits);
+  const [unitsList, setUnitsList] = useState<MeasurementUnit[]>(measurementUnits);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentUnit, setCurrentUnit] = useState<Unit | null>(null);
+  const [currentUnit, setCurrentUnit] = useState<MeasurementUnit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
   const [formData, setFormData] = useState({
     name: "",
+    nameEnglish: "",
     abbreviation: "",
-    category: "",
+    abbreviationEnglish: "",
+    type: "count" as const,
+    baseUnit: "",
+    conversionFactor: 0,
+    description: ""
   });
 
   // Filter units
   const filteredUnits = useMemo(() => {
-    return units.filter(
-      (unit) =>
-        unit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        unit.abbreviation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        unit.category?.toLowerCase().includes(searchTerm.toLowerCase())
+    return unitsList.filter(
+      (unit) => {
+        const matchesSearch =
+          unit.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          unit.abbreviation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          unit.nameEnglish?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          unit.abbreviationEnglish?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesType = filterType === "all" || unit.type === filterType;
+        return matchesSearch && matchesType;
+      }
     );
-  }, [units, searchTerm]);
+  }, [unitsList, searchTerm, filterType]);
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const totalUnits = units.length;
-    const categoriesCount = new Set(units.map((u) => u.category)).size;
-    return { totalUnits, categoriesCount };
-  }, [units]);
+    const totalUnits = unitsList.length;
+    const activeUnits = unitsList.filter(u => u.isActive).length;
+    const typesCount = new Set(unitsList.map((u) => u.type)).size;
+    return { totalUnits, activeUnits, typesCount };
+  }, [unitsList]);
 
   const handleAddNew = () => {
     setCurrentUnit(null);
-    setFormData({ name: "", abbreviation: "", category: "" });
+    setFormData({
+      name: "",
+      nameEnglish: "",
+      abbreviation: "",
+      abbreviationEnglish: "",
+      type: "count",
+      baseUnit: "",
+      conversionFactor: 0,
+      description: ""
+    });
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (unit: Unit) => {
+  const handleEdit = (unit: MeasurementUnit) => {
     setCurrentUnit(unit);
     setFormData({
       name: unit.name,
-      abbreviation: unit.abbreviation || "",
-      category: unit.category || "",
+      nameEnglish: unit.nameEnglish || "",
+      abbreviation: unit.abbreviation,
+      abbreviationEnglish: unit.abbreviationEnglish || "",
+      type: unit.type,
+      baseUnit: unit.baseUnit || "",
+      conversionFactor: unit.conversionFactor || 0,
+      description: unit.description || ""
     });
     setIsDialogOpen(true);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الوحدة؟")) {
-      setUnits(units.filter((u) => u.id !== id));
+      setUnitsList(unitsList.filter((u) => u.id !== id));
     }
   };
 
@@ -110,18 +129,60 @@ const UnitsPage = () => {
 
     if (currentUnit) {
       // Edit
-      setUnits(
-        units.map((u) =>
-          u.id === currentUnit.id ? { ...u, ...formData } : u
+      setUnitsList(
+        unitsList.map((u) =>
+          u.id === currentUnit.id
+            ? {
+                ...u,
+                name: formData.name,
+                nameEnglish: formData.nameEnglish,
+                abbreviation: formData.abbreviation,
+                abbreviationEnglish: formData.abbreviationEnglish,
+                type: formData.type,
+                baseUnit: formData.baseUnit || undefined,
+                conversionFactor: formData.conversionFactor || undefined,
+                description: formData.description
+              }
+            : u
         )
       );
     } else {
       // Add
-      const newId = units.length > 0 ? Math.max(...units.map((d) => d.id)) + 1 : 1;
-      setUnits([...units, { id: newId, ...formData }]);
+      const newId =
+        unitsList.length > 0
+          ? Math.max(...unitsList.map((u) => u.id)) + 1
+          : 1;
+      const newCode = formData.abbreviation.toUpperCase();
+      setUnitsList([
+        ...unitsList,
+        {
+          id: newId,
+          code: newCode,
+          name: formData.name,
+          nameEnglish: formData.nameEnglish,
+          abbreviation: formData.abbreviation,
+          abbreviationEnglish: formData.abbreviationEnglish,
+          type: formData.type,
+          baseUnit: formData.baseUnit || undefined,
+          conversionFactor: formData.conversionFactor || undefined,
+          isActive: true,
+          description: formData.description,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ]);
     }
     setIsDialogOpen(false);
-    setFormData({ name: "", abbreviation: "", category: "" });
+    setFormData({
+      name: "",
+      nameEnglish: "",
+      abbreviation: "",
+      abbreviationEnglish: "",
+      type: "count",
+      baseUnit: "",
+      conversionFactor: 0,
+      description: ""
+    });
     setCurrentUnit(null);
   };
 
@@ -157,25 +218,27 @@ const UnitsPage = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">التصنيفات</CardTitle>
-            <Hash className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">الوحدات النشطة</CardTitle>
+            <Hash className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {stats.categoriesCount}
+            <div className="text-2xl font-bold text-green-600">
+              {stats.activeUnits}
             </div>
-            <p className="text-xs text-muted-foreground">تصنيف مختلف</p>
+            <p className="text-xs text-muted-foreground">وحدة نشطة</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">الأكثر شيوعاً</CardTitle>
-            <Ruler className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium">أنواع الوحدات</CardTitle>
+            <Ruler className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">قطعة</div>
-            <p className="text-xs text-muted-foreground">وحدة القياس الأساسية</p>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.typesCount}
+            </div>
+            <p className="text-xs text-muted-foreground">نوع مختلف</p>
           </CardContent>
         </Card>
       </div>
@@ -192,34 +255,53 @@ const UnitsPage = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="ابحث عن وحدة قياس..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pr-10"
-            />
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="ابحث عن وحدة قياس..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+            </div>
+            <div className="w-full sm:w-64">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر النوع..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأنواع</SelectItem>
+                  {UNIT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Table */}
           <div className="border rounded-md">
-            <Table>
+            <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead>الرقم</TableHead>
-                  <TableHead>اسم الوحدة</TableHead>
-                  <TableHead>الاختصار</TableHead>
-                  <TableHead>التصنيف</TableHead>
-                  <TableHead className="text-left">إجراءات</TableHead>
+                  <TableHead className="text-right">الكود</TableHead>
+                  <TableHead className="text-right">اسم الوحدة</TableHead>
+                  <TableHead className="text-right">الاسم بالإنجليزية</TableHead>
+                  <TableHead className="text-right">الاختصار</TableHead>
+                  <TableHead className="text-right">النوع</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUnits.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={5}
+                      colSpan={7}
                       className="text-center text-muted-foreground h-24"
                     >
                       لا توجد وحدات تطابق معايير البحث
@@ -229,7 +311,7 @@ const UnitsPage = () => {
                   filteredUnits.map((unit) => (
                     <TableRow key={unit.id}>
                       <TableCell>
-                        <Badge variant="outline">{unit.id}</Badge>
+                        <Badge variant="outline">{unit.code}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -237,50 +319,39 @@ const UnitsPage = () => {
                           {unit.name}
                         </div>
                       </TableCell>
+                      <TableCell className="text-sm">
+                        {unit.nameEnglish || "-"}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="font-mono">
-                          {unit.abbreviation || "-"}
+                          {unit.abbreviation}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {unit.category ? (
-                          <Badge
-                            variant="outline"
-                            className={
-                              unit.category === "وزن"
-                                ? "bg-blue-50 text-blue-700"
-                                : unit.category === "طول"
-                                ? "bg-green-50 text-green-700"
-                                : unit.category === "حجم"
-                                ? "bg-purple-50 text-purple-700"
-                                : unit.category === "حزمة"
-                                ? "bg-yellow-50 text-yellow-700"
-                                : "bg-gray-50 text-gray-700"
-                            }
-                          >
-                            {unit.category}
-                          </Badge>
-                        ) : (
-                          "-"
-                        )}
+                        {UNIT_TYPES.find(t => t.value === unit.type)?.label || unit.type}
                       </TableCell>
-                      <TableCell className="text-left">
-                        <div className="flex gap-2">
+                      <TableCell>
+                        <Badge variant={unit.isActive ? "default" : "secondary"}>
+                          {unit.isActive ? "نشط" : "متوقف"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-center gap-1">
                           <Button
+                            size="sm"
                             variant="ghost"
-                            size="icon"
                             onClick={() => handleEdit(unit)}
                             title="تعديل"
                           >
-                            <Edit className="h-4 w-4 text-blue-600" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
+                            size="sm"
                             variant="ghost"
-                            size="icon"
                             onClick={() => handleDelete(unit.id)}
                             title="حذف"
                           >
-                            <Trash2 className="h-4 w-4 text-red-600" />
+                            <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>
                       </TableCell>
@@ -295,11 +366,11 @@ const UnitsPage = () => {
 
       {/* Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Ruler className="h-5 w-5 text-orange-600" />
-              {currentUnit ? "تعديل وحدة" : "إضافة وحدة جديدة"}
+              {currentUnit ? "تعديل وحدة قياس" : "إضافة وحدة قياس جديدة"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -316,33 +387,90 @@ const UnitsPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="abbreviation">الاختصار</Label>
+              <Label htmlFor="nameEnglish">الاسم بالإنجليزية</Label>
+              <Input
+                id="nameEnglish"
+                value={formData.nameEnglish}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, nameEnglish: e.target.value }))
+                }
+                placeholder="مثال: Kilogram"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="abbreviation">الاختصار بالعربية *</Label>
               <Input
                 id="abbreviation"
                 value={formData.abbreviation}
                 onChange={(e) =>
                   setFormData((f) => ({ ...f, abbreviation: e.target.value }))
                 }
-                placeholder="مثال: كغم"
+                placeholder="مثال: كجم"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">التصنيف</Label>
-              <select
-                id="category"
-                value={formData.category}
+              <Label htmlFor="abbreviationEnglish">الاختصار بالإنجليزية</Label>
+              <Input
+                id="abbreviationEnglish"
+                value={formData.abbreviationEnglish}
                 onChange={(e) =>
-                  setFormData((f) => ({ ...f, category: e.target.value }))
+                  setFormData((f) => ({ ...f, abbreviationEnglish: e.target.value }))
                 }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <option value="">اختر التصنيف...</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+                placeholder="مثال: KG"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="type">النوع</Label>
+              <Select value={formData.type} onValueChange={(value: any) => setFormData((f) => ({ ...f, type: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر النوع..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNIT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {(formData.type === 'count' || formData.type === 'length' || formData.type === 'weight' || formData.type === 'volume') && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="baseUnit">الوحدة الأساسية</Label>
+                  <Input
+                    id="baseUnit"
+                    value={formData.baseUnit}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, baseUnit: e.target.value }))
+                    }
+                    placeholder="مثال: غرام للكيلوغرام"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="conversionFactor">معامل التحويل</Label>
+                  <Input
+                    id="conversionFactor"
+                    type="number"
+                    value={formData.conversionFactor}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, conversionFactor: parseFloat(e.target.value) || 0 }))
+                    }
+                    placeholder="مثال: 1000"
+                  />
+                </div>
+              </>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="description">الوصف</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, description: e.target.value }))
+                }
+                placeholder="وصف الوحدة..."
+              />
             </div>
           </div>
           <DialogFooter>

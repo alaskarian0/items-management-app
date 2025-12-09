@@ -44,7 +44,14 @@ import { useWarehouse } from "@/context/warehouse-context";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
-// --- MOCK DATA ---
+// Import shared data and types
+import {
+  stockItems,
+  itemCategories,
+  stockStatusOptions,
+  type StockItem,
+  type StockFilter
+} from "@/lib/data/warehouse-data";
 const allItems = [
   {
     id: 1,

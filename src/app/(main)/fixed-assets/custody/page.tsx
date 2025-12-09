@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ import {
   CheckCircle2,
   ArrowRightLeft,
   Building2,
-  UserPlus
+  UserPlus,
 } from "lucide-react";
 import {
   Select,
@@ -55,110 +55,123 @@ type CustodyRecord = {
   department: string;
   assignDate: string;
   returnDate?: string;
-  status: 'active' | 'returned';
-  condition: 'excellent' | 'good' | 'fair' | 'poor';
+  status: "active" | "returned";
+  condition: "excellent" | "good" | "fair" | "poor";
   notes?: string;
 };
 
 // Mock data for departments and employees
 const departments = [
-  'قسم تقنية المعلومات',
-  'قسم المحاسبة',
-  'قسم الإعلام',
-  'قسم التدريب',
-  'قسم الشؤون الإدارية',
-  'قسم الموارد البشرية',
-  'قسم الهندسة',
-  'قسم المبيعات',
+  "قسم تقنية المعلومات",
+  "قسم المحاسبة",
+  "قسم الإعلام",
+  "قسم التدريب",
+  "قسم الشؤون الإدارية",
+  "قسم الموارد البشرية",
+  "قسم الهندسة",
+  "قسم المبيعات",
 ];
 
 const employees = [
-  { id: 'EMP-001', name: 'أحمد محمد علي', department: 'قسم تقنية المعلومات' },
-  { id: 'EMP-002', name: 'فاطمة حسن', department: 'قسم المحاسبة' },
-  { id: 'EMP-003', name: 'محمد خالد', department: 'قسم الإعلام' },
-  { id: 'EMP-004', name: 'سارة أحمد', department: 'قسم التدريب' },
-  { id: 'EMP-005', name: 'علي حسين', department: 'قسم الشؤون الإدارية' },
-  { id: 'EMP-006', name: 'نورا أحمد', department: 'قسم الموارد البشرية' },
-  { id: 'EMP-007', name: 'خالد إبراهيم', department: 'قسم الهندسة' },
-  { id: 'EMP-008', name: 'مريم سعيد', department: 'قسم المبيعات' },
+  { id: "EMP-001", name: "أحمد محمد علي", department: "قسم تقنية المعلومات" },
+  { id: "EMP-002", name: "فاطمة حسن", department: "قسم المحاسبة" },
+  { id: "EMP-003", name: "محمد خالد", department: "قسم الإعلام" },
+  { id: "EMP-004", name: "سارة أحمد", department: "قسم التدريب" },
+  { id: "EMP-005", name: "علي حسين", department: "قسم الشؤون الإدارية" },
+  { id: "EMP-006", name: "نورا أحمد", department: "قسم الموارد البشرية" },
+  { id: "EMP-007", name: "خالد إبراهيم", department: "قسم الهندسة" },
+  { id: "EMP-008", name: "مريم سعيد", department: "قسم المبيعات" },
 ];
 
 const mockCustodyRecords: CustodyRecord[] = [
   {
-    id: '1',
-    assetName: 'جهاز حاسوب محمول Dell',
-    assetCode: 'BC-001-2024',
-    employeeName: 'أحمد محمد علي',
-    employeeId: 'EMP-001',
-    department: 'قسم تقنية المعلومات',
-    assignDate: '2024-01-15',
-    status: 'active',
-    condition: 'excellent',
-    notes: 'تم التسليم بحالة ممتازة'
+    id: "1",
+    assetName: "جهاز حاسوب محمول Dell",
+    assetCode: "BC-001-2024",
+    employeeName: "أحمد محمد علي",
+    employeeId: "EMP-001",
+    department: "قسم تقنية المعلومات",
+    assignDate: "2024-01-15",
+    status: "active",
+    condition: "excellent",
+    notes: "تم التسليم بحالة ممتازة",
   },
   {
-    id: '2',
-    assetName: 'طابعة ليزر HP',
-    assetCode: 'BC-002-2024',
-    employeeName: 'فاطمة حسن',
-    employeeId: 'EMP-002',
-    department: 'قسم المحاسبة',
-    assignDate: '2024-02-10',
-    status: 'active',
-    condition: 'good',
+    id: "2",
+    assetName: "طابعة ليزر HP",
+    assetCode: "BC-002-2024",
+    employeeName: "فاطمة حسن",
+    employeeId: "EMP-002",
+    department: "قسم المحاسبة",
+    assignDate: "2024-02-10",
+    status: "active",
+    condition: "good",
   },
   {
-    id: '3',
-    assetName: 'كاميرا رقمية Canon',
-    assetCode: 'BC-003-2024',
-    employeeName: 'محمد خالد',
-    employeeId: 'EMP-003',
-    department: 'قسم الإعلام',
-    assignDate: '2024-01-20',
-    returnDate: '2024-03-15',
-    status: 'returned',
-    condition: 'good',
-    notes: 'تم الإرجاع بنفس الحالة'
+    id: "3",
+    assetName: "كاميرا رقمية Canon",
+    assetCode: "BC-003-2024",
+    employeeName: "محمد خالد",
+    employeeId: "EMP-003",
+    department: "قسم الإعلام",
+    assignDate: "2024-01-20",
+    returnDate: "2024-03-15",
+    status: "returned",
+    condition: "good",
+    notes: "تم الإرجاع بنفس الحالة",
   },
   {
-    id: '4',
-    assetName: 'جهاز عرض Projector',
-    assetCode: 'BC-004-2024',
-    employeeName: 'سارة أحمد',
-    employeeId: 'EMP-004',
-    department: 'قسم التدريب',
-    assignDate: '2024-03-01',
-    status: 'active',
-    condition: 'excellent',
+    id: "4",
+    assetName: "جهاز عرض Projector",
+    assetCode: "BC-004-2024",
+    employeeName: "سارة أحمد",
+    employeeId: "EMP-004",
+    department: "قسم التدريب",
+    assignDate: "2024-03-01",
+    status: "active",
+    condition: "excellent",
   },
 ];
 
 const CustodyPage = () => {
   const [records, setRecords] = useState<CustodyRecord[]>(mockCustodyRecords);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'returned'>('all');
-  const [filterDepartment, setFilterDepartment] = useState<string>('all');
-  const [selectedRecord, setSelectedRecord] = useState<CustodyRecord | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<
+    "all" | "active" | "returned"
+  >("all");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [selectedRecord, setSelectedRecord] = useState<CustodyRecord | null>(
+    null
+  );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
-  const [returnNotes, setReturnNotes] = useState('');
-  const [transferNotes, setTransferNotes] = useState('');
-  const [transferDepartment, setTransferDepartment] = useState<string | undefined>(undefined);
-  const [transferEmployee, setTransferEmployee] = useState<string | undefined>(undefined);
+  const [returnNotes, setReturnNotes] = useState("");
+  const [transferNotes, setTransferNotes] = useState("");
+  const [transferDepartment, setTransferDepartment] = useState<
+    string | undefined
+  >(undefined);
+  const [transferEmployee, setTransferEmployee] = useState<string | undefined>(
+    undefined
+  );
 
-  const recordDepartments = Array.from(new Set(records.map(r => r.department)));
+  const recordDepartments = Array.from(
+    new Set(records.map((r) => r.department))
+  );
   const filteredEmployees = transferDepartment
-    ? employees.filter(emp => emp.department === transferDepartment)
+    ? employees.filter((emp) => emp.department === transferDepartment)
     : employees;
 
-  const filteredRecords = records.filter(record => {
-    const matchesSearch = record.assetName.includes(searchTerm) ||
-                         record.employeeName.includes(searchTerm) ||
-                         record.assetCode.includes(searchTerm) ||
-                         record.employeeId.includes(searchTerm);
-    const matchesStatus = filterStatus === 'all' || record.status === filterStatus;
-    const matchesDepartment = filterDepartment === 'all' || record.department === filterDepartment;
+  const filteredRecords = records.filter((record) => {
+    const matchesSearch =
+      record.assetName.includes(searchTerm) ||
+      record.employeeName.includes(searchTerm) ||
+      record.assetCode.includes(searchTerm) ||
+      record.employeeId.includes(searchTerm);
+    const matchesStatus =
+      filterStatus === "all" || record.status === filterStatus;
+    const matchesDepartment =
+      filterDepartment === "all" || record.department === filterDepartment;
     return matchesSearch && matchesStatus && matchesDepartment;
   });
 
@@ -169,7 +182,7 @@ const CustodyPage = () => {
 
   const handleReturnAsset = (record: CustodyRecord) => {
     setSelectedRecord(record);
-    setReturnNotes('');
+    setReturnNotes("");
     setIsReturnDialogOpen(true);
   };
 
@@ -177,66 +190,87 @@ const CustodyPage = () => {
     setSelectedRecord(record);
     setTransferDepartment(undefined);
     setTransferEmployee(undefined);
-    setTransferNotes('');
+    setTransferNotes("");
     setIsTransferDialogOpen(true);
   };
 
   const handleConfirmReturn = () => {
     if (selectedRecord) {
-      setRecords(records.map(record =>
-        record.id === selectedRecord.id
-          ? {
-              ...record,
-              status: 'returned' as const,
-              returnDate: new Date().toISOString().split('T')[0],
-              notes: returnNotes || record.notes
-            }
-          : record
-      ));
+      setRecords(
+        records.map((record) =>
+          record.id === selectedRecord.id
+            ? {
+                ...record,
+                status: "returned" as const,
+                returnDate: new Date().toISOString().split("T")[0],
+                notes: returnNotes || record.notes,
+              }
+            : record
+        )
+      );
       setIsReturnDialogOpen(false);
       setSelectedRecord(null);
-      setReturnNotes('');
+      setReturnNotes("");
     }
   };
 
   const handleConfirmTransfer = () => {
     if (selectedRecord && transferDepartment && transferEmployee) {
-      const selectedEmployee = employees.find(emp => emp.id === transferEmployee);
+      const selectedEmployee = employees.find(
+        (emp) => emp.id === transferEmployee
+      );
       if (selectedEmployee) {
-        setRecords(records.map(record =>
-          record.id === selectedRecord.id
-            ? {
-                ...record,
-                employeeName: selectedEmployee.name,
-                employeeId: selectedEmployee.id,
-                department: selectedEmployee.department,
-                assignDate: new Date().toISOString().split('T')[0],
-                notes: transferNotes ? `${record.notes ? record.notes + ' | ' : ''}تم التحويل إلى ${selectedEmployee.name}: ${transferNotes}` : (record.notes || '') + ` تم التحويل إلى ${selectedEmployee.name}`
-              }
-            : record
-        ));
+        setRecords(
+          records.map((record) =>
+            record.id === selectedRecord.id
+              ? {
+                  ...record,
+                  employeeName: selectedEmployee.name,
+                  employeeId: selectedEmployee.id,
+                  department: selectedEmployee.department,
+                  assignDate: new Date().toISOString().split("T")[0],
+                  notes: transferNotes
+                    ? `${
+                        record.notes ? record.notes + " | " : ""
+                      }تم التحويل إلى ${
+                        selectedEmployee.name
+                      }: ${transferNotes}`
+                    : (record.notes || "") +
+                      ` تم التحويل إلى ${selectedEmployee.name}`,
+                }
+              : record
+          )
+        );
       }
       setIsTransferDialogOpen(false);
       setSelectedRecord(null);
       setTransferDepartment(undefined);
       setTransferEmployee(undefined);
-      setTransferNotes('');
+      setTransferNotes("");
     }
   };
 
   const stats = {
     total: records.length,
-    active: records.filter(r => r.status === 'active').length,
-    returned: records.filter(r => r.status === 'returned').length,
-    employees: new Set(records.filter(r => r.status === 'active').map(r => r.employeeId)).size,
+    active: records.filter((r) => r.status === "active").length,
+    returned: records.filter((r) => r.status === "returned").length,
+    employees: new Set(
+      records.filter((r) => r.status === "active").map((r) => r.employeeId)
+    ).size,
   };
 
   const getConditionBadge = (condition: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
-      excellent: { variant: 'default', label: 'ممتاز' },
-      good: { variant: 'secondary', label: 'جيد' },
-      fair: { variant: 'outline', label: 'مقبول' },
-      poor: { variant: 'destructive', label: 'سيء' },
+    const variants: Record<
+      string,
+      {
+        variant: "default" | "secondary" | "destructive" | "outline";
+        label: string;
+      }
+    > = {
+      excellent: { variant: "default", label: "ممتاز" },
+      good: { variant: "secondary", label: "جيد" },
+      fair: { variant: "outline", label: "مقبول" },
+      poor: { variant: "destructive", label: "سيء" },
     };
     return variants[condition] || variants.good;
   };
@@ -247,7 +281,9 @@ const CustodyPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي السجلات</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              إجمالي السجلات
+            </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -262,7 +298,9 @@ const CustodyPage = () => {
             <Package className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.active}</div>
+            <div className="text-2xl font-bold text-blue-600">
+              {stats.active}
+            </div>
             <p className="text-xs text-muted-foreground">موجودات نشطة</p>
           </CardContent>
         </Card>
@@ -273,7 +311,9 @@ const CustodyPage = () => {
             <CheckCircle2 className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.returned}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.returned}
+            </div>
             <p className="text-xs text-muted-foreground">تم الإرجاع</p>
           </CardContent>
         </Card>
@@ -284,7 +324,9 @@ const CustodyPage = () => {
             <Users className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{stats.employees}</div>
+            <div className="text-2xl font-bold text-purple-600">
+              {stats.employees}
+            </div>
             <p className="text-xs text-muted-foreground">لديهم موجودات</p>
           </CardContent>
         </Card>
@@ -322,7 +364,12 @@ const CustodyPage = () => {
                 className="pr-10"
               />
             </div>
-            <Select value={filterStatus} onValueChange={(value: 'all' | 'active' | 'returned') => setFilterStatus(value)}>
+            <Select
+              value={filterStatus}
+              onValueChange={(value: "all" | "active" | "returned") =>
+                setFilterStatus(value)
+              }
+            >
               <SelectTrigger>
                 <Filter className="ml-2 h-4 w-4" />
                 <SelectValue placeholder="الحالة" />
@@ -333,14 +380,19 @@ const CustodyPage = () => {
                 <SelectItem value="returned">مرتجعة</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+            <Select
+              value={filterDepartment}
+              onValueChange={setFilterDepartment}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="القسم" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع الأقسام</SelectItem>
-                {recordDepartments.map(dept => (
-                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                {recordDepartments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -348,24 +400,28 @@ const CustodyPage = () => {
 
           {/* Table */}
           <div className="border rounded-lg">
-            <Table>
+            <Table dir="rtl">
+              {" "}
               <TableHeader>
                 <TableRow>
-                  <TableHead>اسم الموجود</TableHead>
-                  <TableHead>رمز الموجود</TableHead>
-                  <TableHead>اسم الموظف</TableHead>
-                  <TableHead>القسم</TableHead>
-                  <TableHead>تاريخ التسليم</TableHead>
-                  <TableHead>تاريخ الإرجاع</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الوضع</TableHead>
+                  <TableHead className="text-right">اسم الموجود</TableHead>
+                  <TableHead className="text-right">رمز الموجود</TableHead>
+                  <TableHead className="text-right">اسم الموظف</TableHead>
+                  <TableHead className="text-right">القسم</TableHead>
+                  <TableHead className="text-right">تاريخ التسليم</TableHead>
+                  <TableHead className="text-right">تاريخ الإرجاع</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">الوضع</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRecords.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={9}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       لا توجد نتائج
                     </TableCell>
                   </TableRow>
@@ -374,7 +430,9 @@ const CustodyPage = () => {
                     const conditionBadge = getConditionBadge(record.condition);
                     return (
                       <TableRow key={record.id}>
-                        <TableCell className="font-medium">{record.assetName}</TableCell>
+                        <TableCell className="font-medium">
+                          {record.assetName}
+                        </TableCell>
                         <TableCell>
                           <code className="px-2 py-1 bg-muted rounded text-sm">
                             {record.assetCode}
@@ -384,8 +442,12 @@ const CustodyPage = () => {
                           <div className="flex items-center gap-2">
                             <UserCircle className="h-4 w-4 text-muted-foreground" />
                             <div>
-                              <div className="font-medium">{record.employeeName}</div>
-                              <div className="text-xs text-muted-foreground">{record.employeeId}</div>
+                              <div className="font-medium">
+                                {record.employeeName}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {record.employeeId}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
@@ -403,7 +465,9 @@ const CustodyPage = () => {
                               {record.returnDate}
                             </div>
                           ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
+                            <span className="text-muted-foreground text-sm">
+                              -
+                            </span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -412,8 +476,14 @@ const CustodyPage = () => {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={record.status === 'active' ? 'default' : 'secondary'}>
-                            {record.status === 'active' ? 'قيد الذمة' : 'مرتجع'}
+                          <Badge
+                            variant={
+                              record.status === "active"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {record.status === "active" ? "قيد الذمة" : "مرتجع"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-center">
@@ -425,7 +495,7 @@ const CustodyPage = () => {
                             >
                               <FileText className="h-4 w-4" />
                             </Button>
-                            {record.status === 'active' && (
+                            {record.status === "active" && (
                               <>
                                 <Button
                                   size="sm"
@@ -478,7 +548,9 @@ const CustodyPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">اسم الموظف</Label>
-                  <div className="font-medium">{selectedRecord.employeeName}</div>
+                  <div className="font-medium">
+                    {selectedRecord.employeeName}
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">الرقم الوظيفي</Label>
@@ -494,14 +566,22 @@ const CustodyPage = () => {
                 </div>
                 {selectedRecord.returnDate && (
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">تاريخ الإرجاع</Label>
-                    <div className="font-medium">{selectedRecord.returnDate}</div>
+                    <Label className="text-muted-foreground">
+                      تاريخ الإرجاع
+                    </Label>
+                    <div className="font-medium">
+                      {selectedRecord.returnDate}
+                    </div>
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">الحالة</Label>
                   <div>
-                    <Badge variant={getConditionBadge(selectedRecord.condition).variant}>
+                    <Badge
+                      variant={
+                        getConditionBadge(selectedRecord.condition).variant
+                      }
+                    >
                       {getConditionBadge(selectedRecord.condition).label}
                     </Badge>
                   </div>
@@ -535,8 +615,9 @@ const CustodyPage = () => {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  سيتم تسجيل إرجاع الموجود <strong>{selectedRecord.assetName}</strong> من
-                  الموظف <strong>{selectedRecord.employeeName}</strong>
+                  سيتم تسجيل إرجاع الموجود{" "}
+                  <strong>{selectedRecord.assetName}</strong> من الموظف{" "}
+                  <strong>{selectedRecord.employeeName}</strong>
                 </AlertDescription>
               </Alert>
               <div className="space-y-2">
@@ -551,18 +632,22 @@ const CustodyPage = () => {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsReturnDialogOpen(false)}
+            >
               إلغاء
             </Button>
-            <Button onClick={handleConfirmReturn}>
-              تأكيد الإرجاع
-            </Button>
+            <Button onClick={handleConfirmReturn}>تأكيد الإرجاع</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Transfer Asset Dialog */}
-      <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+      <Dialog
+        open={isTransferDialogOpen}
+        onOpenChange={setIsTransferDialogOpen}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -575,8 +660,9 @@ const CustodyPage = () => {
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  سيتم تحويل ذمة الموجود <strong>{selectedRecord.assetName}</strong> من
-                  الموظف <strong>{selectedRecord.employeeName}</strong>
+                  سيتم تحويل ذمة الموجود{" "}
+                  <strong>{selectedRecord.assetName}</strong> من الموظف{" "}
+                  <strong>{selectedRecord.employeeName}</strong>
                 </AlertDescription>
               </Alert>
 
@@ -585,7 +671,10 @@ const CustodyPage = () => {
                   <Building2 className="h-4 w-4" />
                   القسم الجديد
                 </Label>
-                <Select value={transferDepartment} onValueChange={setTransferDepartment}>
+                <Select
+                  value={transferDepartment}
+                  onValueChange={setTransferDepartment}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر القسم الجديد..." />
                   </SelectTrigger>
@@ -635,15 +724,33 @@ const CustodyPage = () => {
               {/* Current Assignment Info */}
               <div className="border-t pt-4">
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <div>الموظف الحالي: <span className="font-medium text-foreground">{selectedRecord.employeeName}</span></div>
-                  <div>القسم الحالي: <span className="font-medium text-foreground">{selectedRecord.department}</span></div>
-                  <div>تاريخ التسليم: <span className="font-medium text-foreground">{selectedRecord.assignDate}</span></div>
+                  <div>
+                    الموظف الحالي:{" "}
+                    <span className="font-medium text-foreground">
+                      {selectedRecord.employeeName}
+                    </span>
+                  </div>
+                  <div>
+                    القسم الحالي:{" "}
+                    <span className="font-medium text-foreground">
+                      {selectedRecord.department}
+                    </span>
+                  </div>
+                  <div>
+                    تاريخ التسليم:{" "}
+                    <span className="font-medium text-foreground">
+                      {selectedRecord.assignDate}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsTransferDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsTransferDialogOpen(false)}
+            >
               إلغاء
             </Button>
             <Button

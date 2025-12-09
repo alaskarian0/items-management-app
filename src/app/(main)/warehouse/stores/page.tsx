@@ -30,41 +30,16 @@ import {
 } from "@/components/ui/select";
 import { produce } from 'immer';
 
-// --- DATA STRUCTURES ---
-type Warehouse = {
-  id: string;
-  name: string;
-  itemCount?: number;
-  children: Warehouse[];
-};
+// Import shared data and types
+import {
+  warehouseStores,
+  warehouses,
+  type WarehouseStore,
+  type Warehouse
+} from "@/lib/data/warehouse-data";
 
-// --- MOCK DATA with item counts ---
-const initialWarehouseData: Warehouse[] = [
-  {
-    id: 'store-1',
-    name: 'المخزن الرئيسي',
-    itemCount: 4234,
-    children: [
-      {
-        id: 'group-1-1',
-        name: 'مخزن شعبة المواد الثابتة',
-        itemCount: 2341,
-        children: [
-          { id: 'sub-1-1-1', name: 'مخزن الأثاث والممتلكات العامة', itemCount: 1456, children: [] },
-          { id: 'sub-1-1-2', name: 'مخزن السجاد والمفروشات', itemCount: 885, children: [] },
-        ],
-      },
-      {
-        id: 'group-1-2',
-        name: 'مخزن شعبة المواد الاستهلاكية',
-        itemCount: 1893,
-        children: [
-          { id: 'sub-1-2-1', name: 'مخزن المواد العامة', itemCount: 1893, children: [] },
-        ],
-      },
-    ],
-  },
-];
+// Convert warehouse data to hierarchical structure for display
+const initialWarehouseData: WarehouseStore[] = warehouseStores;
 
 // --- MODAL STATE TYPE ---
 type ModalState = {
