@@ -50,6 +50,7 @@ export const navbarData: NavbarData = {
           url: "/warehouse/stores",
           icon: Warehouse,
         },
+
         {
           title: "إدخال المواد",
           url: "/warehouse/entry",
@@ -59,6 +60,12 @@ export const navbarData: NavbarData = {
           title: "إصدار المواد",
           url: "/warehouse/issuance",
           icon: PackageMinus,
+        },
+
+        {
+          title: "إدارة المستندات",
+          url: "/warehouse/documents",
+          icon: BarChart3,
         },
         {
           title: "حركة المواد",
@@ -124,32 +131,25 @@ export const navbarData: NavbarData = {
   ],
   projects: [
     {
-      title: "الإعدادات",
-      url: "/settings",
-      icon: Settings,
-      items: [
-        {
-          title: "الأقسام والشعب",
-          url: "/settings/departments",
-          icon: Building2,
-        },
-        {
-          title: "الموردين",
-          url: "/settings/suppliers",
-          icon: Truck,
-        },
-        {
-          title: "وحدات القياس",
-          url: "/settings/units",
-          icon: Ruler,
-        },
-        {
-          title: "المستخدمين",
-          url: "/settings/users",
-          icon: Users,
-          roles: ["admin"],
-        },
-      ],
+      title: "الأقسام والشعب",
+      url: "/settings/departments",
+      icon: Building2,
+    },
+    {
+      title: "الموردين",
+      url: "/settings/suppliers",
+      icon: Truck,
+    },
+    {
+      title: "وحدات القياس",
+      url: "/settings/units",
+      icon: Ruler,
+    },
+    {
+      title: "المستخدمين",
+      url: "/settings/users",
+      icon: Users,
+      roles: ["admin"],
     },
   ],
 };

@@ -95,6 +95,8 @@ const ItemEntryPage = () => {
         unit: "",
         quantity: 1,
         price: 0,
+        vendorName: "",
+        vendorId: null,
       });
     });
   };
@@ -237,22 +239,6 @@ const ItemEntryPage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>اسم المورد</Label>
-                <Select onValueChange={setSupplier}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر المورد..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
                 <Label>نوع الإدخال</Label>
                 <Select onValueChange={setEntryType}>
                   <SelectTrigger>
@@ -325,13 +311,12 @@ const ItemEntryPage = () => {
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-2/5 text-right">
-                      كود المادة
-                    </TableHead>
+                    <TableHead className="text-right">كود المادة</TableHead>
                     <TableHead className="text-right">اسم المادة</TableHead>
                     <TableHead className="text-right">الوحدة</TableHead>
                     <TableHead className="text-right">الكمية</TableHead>
                     <TableHead className="text-right">سعر المفرد</TableHead>
+                    <TableHead className="text-right">اسم المورد</TableHead>
                     <TableHead className="text-right">الضمان</TableHead>
                     <TableHead className="text-right">إجراء</TableHead>
                   </TableRow>
@@ -340,7 +325,7 @@ const ItemEntryPage = () => {
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={8}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -349,7 +334,7 @@ const ItemEntryPage = () => {
                   ) : (
                     itemsList.map((item, index) => (
                       <TableRow key={item.id}>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right w-32">
                           {item.itemId ? (
                             <div className="font-mono text-sm font-medium">
                               {item.itemCode}
@@ -517,6 +502,32 @@ const ItemEntryPage = () => {
                             min="0"
                             step="0.01"
                           />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Select
+                            value={item.vendorId ? String(item.vendorId) : ""}
+                            onValueChange={(value) => {
+                              const selectedSupplier = suppliers.find(
+                                (s) => s.id === Number(value)
+                              );
+                              updateItemsList((draft) => {
+                                draft[index].vendorId = Number(value);
+                                draft[index].vendorName =
+                                  selectedSupplier?.name || "";
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="w-48">
+                              <SelectValue placeholder="اختر المورد..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {suppliers.map((s) => (
+                                <SelectItem key={s.id} value={String(s.id)}>
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </TableCell>
                         <TableCell className="text-right">
                           <Input

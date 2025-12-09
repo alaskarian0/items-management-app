@@ -253,6 +253,39 @@ export const UNIT_TYPES = [
   { value: 'temperature', label: 'درجة حرارة' }
 ] as const;
 
+// Organizational Structure Types
+export interface Unit extends BaseEntity {
+  name: string;
+  description?: string;
+  unitHead?: string;
+  employeeCount?: number;
+  divisionId: number;
+  divisionName?: string;
+  departmentId?: number;
+  departmentName?: string;
+  isActive?: boolean;
+}
+
+export interface Division extends BaseEntity {
+  name: string;
+  description?: string;
+  headOfDivision?: string;
+  employeeCount?: number;
+  departmentId: number;
+  departmentName?: string;
+  isActive?: boolean;
+  units?: Unit[];
+}
+
+export interface Department extends BaseEntity {
+  name: string;
+  description?: string;
+  headOfDepartment?: string;
+  employeeCount?: number;
+  isActive?: boolean;
+  divisions?: Division[];
+}
+
 export const USER_ROLES = [
   'مدير نظام',
   'مدير قسم',

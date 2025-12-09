@@ -10,7 +10,10 @@ import type {
   SystemSetting,
   ReportConfig,
   ActivityLog,
-  NotificationTemplate
+  NotificationTemplate,
+  Department,
+  Division,
+  Unit
 } from '@/lib/types/settings';
 
 // Suppliers
@@ -556,3 +559,230 @@ export const SUPPLIER_CATEGORIES = [
   "الخدمات",
   "المواد الخام"
 ];
+
+// Departments
+export const departments: Department[] = [
+  {
+    id: 1,
+    name: "قسم الشؤون الهندسية",
+    description: "مسؤول عن جميع الأعمال الهندسية والمشاريع",
+    headOfDepartment: "م. أحمد محمد",
+    employeeCount: 25,
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 2,
+    name: "قسم الشؤون الإدارية",
+    description: "إدارة العمليات الإدارية اليومية",
+    headOfDepartment: "علي حسن",
+    employeeCount: 15,
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 3,
+    name: "قسم المحاسبة",
+    description: "إدارة الحسابات والمعاملات المالية",
+    headOfDepartment: "فاطمة علي",
+    employeeCount: 12,
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 4,
+    name: "قسم تقنية المعلومات",
+    description: "صيانة وتطوير الأنظمة التقنية",
+    headOfDepartment: "محمد عبد الله",
+    employeeCount: 8,
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 5,
+    name: "قسم الموارد البشرية",
+    description: "إدارة شؤون الموظفين والتوظيف",
+    headOfDepartment: "سارة أحمد",
+    employeeCount: 6,
+    isActive: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  }
+];
+
+// Divisions
+export const divisions: Division[] = [
+  {
+    id: 1,
+    name: "شعبة الهندسة المدنية",
+    description: "المشاريع الإنشائية والمدنية",
+    headOfDivision: "م. علي أحمد",
+    employeeCount: 10,
+    departmentId: 1,
+    departmentName: "قسم الشؤون الهندسية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 2,
+    name: "شعبة الهندسة الكهربائية",
+    description: "أنظمة الكهرباء والتحكم",
+    headOfDivision: "م. حسن علي",
+    employeeCount: 8,
+    departmentId: 1,
+    departmentName: "قسم الشؤون الهندسية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 3,
+    name: "شعبة الشؤون المالية",
+    description: "إدارة الحسابات والميزانيات",
+    headOfDivision: "فاطمة محمود",
+    employeeCount: 8,
+    departmentId: 2,
+    departmentName: "قسم الشؤون الإدارية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 4,
+    name: "شعبة تطوير البرمجيات",
+    description: "تطوير البرمجيات والتطبيقات",
+    headOfDivision: "عبد الرحمن خالد",
+    employeeCount: 7,
+    departmentId: 3,
+    departmentName: "قسم تقنية المعلومات",
+    isActive: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  }
+];
+
+// Units
+export const units: Unit[] = [
+  {
+    id: 1,
+    name: "وحدة التخطيط والتصميم",
+    description: "تخطيط وتصميم المشاريع",
+    unitHead: "خالد محمود",
+    employeeCount: 5,
+    divisionId: 1,
+    departmentId: 1,
+    departmentName: "قسم الشؤون الهندسية",
+    divisionName: "شعبة الهندسة المدنية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 2,
+    name: "وحدة التنفيذ والإشراف",
+    description: "الإشراف على تنفيذ المشاريع",
+    unitHead: "سالم ياسر",
+    employeeCount: 5,
+    divisionId: 1,
+    departmentId: 1,
+    departmentName: "قسم الشؤون الهندسية",
+    divisionName: "شعبة الهندسة المدنية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 3,
+    name: "وحدة أنظمة الطاقة",
+    description: "تصميم أنظمة الطاقة الكهربائية",
+    unitHead: "رعد فريد",
+    employeeCount: 4,
+    divisionId: 2,
+    departmentId: 1,
+    departmentName: "قسم الشؤون الهندسية",
+    divisionName: "شعبة الهندسة الكهربائية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 4,
+    name: "وحدة أنظمة التحكم",
+    description: "برمجة أنظمة التحكم الصناعي",
+    unitHead: "مراد حسن",
+    employeeCount: 4,
+    divisionId: 2,
+    departmentId: 1,
+    departmentName: "قسم الشؤون الهندسية",
+    divisionName: "شعبة الهندسة الكهربائية",
+    isActive: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 5,
+    name: "وحدة الحسابات العامة",
+    description: "إدارة الحسابات اليومية",
+    unitHead: "نور الدين أحمد",
+    employeeCount: 4,
+    divisionId: 3,
+    departmentId: 2,
+    departmentName: "قسم الشؤون الإدارية",
+    divisionName: "شعبة الشؤون المالية",
+    isActive: true,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  },
+  {
+    id: 6,
+    name: "وحدة تطوير الواجهات",
+    description: "تطوير واجهات المستخدم",
+    unitHead: "ياسر حسن",
+    employeeCount: 3,
+    divisionId: 4,
+    departmentId: 3,
+    departmentName: "قسم تقنية المعلومات",
+    divisionName: "شعبة تطوير البرمجيات",
+    isActive: false,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z"
+  }
+];
+
+// Helper functions for organizational structure
+export const getDepartmentById = (id: number): Department | undefined => {
+  return departments.find(dept => dept.id === id);
+};
+
+export const getDivisionById = (id: number): Division | undefined => {
+  return divisions.find(div => div.id === id);
+};
+
+export const getUnitById = (id: number): Unit | undefined => {
+  return units.find(unit => unit.id === id);
+};
+
+export const getDivisionsByDepartment = (departmentId: number): Division[] => {
+  return divisions.filter(div => div.departmentId === departmentId);
+};
+
+export const getUnitsByDivision = (divisionId: number): Unit[] => {
+  return units.filter(unit => unit.divisionId === divisionId);
+};
+
+export const getActiveDepartments = (): Department[] => {
+  return departments.filter(dept => dept.isActive);
+};
+
+export const getActiveDivisions = (): Division[] => {
+  return divisions.filter(div => div.isActive);
+};
+
+export const getActiveUnits = (): Unit[] => {
+  return units.filter(unit => unit.isActive);
+};

@@ -62,6 +62,8 @@ export interface DocumentItem {
   stock?: number;
   warranty?: string;
   notes?: string;
+  vendorName?: string;
+  vendorId?: number;
 }
 
 export interface StockItem extends Item {
@@ -151,6 +153,32 @@ export interface WarehouseStats {
   movementsToday: number;
   entriesToday: number;
   issuancesToday: number;
+}
+
+// Warehouse Document (combined entry/issuance records)
+export interface WarehouseDocument {
+  id: number;
+  docNumber: string;
+  type: "entry" | "issuance";
+  date: string;
+  warehouseId: number;
+  warehouseName: string;
+  departmentId?: number;
+  departmentName?: string;
+  divisionId?: number;
+  divisionName?: string;
+  unitId?: number;
+  unitName?: string;
+  supplierId?: number;
+  supplierName?: string;
+  recipientName?: string;
+  entryType?: "purchases" | "gifts" | "returns";
+  itemCount: number;
+  totalValue: number;
+  notes?: string;
+  status: "draft" | "approved" | "cancelled";
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Form types

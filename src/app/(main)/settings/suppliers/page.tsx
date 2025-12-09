@@ -29,7 +29,6 @@ import {
   Search,
   Phone,
   MapPin,
-  Mail,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,7 +60,6 @@ const SuppliersPage = () => {
     description: "",
     contactPerson: "",
     phone: "",
-    email: "",
     address: "",
     website: "",
     category: "",
@@ -69,7 +67,6 @@ const SuppliersPage = () => {
     commercialNumber: "",
     bankAccount: "",
     bankName: "",
-    rating: 0,
     notes: ""
   });
 
@@ -78,8 +75,7 @@ const SuppliersPage = () => {
     return suppliersList.filter((supplier) => {
       const matchesSearch =
         supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supplier.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supplier.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        supplier.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = filterCategory === "all" || supplier.category === filterCategory;
       return matchesSearch && matchesCategory;
     });
@@ -92,7 +88,6 @@ const SuppliersPage = () => {
       description: "",
       contactPerson: "",
       phone: "",
-      email: "",
       address: "",
       website: "",
       category: "",
@@ -100,7 +95,6 @@ const SuppliersPage = () => {
       commercialNumber: "",
       bankAccount: "",
       bankName: "",
-      rating: 0,
       notes: ""
     });
     setIsDialogOpen(true);
@@ -113,7 +107,6 @@ const SuppliersPage = () => {
       description: supplier.description || "",
       contactPerson: supplier.contactPerson || "",
       phone: supplier.phone,
-      email: supplier.email || "",
       address: supplier.address || "",
       website: supplier.website || "",
       category: supplier.category,
@@ -121,7 +114,6 @@ const SuppliersPage = () => {
       commercialNumber: supplier.commercialNumber || "",
       bankAccount: supplier.bankAccount || "",
       bankName: supplier.bankName || "",
-      rating: supplier.rating,
       notes: supplier.notes || ""
     });
     setIsDialogOpen(true);
@@ -174,7 +166,6 @@ const SuppliersPage = () => {
       description: "",
       contactPerson: "",
       phone: "",
-      email: "",
       address: "",
       website: "",
       category: "",
@@ -182,7 +173,6 @@ const SuppliersPage = () => {
       commercialNumber: "",
       bankAccount: "",
       bankName: "",
-      rating: 0,
       notes: ""
     });
     setCurrentSupplier(null);
@@ -286,8 +276,6 @@ const SuppliersPage = () => {
                   <TableHead className="text-right">الفئة</TableHead>
                   <TableHead className="text-right">الشخص المسؤول</TableHead>
                   <TableHead className="text-right">رقم الهاتف</TableHead>
-                  <TableHead className="text-right">البريد الإلكتروني</TableHead>
-                  <TableHead className="text-right">التقييم</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
@@ -295,7 +283,7 @@ const SuppliersPage = () => {
               <TableBody>
                 {filteredSuppliers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       لا توجد موردين مطابقة للبحث
                     </TableCell>
                   </TableRow>
@@ -311,30 +299,6 @@ const SuppliersPage = () => {
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
                           {supplier.phone}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {supplier.email ? (
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4" />
-                            {supplier.email}
-                          </div>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, index) => (
-                            <div
-                              key={index}
-                              className={`h-4 w-4 rounded-sm ml-1 ${
-                                index < supplier.rating
-                                  ? "bg-yellow-400"
-                                  : "bg-gray-200"
-                              }`}
-                            />
-                          ))}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -422,16 +386,6 @@ const SuppliersPage = () => {
                 value={formData.phone}
                 onChange={(e) => setFormData((f) => ({ ...f, phone: e.target.value }))}
                 placeholder="رقم الهاتف"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">البريد الإلكتروني</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
-                placeholder="البريد الإلكتروني"
               />
             </div>
             <div className="space-y-2">
