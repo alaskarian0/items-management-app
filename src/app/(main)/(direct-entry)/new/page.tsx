@@ -715,7 +715,7 @@ const QuickEntryPage = () => {
                 <div className="text-xs text-muted-foreground flex items-center gap-1">
                   <DollarSign className="h-3 w-3" /> آخر سعر
                 </div>
-                {/* @ts-ignore - mock data extension */}
+
                 <div className="font-bold">{focusedItem.price?.toLocaleString() || '-'} د.ع</div>
               </div>
             </div>
@@ -724,17 +724,17 @@ const QuickEntryPage = () => {
               <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                 <CalendarIconLucide className="h-3 w-3" /> آخر إدخال
               </div>
-              {/* @ts-ignore - mock data extension */}
-              <div className="text-sm">{focusedItem.lastEntryDate || '-'}</div>
+
+              <div className="text-sm">{(focusedItem as any).lastEntryDate || '-'}</div>
             </div>
 
-            {/* @ts-ignore - mock data extension */}
-            {focusedItem.specs && (
+
+            {(focusedItem as any).specs && (
               <div className="space-y-1 border-t pt-2">
                 <div className="text-xs text-muted-foreground mb-1">المواصفات</div>
                 <div className="text-sm bg-muted/50 p-2 rounded text-muted-foreground">
-                  {/* @ts-ignore */}
-                  {focusedItem.specs}
+
+                  {(focusedItem as any).specs}
                 </div>
               </div>
             )}

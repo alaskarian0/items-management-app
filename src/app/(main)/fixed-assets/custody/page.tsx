@@ -51,9 +51,12 @@ import {
   assetCustodies,
   fixedAssets,
   getAssetById,
-  type AssetCustody,
-  type FixedAsset
+  assetCustodies,
+  fixedAssets,
+  getAssetById,
 } from "@/lib/data/fixed-assets-data";
+import { type AssetCustody, type FixedAsset } from "@/lib/types/fixed-assets";
+import { departments } from "@/lib/data/warehouse-data";
 
 // View model for custody records display
 type CustodyRecordView = AssetCustody & {
@@ -137,11 +140,11 @@ const CustodyPage = () => {
         records.map((record) =>
           record.id === selectedRecord.id
             ? {
-                ...record,
-                status: "returned" as const,
-                endDate: new Date(),
-                notes: returnNotes || record.notes,
-              }
+              ...record,
+              status: "returned" as const,
+              endDate: new Date(),
+              notes: returnNotes || record.notes,
+            }
             : record
         )
       );
@@ -157,18 +160,17 @@ const CustodyPage = () => {
         records.map((record) =>
           record.id === selectedRecord.id
             ? {
-                ...record,
-                  employeeName: transferEmployee,
-                  department: transferDepartment,
-                  notes: transferNotes
-                    ? `${
-                        record.notes ? record.notes + " | " : ""
-                      }تم التحويل: ${transferNotes}`
-                    : (record.notes || "تم التحويل"),
-                }
-              : record
-          )
-        );
+              ...record,
+              employeeName: transferEmployee,
+              department: transferDepartment,
+              notes: transferNotes
+                ? `${record.notes ? record.notes + " | " : ""
+                }تم التحويل: ${transferNotes}`
+                : (record.notes || "تم التحويل"),
+            }
+            : record
+        )
+      );
       setIsTransferDialogOpen(false);
       setSelectedRecord(null);
       setTransferDepartment(undefined);

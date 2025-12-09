@@ -47,14 +47,17 @@ import {
   assetDonated,
   fixedAssets,
   getAssetById,
-  type AssetDonated
 } from "@/lib/data/fixed-assets-data";
+import { type AssetDonated } from "@/lib/types/fixed-assets";
 
 // View model for donated assets display
 type DonatedAssetView = AssetDonated & {
   assetName: string;
   assetCode: string;
   category: string;
+  value: number;
+  condition?: string;
+  documentNumber?: string;
 };
 
 // Convert donated assets data to view model
@@ -82,10 +85,10 @@ const DonatedPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetName.includes(searchTerm) ||
-                         asset.assetCode.includes(searchTerm) ||
-                         asset.donatedTo.includes(searchTerm) ||
-                         asset.receiptNumber?.includes(searchTerm) ||
-                         asset.donationReason.includes(searchTerm);
+      asset.assetCode.includes(searchTerm) ||
+      asset.donatedTo.includes(searchTerm) ||
+      asset.receiptNumber?.includes(searchTerm) ||
+      asset.donationReason.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || asset.status === filterStatus;
     const matchesCategory = filterCategory === 'all' || asset.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
@@ -283,9 +286,11 @@ const DonatedPage = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {asset.donationDate instanceof Date
-                              ? asset.donationDate.toLocaleDateString('ar-SA')
-                              : new Date(asset.donationDate).toLocaleDateString('ar-SA')}
+                            <span>
+                              {asset.donationDate instanceof Date
+                                ? asset.donationDate.toLocaleDateString('ar-SA')
+                                : new Date(asset.donationDate).toLocaleDateString('ar-SA')}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>

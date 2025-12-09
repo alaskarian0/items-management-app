@@ -61,13 +61,14 @@ import {
   assetConsumed,
   fixedAssets,
   getAssetById,
-  type AssetConsumed
 } from "@/lib/data/fixed-assets-data";
+import { type AssetConsumed } from "@/lib/types/fixed-assets";
 
 // View model for consumed assets display
 type ConsumedAssetView = AssetConsumed & {
   assetName: string;
   assetCode: string;
+  consumedBy?: string;
   category: string;
   remainingValue: number;
 };
@@ -96,12 +97,12 @@ const ConsumedPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetName.includes(searchTerm) ||
-                         asset.assetCode.includes(searchTerm) ||
-                         asset.consumedBy?.includes(searchTerm) ||
-                         asset.consumptionReason.includes(searchTerm);
+      asset.assetCode.includes(searchTerm) ||
+      asset.consumedBy?.includes(searchTerm) ||
+      asset.consumptionReason.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' ||
-                         (filterStatus === 'complete' && asset.consumptionMethod === 'end-of-life') ||
-                         (filterStatus === 'partial' && asset.consumptionMethod !== 'end-of-life');
+      (filterStatus === 'complete' && asset.consumptionMethod === 'end-of-life') ||
+      (filterStatus === 'partial' && asset.consumptionMethod !== 'end-of-life');
     const matchesCategory = filterCategory === 'all' || asset.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
   });

@@ -176,7 +176,7 @@ const ItemEntryPage = () => {
         if (!item.itemId && item.itemName) {
           // Creating new item
           const newCode = item.itemCode || `AUTO-${Date.now()}-${i}`;
-          // @ts-ignore - Dexie handles ID generation
+          // Dexie handles ID generation
           const newItemId = await db.items.add({
             name: item.itemName,
             code: newCode,
@@ -520,7 +520,7 @@ const ItemEntryPage = () => {
                                             }}
                                           >
                                             <PlusCircle className="ml-2 h-4 w-4" />
-                                            إضافة "{searchValue}" كمادة جديدة
+                                            إضافة &quot;{searchValue}&quot; كمادة جديدة
                                           </Button>
                                         </div>
                                       </CommandEmpty>

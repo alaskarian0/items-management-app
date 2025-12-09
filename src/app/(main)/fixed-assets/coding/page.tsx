@@ -47,9 +47,8 @@ import {
   fixedAssets,
   getAssetByCode,
   searchAssets,
-  type FixedAsset,
-  type AssetCoding
 } from "@/lib/data/fixed-assets-data";
+import { type FixedAsset, type AssetCoding } from "@/lib/types/fixed-assets";
 
 const CodingPage = () => {
   const [assets, setAssets] = useState<FixedAsset[]>(fixedAssets);
@@ -63,8 +62,8 @@ const CodingPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.name.includes(searchTerm) ||
-                         asset.serialNumber?.includes(searchTerm) ||
-                         asset.barcode?.includes(searchTerm);
+      asset.serialNumber?.includes(searchTerm) ||
+      asset.barcode?.includes(searchTerm);
     const matchesFilter = filterStatus === 'all' || (asset.barcode ? 'coded' : 'pending') === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -79,7 +78,7 @@ const CodingPage = () => {
     if (selectedAsset && barcodeInput) {
       setAssets(assets.map(asset =>
         asset.id === selectedAsset.id
-          ? { ...asset, barcode: barcodeInput, status: 'coded' as const }
+          ? { ...asset, barcode: barcodeInput, status: 'active' as const }
           : asset
       ));
       setIsDialogOpen(false);
@@ -90,7 +89,8 @@ const CodingPage = () => {
 
   const handleGenerateBarcode = () => {
     if (selectedAsset) {
-      const newBarcode = `BC-${selectedAsset.serialNumber.split('-')[2]}-${new Date().getFullYear()}`;
+      const serial = selectedAsset.serialNumber || 'SN-000';
+      const newBarcode = `BC-${serial.split('-')[2] || 'GEN'}-${new Date().getFullYear()}`;
       setBarcodeInput(newBarcode);
     }
   };
@@ -338,7 +338,7 @@ const CodingPage = () => {
       <BarcodeQRPrintModal
         open={isPrintModalOpen}
         onOpenChange={setIsPrintModalOpen}
-        assets={assets}
+        assets={assets as any}
         selectedAssets={selectedAssetsForPrint}
         onSelectedAssetsChange={setSelectedAssetsForPrint}
       />
