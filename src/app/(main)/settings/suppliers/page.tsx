@@ -152,6 +152,8 @@ const SuppliersPage = () => {
         ...suppliersList,
         {
           id: newId,
+          code: `SUP${newId.toString().padStart(3, '0')}`,
+          rating: 5,
           ...formData,
           isActive: true,
           createdAt: new Date().toISOString(),

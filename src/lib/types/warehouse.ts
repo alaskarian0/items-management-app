@@ -18,7 +18,7 @@ export interface Unit {
   divisionId: number;
 }
 
-export interface Supplier {
+export interface BasicSupplier {
   id: number;
   name: string;
 }
@@ -64,6 +64,8 @@ export interface DocumentItem {
   notes?: string;
   vendorName?: string;
   vendorId?: number;
+  supplierName?: string;
+  supplierId?: number;
 }
 
 export interface StockItem extends Item {
