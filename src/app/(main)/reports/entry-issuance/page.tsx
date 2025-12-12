@@ -457,15 +457,16 @@ const EntryIssuanceReportPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>رقم المستند</TableHead>
-                  <TableHead>النوع</TableHead>
-                  <TableHead>التاريخ</TableHead>
-                  <TableHead>المخزن</TableHead>
-                  <TableHead>المورد/القسم</TableHead>
-                  <TableHead>عدد الأصناف</TableHead>
-                  <TableHead>القيمة الإجمالية</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>المنشئ</TableHead>
+                  <TableHead className="text-right">إجمالي المبلغ</TableHead>
+                  <TableHead className="text-right">رقم المستند</TableHead>
+                  <TableHead className="text-right">النوع</TableHead>
+                  <TableHead className="text-right">التاريخ</TableHead>
+                  <TableHead className="text-right">المخزن</TableHead>
+                  <TableHead className="text-right">المورد/القسم</TableHead>
+                  <TableHead className="text-right">عدد الأصناف</TableHead>
+                  <TableHead className="text-right">القيمة الإجمالية</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">المنشئ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

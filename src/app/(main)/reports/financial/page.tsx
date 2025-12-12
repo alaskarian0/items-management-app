@@ -435,11 +435,11 @@ const FinancialReportPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>المورد</TableHead>
-                  <TableHead>إجمالي المبلغ</TableHead>
-                  <TableHead>عدد العمليات</TableHead>
-                  <TableHead>آخر عملية</TableHead>
-                  <TableHead>النسبة</TableHead>
+                  <TableHead className="text-right">المورد</TableHead>
+                  <TableHead className="text-right">إجمالي المبلغ</TableHead>
+                  <TableHead className="text-right">عدد العمليات</TableHead>
+                  <TableHead className="text-right">آخر عملية</TableHead>
+                  <TableHead className="text-right">النسبة</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

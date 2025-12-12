@@ -198,20 +198,29 @@ export default function DashboardPage() {
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={warehouseStockData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis
                   dataKey="name"
-                  stroke="#888888"
+                  className="text-muted-foreground"
+                  stroke="currentColor"
                   fontSize={12}
                   tickLine={false}
                 />
                 <YAxis
-                  stroke="#888888"
+                  className="text-muted-foreground"
+                  stroke="currentColor"
                   fontSize={12}
                   tickLine={false}
                   tickFormatter={(value) => `${value}`}
                 />
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--popover))",
+                    borderColor: "hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                  labelStyle={{ color: "hsl(var(--popover-foreground))" }}
+                />
                 <Bar
                   dataKey="items"
                   fill="currentColor"
@@ -234,10 +243,26 @@ export default function DashboardPage() {
           <CardContent>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={movementData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" stroke="#888888" fontSize={12} />
-                <YAxis stroke="#888888" fontSize={12} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis
+                  dataKey="day"
+                  className="text-muted-foreground"
+                  stroke="currentColor"
+                  fontSize={12}
+                />
+                <YAxis
+                  className="text-muted-foreground"
+                  stroke="currentColor"
+                  fontSize={12}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--popover))",
+                    borderColor: "hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                  labelStyle={{ color: "hsl(var(--popover-foreground))" }}
+                />
                 <Legend />
                 <Line
                   type="monotone"
@@ -291,7 +316,14 @@ export default function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--popover))",
+                      borderColor: "hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                    labelStyle={{ color: "hsl(var(--popover-foreground))" }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
