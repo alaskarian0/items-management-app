@@ -32,7 +32,7 @@ import {
   Search,
   TrendingDown,
   TrendingUp,
-  Users
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -116,9 +116,7 @@ const departmentData = [
     status: "good",
     criticalItems: 0,
     lowStockItems: 2,
-    issues: [
-      { item: "خزنة ملفات", issue: "قفل معطل" },
-    ],
+    issues: [{ item: "خزنة ملفات", issue: "قفل معطل" }],
   },
 ];
 
@@ -151,13 +149,17 @@ const DepartmentBalanceReportsPage = () => {
           dept.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
           dept.division.toLowerCase().includes(searchTerm.toLowerCase()) ||
           dept.unit.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          dept.responsiblePerson.toLowerCase().includes(searchTerm.toLowerCase())
+          dept.responsiblePerson
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
       );
     }
 
     // Apply department filter
     if (departmentFilter !== "all") {
-      filtered = filtered.filter((dept) => dept.department === departmentFilter);
+      filtered = filtered.filter(
+        (dept) => dept.department === departmentFilter
+      );
     }
 
     // Apply status filter
@@ -183,13 +185,22 @@ const DepartmentBalanceReportsPage = () => {
   }, [searchTerm, departmentFilter, statusFilter, sortBy]);
 
   const statistics = useMemo(() => {
-    const totalDepartments = new Set(filteredData.map(d => d.department)).size;
+    const totalDepartments = new Set(filteredData.map((d) => d.department))
+      .size;
     const totalUnits = filteredData.length;
     const totalItems = filteredData.reduce((sum, d) => sum + d.totalItems, 0);
     const totalValue = filteredData.reduce((sum, d) => sum + d.totalValue, 0);
-    const criticalDepartments = filteredData.filter(d => d.status === "critical").length;
+    const criticalDepartments = filteredData.filter(
+      (d) => d.status === "critical"
+    ).length;
 
-    return { totalDepartments, totalUnits, totalItems, totalValue, criticalDepartments };
+    return {
+      totalDepartments,
+      totalUnits,
+      totalItems,
+      totalValue,
+      criticalDepartments,
+    };
   }, [filteredData]);
 
   const getStatusBadge = (status: string) => {
@@ -225,7 +236,11 @@ const DepartmentBalanceReportsPage = () => {
         <div>
           <div className="flex items-center gap-4 mb-2">
             <Link href="/reports">
-              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2"
+              >
                 <ArrowLeft className="h-4 w-4" />
                 العودة للتقارير
               </Button>
@@ -245,18 +260,24 @@ const DepartmentBalanceReportsPage = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الأقسام</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              إجمالي الأقسام
+            </CardTitle>
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statistics.totalDepartments}</div>
+            <div className="text-2xl font-bold">
+              {statistics.totalDepartments}
+            </div>
             <p className="text-xs text-muted-foreground">قسم</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الوحدات</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              إجمالي الوحدات
+            </CardTitle>
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -282,7 +303,9 @@ const DepartmentBalanceReportsPage = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">القيمة الإجمالية</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              القيمة الإجمالية
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
@@ -327,7 +350,10 @@ const DepartmentBalanceReportsPage = () => {
               />
             </div>
 
-            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+            <Select
+              value={departmentFilter}
+              onValueChange={setDepartmentFilter}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="القسم..." />
               </SelectTrigger>
@@ -369,11 +395,19 @@ const DepartmentBalanceReportsPage = () => {
 
           {/* Export Buttons */}
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => exportReport("excel")} className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => exportReport("excel")}
+              className="flex items-center gap-2"
+            >
               <Download className="h-4 w-4" />
               تصدير Excel
             </Button>
-            <Button variant="outline" onClick={() => exportReport("pdf")} className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => exportReport("pdf")}
+              className="flex items-center gap-2"
+            >
               <Download className="h-4 w-4" />
               تصدير PDF
             </Button>
@@ -399,17 +433,20 @@ const DepartmentBalanceReportsPage = () => {
                   <TableHead className="text-right">القيمة</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">الجرد</TableHead>
-                  <TableHead className="text-right">المشاكل</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.map((dept) => (
                   <TableRow key={dept.id}>
-                    <TableCell className="font-medium">{dept.department}</TableCell>
+                    <TableCell className="font-medium">
+                      {dept.department}
+                    </TableCell>
                     <TableCell>{dept.division}</TableCell>
                     <TableCell>{dept.unit}</TableCell>
                     <TableCell>{dept.responsiblePerson}</TableCell>
-                    <TableCell className="font-medium">{dept.totalItems}</TableCell>
+                    <TableCell className="font-medium">
+                      {dept.totalItems}
+                    </TableCell>
                     <TableCell className="font-medium">
                       {(dept.totalValue / 1000000).toFixed(1)}M
                     </TableCell>
@@ -422,21 +459,6 @@ const DepartmentBalanceReportsPage = () => {
                     <TableCell className="text-sm">
                       {format(dept.lastUpdate, "yyyy-MM-dd", { locale: ar })}
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="text-sm text-red-600">
-                          {dept.criticalItems} مواد حرجة
-                        </div>
-                        <div className="text-sm text-yellow-600">
-                          {dept.lowStockItems} مواد منخفضة
-                        </div>
-                        {dept.issues.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            {dept.issues.length} مشكلة مفتوحة
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -444,35 +466,6 @@ const DepartmentBalanceReportsPage = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Critical Departments Alert */}
-      {statistics.criticalDepartments > 0 && (
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <AlertTriangle className="h-5 w-5" />
-              أقسام تحتاج متابعة عاجلة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-800">
-              هناك {statistics.criticalDepartments} أقسام تحتاج إلى متابعة عاجلة بسبب وجود مواد في حالة حرجة أو مشاكل تحتاج حل.
-            </p>
-            <div className="mt-3 space-y-2">
-              {filteredData
-                .filter(dept => dept.status === "critical")
-                .map(dept => (
-                  <div key={dept.id} className="flex items-center justify-between bg-white p-2 rounded border border-red-200">
-                    <span className="font-medium">{dept.unit}</span>
-                    <span className="text-sm text-red-600">
-                      {dept.criticalItems} مواد حرجة
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

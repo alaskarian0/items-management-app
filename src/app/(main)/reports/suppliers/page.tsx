@@ -30,7 +30,6 @@ import {
   TrendingUp,
   TrendingDown,
   Package,
-  Star,
   Phone,
   Mail,
   MapPin,
@@ -120,7 +119,6 @@ const SuppliersReportsPage = () => {
     { value: "name", label: "اسم المورد" },
     { value: "orders", label: "عدد الطلبات" },
     { value: "value", label: "القيمة الإجمالية" },
-    { value: "rating", label: "التقييم" },
   ];
 
   const filteredData = useMemo(() => {
@@ -153,8 +151,6 @@ const SuppliersReportsPage = () => {
           return b.totalOrders - a.totalOrders;
         case "value":
           return b.totalValue - a.totalValue;
-        case "rating":
-          return b.rating - a.rating;
         default:
           return a.name.localeCompare(b.name);
       }
@@ -168,25 +164,9 @@ const SuppliersReportsPage = () => {
     const activeSuppliers = filteredData.filter(s => s.status === "active").length;
     const totalOrders = filteredData.reduce((sum, s) => sum + s.totalOrders, 0);
     const totalValue = filteredData.reduce((sum, s) => sum + s.totalValue, 0);
-    const avgRating = filteredData.reduce((sum, s) => sum + s.rating, 0) / filteredData.length;
 
-    return { totalSuppliers, activeSuppliers, totalOrders, totalValue, avgRating };
+    return { totalSuppliers, activeSuppliers, totalOrders, totalValue };
   }, [filteredData]);
-
-  const getRatingStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`h-4 w-4 ${
-          i < Math.floor(rating)
-            ? "text-yellow-400 fill-current"
-            : i < rating
-            ? "text-yellow-400 fill-current opacity-50"
-            : "text-gray-300"
-        }`}
-      />
-    ));
-  };
 
   const exportReport = (format: "pdf" | "excel") => {
     console.log(`Exporting suppliers report as ${format}`);
@@ -197,14 +177,6 @@ const SuppliersReportsPage = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <Link href="/reports">
-              <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                العودة للتقارير
-              </Button>
-            </Link>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Truck className="h-8 w-8" />
             تقارير الموردين
@@ -216,7 +188,7 @@ const SuppliersReportsPage = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">إجمالي الموردين</CardTitle>
@@ -231,10 +203,10 @@ const SuppliersReportsPage = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">موردون نشطون</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {statistics.activeSuppliers}
             </div>
             <p className="text-xs text-muted-foreground">مورد نشط</p>
@@ -244,10 +216,10 @@ const SuppliersReportsPage = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">إجمالي الطلبات</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
+            <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {statistics.totalOrders}
             </div>
             <p className="text-xs text-muted-foreground">طلبية</p>
@@ -257,26 +229,13 @@ const SuppliersReportsPage = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">القيمة الإجمالية</CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-600" />
+            <TrendingUp className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
               {(statistics.totalValue / 1000000).toFixed(1)}M
             </div>
             <p className="text-xs text-muted-foreground">دينار عراقي</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">متوسط التقييم</CardTitle>
-            <Star className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {statistics.avgRating.toFixed(1)}
-            </div>
-            <p className="text-xs text-muted-foreground">من 5 نجوم</p>
           </CardContent>
         </Card>
       </div>
@@ -367,7 +326,6 @@ const SuppliersReportsPage = () => {
                   <TableHead className="text-right">كود المورد</TableHead>
                   <TableHead className="text-right">اسم المورد</TableHead>
                   <TableHead className="text-right">الفئة</TableHead>
-                  <TableHead className="text-right">التقييم</TableHead>
                   <TableHead className="text-right">عدد الطلبات</TableHead>
                   <TableHead className="text-right">القيمة الإجمالية</TableHead>
                   <TableHead className="text-right">آخر طلب</TableHead>
@@ -394,14 +352,6 @@ const SuppliersReportsPage = () => {
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">{supplier.category}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        {getRatingStars(supplier.rating)}
-                        <span className="text-sm text-muted-foreground ml-1">
-                          {supplier.rating.toFixed(1)}
-                        </span>
-                      </div>
                     </TableCell>
                     <TableCell className="font-medium">{supplier.totalOrders}</TableCell>
                     <TableCell className="font-medium">

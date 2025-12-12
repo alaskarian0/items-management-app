@@ -315,15 +315,15 @@ const EntryIssuanceReportPage = () => {
 
       {/* Value Cards */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50">
+        <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700">
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
               <PackagePlus className="h-5 w-5" />
               إجمالي قيمة الإدخال
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-700">
+            <div className="text-3xl font-bold text-green-700 dark:text-green-400">
               {stats.totalEntryValue.toLocaleString()} IQD
             </div>
             <p className="text-sm text-muted-foreground mt-2">
@@ -332,15 +332,15 @@ const EntryIssuanceReportPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
+        <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-700">
+            <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
               <PackageMinus className="h-5 w-5" />
               إجمالي قيمة الإصدار
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-700">
+            <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">
               {stats.totalIssuanceValue.toLocaleString()} IQD
             </div>
             <p className="text-sm text-muted-foreground mt-2">

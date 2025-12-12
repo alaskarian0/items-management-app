@@ -328,15 +328,15 @@ const FixedAssetsReportPage = () => {
       </div>
 
       {/* Total Value Card */}
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
+      <Card className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 border-blue-500/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <PieChart className="h-5 w-5" />
+            <PieChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             القيمة الإجمالية للموجودات
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold text-blue-700">
+          <div className="text-4xl font-bold text-blue-700 dark:text-blue-400">
             {stats.totalValue.toLocaleString()} IQD
           </div>
           <p className="text-sm text-muted-foreground mt-2">
@@ -415,14 +415,14 @@ const FixedAssetsReportPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>الباركود</TableHead>
-                  <TableHead>اسم الموجود</TableHead>
-                  <TableHead>الفئة</TableHead>
-                  <TableHead>الحالة</TableHead>
-                  <TableHead>الوضع</TableHead>
-                  <TableHead>القيمة</TableHead>
-                  <TableHead>الموقع/المستفيد</TableHead>
-                  <TableHead>تاريخ الاقتناء</TableHead>
+                  <TableHead className="text-right">الباركود</TableHead>
+                  <TableHead className="text-right">اسم الموجود</TableHead>
+                  <TableHead className="text-right">الفئة</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                  <TableHead className="text-right">الوضع</TableHead>
+                  <TableHead className="text-right">القيمة</TableHead>
+                  <TableHead className="text-right">الموقع/المستفيد</TableHead>
+                  <TableHead className="text-right">تاريخ الاقتناء</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

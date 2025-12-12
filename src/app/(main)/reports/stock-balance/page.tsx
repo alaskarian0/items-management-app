@@ -29,7 +29,7 @@ import {
   Filter,
   Search,
   TrendingDown,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -156,7 +156,14 @@ const StockBalanceReportsPage = () => {
   const [unitFilter, setUnitFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
 
-  const categories = ["كراسي", "طاولات", "سجاد صناعي", "إلكترونيات", "مكاتب", "خزائن"];
+  const categories = [
+    "كراسي",
+    "طاولات",
+    "سجاد صناعي",
+    "إلكترونيات",
+    "مكاتب",
+    "خزائن",
+  ];
   const departments = ["قسم الشؤون الهندسية", "قسم الشؤون الإدارية"];
   const divisions = [
     "شعبة الهندسة المدنية",
@@ -207,7 +214,9 @@ const StockBalanceReportsPage = () => {
 
     // Apply department filter
     if (departmentFilter !== "all") {
-      filtered = filtered.filter((item) => item.department === departmentFilter);
+      filtered = filtered.filter(
+        (item) => item.department === departmentFilter
+      );
     }
 
     // Apply division filter
@@ -235,13 +244,28 @@ const StockBalanceReportsPage = () => {
     });
 
     return filtered;
-  }, [searchTerm, categoryFilter, statusFilter, departmentFilter, divisionFilter, unitFilter, sortBy]);
+  }, [
+    searchTerm,
+    categoryFilter,
+    statusFilter,
+    departmentFilter,
+    divisionFilter,
+    unitFilter,
+    sortBy,
+  ]);
 
   const statistics = useMemo(() => {
     const totalItems = filteredData.length;
-    const totalValue = filteredData.reduce((sum, item) => sum + item.totalValue, 0);
-    const lowStock = filteredData.filter(item => item.status === "low" || item.status === "critical").length;
-    const criticalStock = filteredData.filter(item => item.status === "critical").length;
+    const totalValue = filteredData.reduce(
+      (sum, item) => sum + item.totalValue,
+      0
+    );
+    const lowStock = filteredData.filter(
+      (item) => item.status === "low" || item.status === "critical"
+    ).length;
+    const criticalStock = filteredData.filter(
+      (item) => item.status === "critical"
+    ).length;
 
     return { totalItems, totalValue, lowStock, criticalStock };
   }, [filteredData]);
@@ -272,14 +296,6 @@ const StockBalanceReportsPage = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <Link href="/reports">
-              <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                العودة للتقارير
-              </Button>
-            </Link>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Boxes className="h-8 w-8" />
             تقارير الرصيد المخزني
@@ -319,18 +335,24 @@ const StockBalanceReportsPage = () => {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">إجمالي الأصناف</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  إجمالي الأصناف
+                </CardTitle>
                 <Boxes className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{statistics.totalItems}</div>
+                <div className="text-2xl font-bold">
+                  {statistics.totalItems}
+                </div>
                 <p className="text-xs text-muted-foreground">صنف نشط</p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">القيمة الإجمالية</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  القيمة الإجمالية
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
@@ -343,20 +365,26 @@ const StockBalanceReportsPage = () => {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">مخزون منخفض</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  مخزون منخفض
+                </CardTitle>
                 <TrendingDown className="h-4 w-4 text-orange-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-orange-600">
                   {statistics.lowStock}
                 </div>
-                <p className="text-xs text-muted-foreground">صنف يحتاج إعادة طلب</p>
+                <p className="text-xs text-muted-foreground">
+                  صنف يحتاج إعادة طلب
+                </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">مخزون خطير</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  مخزون خطير
+                </CardTitle>
                 <AlertTriangle className="h-4 w-4 text-red-600" />
               </CardHeader>
               <CardContent>
@@ -388,7 +416,10 @@ const StockBalanceReportsPage = () => {
                   />
                 </div>
 
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <Select
+                  value={categoryFilter}
+                  onValueChange={setCategoryFilter}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="الفئة..." />
                   </SelectTrigger>
@@ -429,7 +460,10 @@ const StockBalanceReportsPage = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                <Select
+                  value={departmentFilter}
+                  onValueChange={setDepartmentFilter}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="القسم..." />
                   </SelectTrigger>
@@ -443,7 +477,10 @@ const StockBalanceReportsPage = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={divisionFilter} onValueChange={setDivisionFilter}>
+                <Select
+                  value={divisionFilter}
+                  onValueChange={setDivisionFilter}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="الشعبة..." />
                   </SelectTrigger>
@@ -473,10 +510,18 @@ const StockBalanceReportsPage = () => {
               </div>
 
               <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => exportReport("excel")} size="sm">
+                <Button
+                  variant="outline"
+                  onClick={() => exportReport("excel")}
+                  size="sm"
+                >
                   Excel
                 </Button>
-                <Button variant="outline" onClick={() => exportReport("pdf")} size="sm">
+                <Button
+                  variant="outline"
+                  onClick={() => exportReport("pdf")}
+                  size="sm"
+                >
                   PDF
                 </Button>
               </div>
@@ -501,7 +546,9 @@ const StockBalanceReportsPage = () => {
                       <TableHead className="text-right">الوحدة</TableHead>
                       <TableHead className="text-right">الحد الأدنى</TableHead>
                       <TableHead className="text-right">الحد الأعلى</TableHead>
-                      <TableHead className="text-right">الرصيد الحالي</TableHead>
+                      <TableHead className="text-right">
+                        الرصيد الحالي
+                      </TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right">المورد</TableHead>
                       <TableHead className="text-right">القيمة</TableHead>
@@ -515,22 +562,42 @@ const StockBalanceReportsPage = () => {
                             {item.code}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {item.name}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{item.category}</Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{item.department}</TableCell>
-                        <TableCell className="text-sm">{item.division}</TableCell>
-                        <TableCell className="text-sm">{item.unitName}</TableCell>
-                        <TableCell className="text-center">{item.minStock}</TableCell>
-                        <TableCell className="text-center">{item.maxStock}</TableCell>
+                        <TableCell className="text-sm">
+                          {item.department}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {item.division}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {item.unitName}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.minStock}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {item.maxStock}
+                        </TableCell>
                         <TableCell>
-                          <span className={`font-bold ${getStockColor(item.currentStock, item.minStock, item.maxStock)}`}>
+                          <span
+                            className={`font-bold ${getStockColor(
+                              item.currentStock,
+                              item.minStock,
+                              item.maxStock
+                            )}`}
+                          >
                             {item.currentStock}
                           </span>
                         </TableCell>
                         <TableCell>{getStatusBadge(item.status)}</TableCell>
-                        <TableCell className="text-sm">{item.supplier}</TableCell>
+                        <TableCell className="text-sm">
+                          {item.supplier}
+                        </TableCell>
                         <TableCell className="font-medium">
                           {(item.totalValue / 1000).toFixed(0)}K
                         </TableCell>
@@ -541,16 +608,6 @@ const StockBalanceReportsPage = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Critical Stock Alert */}
-          {statistics.criticalStock > 0 && (
-            <Alert className="border-red-200 bg-red-50">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-800">
-                هناك {statistics.criticalStock} مواد وصلت لمستوى حرج وتحتاج لاستكمال فوري!
-              </AlertDescription>
-            </Alert>
-          )}
         </>
       )}
     </div>

@@ -380,7 +380,6 @@ const CustodyPage = () => {
           {/* Table */}
           <div className="border rounded-lg">
             <Table dir="rtl">
-              {" "}
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-right">رمز الموجود</TableHead>

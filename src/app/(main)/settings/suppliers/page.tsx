@@ -29,12 +29,14 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  BarChart3,
   Edit,
   Phone,
   PlusCircle,
   Search,
   Trash2,
-  Truck
+  Truck,
+  TrendingUp
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -181,6 +183,22 @@ const SuppliersPage = () => {
 
   const activeSuppliersCount = getActiveSuppliers().length;
   const totalSuppliersCount = suppliersList.length;
+  const inactiveSuppliersCount = totalSuppliersCount - activeSuppliersCount;
+
+  // Calculate category breakdown
+  const categoriesBreakdown = useMemo(() => {
+    const breakdown: Record<string, number> = {};
+    suppliersList.forEach(supplier => {
+      breakdown[supplier.category] = (breakdown[supplier.category] || 0) + 1;
+    });
+    return breakdown;
+  }, [suppliersList]);
+
+  const topCategory = useMemo(() => {
+    const entries = Object.entries(categoriesBreakdown);
+    if (entries.length === 0) return null;
+    return entries.reduce((max, curr) => curr[1] > max[1] ? curr : max);
+  }, [categoriesBreakdown]);
 
   return (
     <div className="space-y-6">
@@ -196,16 +214,16 @@ const SuppliersPage = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               إجمالي الموردين
             </CardTitle>
-            <Truck className="h-4 w-4 text-blue-600" />
+            <Truck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold">
               {totalSuppliersCount}
             </div>
             <p className="text-xs text-muted-foreground">مورد مسجل</p>
@@ -217,13 +235,45 @@ const SuppliersPage = () => {
             <CardTitle className="text-sm font-medium">
               الموردين النشطون
             </CardTitle>
-            <Truck className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
               {activeSuppliersCount}
             </div>
             <p className="text-xs text-muted-foreground">مورد نشط</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              الموردين المتوقفون
+            </CardTitle>
+            <Truck className="h-4 w-4 text-red-600 dark:text-red-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+              {inactiveSuppliersCount}
+            </div>
+            <p className="text-xs text-muted-foreground">مورد متوقف</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              الفئة الأكثر استخداماً
+            </CardTitle>
+            <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {topCategory ? topCategory[0] : '-'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {topCategory ? `${topCategory[1]} مورد` : 'لا توجد بيانات'}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -273,6 +323,7 @@ const SuppliersPage = () => {
             <Table dir="rtl">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-right">رمز المورد</TableHead>
                   <TableHead className="text-right">اسم المورد</TableHead>
                   <TableHead className="text-right">الفئة</TableHead>
                   <TableHead className="text-right">الشخص المسؤول</TableHead>
@@ -291,6 +342,11 @@ const SuppliersPage = () => {
                 ) : (
                   filteredSuppliers.map((supplier) => (
                     <TableRow key={supplier.id}>
+                      <TableCell>
+                        <code className="px-2 py-1 bg-muted rounded text-sm">
+                          {supplier.code}
+                        </code>
+                      </TableCell>
                       <TableCell className="font-medium">{supplier.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{supplier.category}</Badge>
@@ -298,7 +354,7 @@ const SuppliersPage = () => {
                       <TableCell>{supplier.contactPerson || "-"}</TableCell>
                       <TableCell className="font-mono text-sm">
                         <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
+                          <Phone className="h-4 w-4 text-muted-foreground" />
                           {supplier.phone}
                         </div>
                       </TableCell>

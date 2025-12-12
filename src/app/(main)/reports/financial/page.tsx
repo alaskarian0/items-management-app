@@ -230,9 +230,9 @@ const FinancialReportPage = () => {
       </div>
 
       {/* Net Value Card */}
-      <Card className="bg-gradient-to-br from-emerald-50 to-green-50">
+      <Card className="bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-green-500/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700">
+          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
             {stats.netValue >= 0 ? (
               <TrendingUp className="h-6 w-6" />
             ) : (
@@ -242,7 +242,7 @@ const FinancialReportPage = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-4xl font-bold text-green-700">
+          <div className="text-4xl font-bold text-green-700 dark:text-green-400">
             {stats.netValue.toLocaleString()} IQD
           </div>
           <p className="text-sm text-muted-foreground mt-2">
@@ -407,7 +407,7 @@ const FinancialReportPage = () => {
                     </span>
                   </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                   <div
                     className="h-2 rounded-full transition-all"
                     style={{
@@ -469,7 +469,7 @@ const FinancialReportPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div className="w-24 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                             <div
                               className="bg-blue-600 h-2 rounded-full"
                               style={{ width: `${percentage}%` }}

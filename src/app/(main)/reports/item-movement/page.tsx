@@ -182,14 +182,6 @@ const ItemMovementReportsPage = () => {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-4 mb-2">
-            <Link href="/reports">
-              <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                العودة للتقارير
-              </Button>
-            </Link>
-          </div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <History className="h-8 w-8" />
             تقارير حركة المواد
