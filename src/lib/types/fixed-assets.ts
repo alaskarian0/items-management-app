@@ -4,7 +4,7 @@
 import type { BaseEntity, DateRange } from './common';
 
 export interface FixedAsset extends BaseEntity {
-  assetCode: string;
+  assetCode: string; // RQ Code - Global identifier for the asset
   name: string;
   description?: string;
   category: string;
@@ -25,6 +25,8 @@ export interface FixedAsset extends BaseEntity {
   supplier?: string;
   notes?: string;
   images?: string[];
+  documentNumber?: string; // Document number - Global identifier for tracking
+  registrationCount?: number; // Number of times this asset appears in documents
 }
 
 export interface AssetCoding {
@@ -44,6 +46,8 @@ export interface AssetCustody {
   employeeId: number;
   employeeName: string;
   department: string;
+  division?: string;
+  unit?: string;
   position: string;
   startDate: Date;
   endDate?: Date;

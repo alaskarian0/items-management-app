@@ -66,6 +66,7 @@ import { type AssetConsumed } from "@/lib/types/fixed-assets";
 type ConsumedAssetView = AssetConsumed & {
   assetName: string;
   assetCode: string;
+  documentNumber?: string;
   consumedBy?: string;
   category: string;
   remainingValue: number;
@@ -78,6 +79,7 @@ const consumedAssetsView: ConsumedAssetView[] = assetConsumed.map(item => {
     ...item,
     assetName: asset?.name || 'غير معروف',
     assetCode: asset?.assetCode || 'غير معروف',
+    documentNumber: asset?.documentNumber,
     category: asset?.category || 'غير معروف',
     remainingValue: item.estimatedValue // For view purposes
   };
@@ -262,8 +264,9 @@ const ConsumedPage = () => {
             <Table dir="rtl">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="text-right">رمز الموجود</TableHead>
+                  <TableHead className="text-right">رقم المستند</TableHead>
                   <TableHead className="text-right">اسم الموجود</TableHead>
-                  <TableHead className="text-right">الرمز</TableHead>
                   <TableHead className="text-right">الفئة</TableHead>
                   <TableHead className="text-right">القيمة الأصلية</TableHead>
                   <TableHead className="text-right">القيمة المستهلكة</TableHead>
@@ -277,7 +280,7 @@ const ConsumedPage = () => {
               <TableBody>
                 {filteredAssets.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
                       لا توجد نتائج
                     </TableCell>
                   </TableRow>
@@ -290,12 +293,21 @@ const ConsumedPage = () => {
 
                     return (
                       <TableRow key={asset.id}>
-                        <TableCell className="font-medium text-right">{asset.assetName}</TableCell>
                         <TableCell className="text-right">
                           <code className="px-2 py-1 bg-muted rounded text-sm">
                             {asset.assetCode}
                           </code>
                         </TableCell>
+                        <TableCell className="text-right">
+                          {asset.documentNumber ? (
+                            <code className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 rounded text-sm text-blue-700 dark:text-blue-300">
+                              {asset.documentNumber}
+                            </code>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">غير محدد</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium text-right">{asset.assetName}</TableCell>
                         <TableCell className="text-right">{asset.category}</TableCell>
                         <TableCell className="text-right">{asset.estimatedValue.toLocaleString()}</TableCell>
                         <TableCell className="text-right">

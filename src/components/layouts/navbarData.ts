@@ -141,11 +141,6 @@ export const navbarData: NavbarData = {
           url: "/fixed-assets/consumed",
           icon: TrendingDown,
         },
-        {
-          title: "الممنوح",
-          url: "/fixed-assets/donated",
-          icon: Gift,
-        },
       ],
     },
     {

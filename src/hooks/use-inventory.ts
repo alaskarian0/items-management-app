@@ -224,3 +224,57 @@ export const saveRequest = async (requestData: Omit<import('@/lib/db').RequestRe
         status: 'pending'
     });
 };
+
+// Fetch Documents with details
+export function useDocuments(warehouseId?: number) {
+    return useLiveQuery(async () => {
+        let query = db.documents.orderBy('date').reverse();
+
+        if (warehouseId) {
+            query = db.documents.where('warehouseId').equals(warehouseId).reverse();
+        }
+
+        const documents = await query.toArray();
+
+        // Get all related data for joins
+        const allWarehouses = await db.warehouses.toArray();
+        const allDepartments = await db.departments.toArray();
+        const allDivisions = await db.divisions.toArray();
+        const allUnits = await db.units.toArray();
+        const allSuppliers = await db.suppliers.toArray();
+
+        // Join details and ensure proper types
+        return documents.map(doc => {
+            const warehouse = allWarehouses.find(w => w.id === doc.warehouseId);
+            const department = allDepartments.find(d => d.id === doc.departmentId);
+            const division = allDivisions.find(d => d.id === doc.divisionId);
+            const unit = allUnits.find(u => u.id === doc.unitId);
+            const supplier = allSuppliers.find(s => s.id === doc.supplierId);
+
+            return {
+                id: doc.id!,
+                docNumber: doc.docNumber,
+                type: doc.type,
+                date: doc.date.toISOString(),
+                warehouseId: doc.warehouseId,
+                warehouseName: warehouse?.name || '',
+                departmentId: doc.departmentId,
+                departmentName: department?.name || '',
+                divisionId: doc.divisionId,
+                divisionName: division?.name,
+                unitId: doc.unitId,
+                unitName: unit?.name,
+                supplierId: doc.supplierId,
+                supplierName: supplier?.name,
+                recipientName: doc.recipientName,
+                entryType: doc.entryType as "purchases" | "gifts" | "returns" | undefined,
+                itemCount: doc.itemCount,
+                totalValue: doc.totalValue || 0,
+                notes: doc.notes,
+                status: doc.status,
+                createdAt: doc.createdAt.toISOString(),
+                updatedAt: doc.createdAt.toISOString()
+            } as any;
+        });
+    }, [warehouseId]);
+}

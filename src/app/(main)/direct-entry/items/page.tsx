@@ -8,12 +8,20 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { produce } from 'immer';
 import {
   ChevronDown,
   ChevronRight,
   Edit,
   File as FileIcon,
+  Filter,
   Folder,
   FolderTree,
   Hash,
@@ -22,7 +30,8 @@ import {
   PlusCircle,
   Search,
   Trash2,
-  Warehouse
+  Warehouse,
+  X
 } from "lucide-react";
 import { useMemo, useState } from 'react';
 
@@ -433,6 +442,45 @@ const ItemsPage = () => {
   const [formData, setFormData] = useState({ name: '', code: '', quantity: '', unit: '' });
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filters
+  const [filterStore, setFilterStore] = useState<string>('');
+  const [filterGroup, setFilterGroup] = useState<string>('');
+
+  // Apply filters to tree data
+  const filteredTreeData = useMemo(() => {
+    let filtered = treeData;
+
+    // Filter by store
+    if (filterStore) {
+      filtered = filtered.filter(store => store.id === filterStore);
+    }
+
+    // Filter by group
+    if (filterGroup) {
+      filtered = filtered.map(store => ({
+        ...store,
+        groups: store.groups.filter(group => group.id === filterGroup)
+      })).filter(store => store.groups.length > 0);
+    }
+
+    return filtered;
+  }, [treeData, filterStore, filterGroup]);
+
+  // Get available groups based on selected store
+  const availableGroups = useMemo(() => {
+    if (!filterStore) {
+      return treeData.flatMap(store => store.groups);
+    }
+    const store = treeData.find(s => s.id === filterStore);
+    return store?.groups || [];
+  }, [treeData, filterStore]);
+
+  // Clear filters function
+  const clearFilters = () => {
+    setFilterStore('');
+    setFilterGroup('');
+  };
+
   // Calculate statistics
   const stats = useMemo(() => {
     const totalStores = treeData.length;
@@ -658,13 +706,14 @@ const ItemsPage = () => {
               className="shrink-0"
             >
               <PlusCircle className="ml-2 h-4 w-4" />
-              إضافة مخزن
+              إضافة مجموعة جديدة
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-6">
-          {/* Search */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          {/* Search and Filters */}
+          <div className="space-y-4 mb-6">
+            {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -674,22 +723,92 @@ const ItemsPage = () => {
                 className="pr-10"
               />
             </div>
+
+            {/* Filters Section */}
+            <div className="border rounded-lg p-4 bg-muted/30">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-semibold">التصفية</Label>
+                </div>
+                {(filterStore || filterGroup) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-7 text-xs"
+                  >
+                    <X className="h-3 w-3 ml-1" />
+                    مسح الفلاتر
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Store Filter */}
+                <div className="space-y-2">
+                  <Label htmlFor="filter-store" className="text-xs">المخزن</Label>
+                  <Select
+                    value={filterStore || "all"}
+                    onValueChange={(value) => {
+                      setFilterStore(value === "all" ? "" : value);
+                      if (value === "all") {
+                        setFilterGroup("");
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="filter-store" className="h-9">
+                      <SelectValue placeholder="كل المخازن" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">كل المخازن</SelectItem>
+                      {treeData.map((store) => (
+                        <SelectItem key={store.id} value={store.id}>
+                          {store.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Group Filter */}
+                <div className="space-y-2">
+                  <Label htmlFor="filter-group" className="text-xs">المجموعة</Label>
+                  <Select
+                    value={filterGroup || "all"}
+                    onValueChange={(value) => setFilterGroup(value === "all" ? "" : value)}
+                    disabled={!filterStore && availableGroups.length === 0}
+                  >
+                    <SelectTrigger id="filter-group" className="h-9">
+                      <SelectValue placeholder="كل المجموعات" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">كل المجموعات</SelectItem>
+                      {availableGroups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Tree */}
-          {treeData.length === 0 ? (
+          {filteredTreeData.length === 0 ? (
             <div className="text-center py-12">
               <FolderTree className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">لا توجد بيانات</h3>
-              <p className="text-sm text-muted-foreground mb-4">ابدأ بإضافة مخزن جديد</p>
+              <p className="text-sm text-muted-foreground mb-4">ابدأ بإضافة مجموعة جديدة</p>
               <Button onClick={() => openModal('add', 'store', { id: `temp-${Date.now()}`, name: '' })}>
                 <PlusCircle className="ml-2 h-4 w-4" />
-                إضافة مخزن
+                إضافة مجموعة جديدة
               </Button>
             </div>
           ) : (
             <div className="space-y-0.5">
-              {treeData.map((store) => (
+              {filteredTreeData.map((store) => (
                 <StoreNode
                   key={store.id}
                   store={store}

@@ -81,6 +81,8 @@ export const fixedAssets: FixedAsset[] = [
     supplier: "شركة التقنية المتقدمة",
     notes: "جهاز حديث للاستخدام الهندسي",
     images: [],
+    documentNumber: "إدخ-2024-001",
+    registrationCount: 1,
     createdAt: "2024-01-15T00:00:00Z",
     updatedAt: "2024-01-15T00:00:00Z"
   },
@@ -107,6 +109,8 @@ export const fixedAssets: FixedAsset[] = [
     supplier: "شركة الأوائل للأجهزة الكهربائية",
     notes: "طابعة للكتيبات والتقارير",
     images: [],
+    documentNumber: "إدخ-2024-002",
+    registrationCount: 2,
     createdAt: "2024-02-01T00:00:00Z",
     updatedAt: "2024-02-01T00:00:00Z"
   },
@@ -133,6 +137,8 @@ export const fixedAssets: FixedAsset[] = [
     supplier: "شركة النبلاء للأثاث",
     notes: "مكتب مدير عام القسم",
     images: [],
+    documentNumber: "إدخ-2024-001",
+    registrationCount: 1,
     createdAt: "2024-01-20T00:00:00Z",
     updatedAt: "2024-01-20T00:00:00Z"
   },
@@ -158,6 +164,8 @@ export const fixedAssets: FixedAsset[] = [
     supplier: "شركة النبلاء للأثاث",
     notes: "كرسي محاسب",
     images: [],
+    documentNumber: "إدخ-2024-003",
+    registrationCount: 3,
     createdAt: "2024-03-10T00:00:00Z",
     updatedAt: "2024-03-10T00:00:00Z"
   },
@@ -185,6 +193,8 @@ export const fixedAssets: FixedAsset[] = [
     supplier: "وكالة Toyota",
     notes: "سيارة مدير عام",
     images: [],
+    documentNumber: "إدخ-2024-004",
+    registrationCount: 1,
     createdAt: "2024-04-05T00:00:00Z",
     updatedAt: "2024-04-05T00:00:00Z"
   }
@@ -237,28 +247,106 @@ export const assetCustodies: AssetCustody[] = [
 export const assetConsumed: AssetConsumed[] = [
   {
     id: 1,
-    assetId: 6,
-    asset: {} as FixedAsset, // Would be populated with actual asset
+    assetId: 1,
+    asset: {} as FixedAsset,
     consumptionDate: new Date("2024-11-15"),
-    consumptionReason: "عطل فني لا يمكن إصلاحه",
+    consumptionReason: "تلف نتيجة حريق في المبنى",
     consumptionMethod: "damage",
-    estimatedValue: 120000,
+    estimatedValue: 3500000,
     approvedBy: 1,
     approvedAt: new Date("2024-11-16"),
-    notes: "تلف كامل للجهاز",
+    notes: "تلف كامل للجهاز بسبب الحريق",
     status: "approved"
   },
   {
     id: 2,
-    assetId: 7,
+    assetId: 2,
     asset: {} as FixedAsset,
     consumptionDate: new Date("2024-10-20"),
     consumptionReason: "انتهاء العمر الافتراضي",
     consumptionMethod: "end-of-life",
-    estimatedValue: 50000,
+    estimatedValue: 480000,
     approvedBy: 1,
     approvedAt: new Date("2024-10-21"),
-    notes: "جهاز قديم لم يعد يعمل",
+    notes: "جهاز قديم لم يعد يعمل بشكل جيد",
+    status: "approved"
+  },
+  {
+    id: 3,
+    assetId: 3,
+    asset: {} as FixedAsset,
+    consumptionDate: new Date("2024-09-10"),
+    consumptionReason: "سرقة من المخزن",
+    consumptionMethod: "theft",
+    estimatedValue: 2100000,
+    approvedBy: 1,
+    approvedAt: new Date("2024-09-12"),
+    notes: "تم تقديم بلاغ للشرطة",
+    status: "approved"
+  },
+  {
+    id: 4,
+    assetId: 4,
+    asset: {} as FixedAsset,
+    consumptionDate: new Date("2024-08-15"),
+    consumptionReason: "فقدان أثناء عملية النقل",
+    consumptionMethod: "loss",
+    estimatedValue: 76500,
+    approvedBy: 1,
+    approvedAt: new Date("2024-08-16"),
+    notes: "ضياع الكرسي أثناء نقل المكتب",
+    status: "approved"
+  },
+  {
+    id: 5,
+    assetId: 5,
+    asset: {} as FixedAsset,
+    consumptionDate: new Date("2024-07-20"),
+    consumptionReason: "حادث سير",
+    consumptionMethod: "damage",
+    estimatedValue: 23800000,
+    approvedBy: 1,
+    approvedAt: new Date("2024-07-22"),
+    notes: "تلف كلي للمركبة بسبب حادث",
+    status: "approved"
+  },
+  {
+    id: 6,
+    assetId: 1,
+    asset: {} as FixedAsset,
+    consumptionDate: new Date("2024-06-05"),
+    consumptionReason: "إتلاف حسب تعليمات الإدارة",
+    consumptionMethod: "disposal",
+    estimatedValue: 3200000,
+    approvedBy: 1,
+    approvedAt: new Date("2024-06-06"),
+    notes: "أجهزة قديمة تم إتلافها حسب الأصول",
+    status: "approved"
+  },
+  {
+    id: 7,
+    assetId: 3,
+    asset: {} as FixedAsset,
+    consumptionDate: new Date("2024-05-12"),
+    consumptionReason: "انتهاء الصلاحية",
+    consumptionMethod: "end-of-life",
+    estimatedValue: 1890000,
+    approvedBy: 1,
+    approvedAt: new Date("2024-05-13"),
+    notes: "معدات قديمة انتهى عمرها الافتراضي",
+    status: "pending"
+  },
+  {
+    id: 8,
+    assetId: 2,
+    asset: {} as FixedAsset,
+    consumptionDate: new Date("2024-04-08"),
+    consumptionReason: "تلف بسبب عطل كهربائي",
+    consumptionMethod: "damage",
+    estimatedValue: 450000,
+    approvedBy: 1,
+    approvedAt: new Date("2024-04-09"),
+    notes: "تلف نتيجة ارتفاع الجهد الكهربائي",
     status: "approved"
   }
 ];

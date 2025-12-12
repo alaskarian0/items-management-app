@@ -47,7 +47,7 @@ import { useWarehouse } from "@/context/warehouse-context";
 import { saveDocument, useItems, useSuppliers } from "@/hooks/use-inventory";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { AlertCircle, CalendarIcon, Loader2, PlusCircle, Save, Search, Trash2, Zap } from "lucide-react";
+import { AlertCircle, CalendarIcon, DollarSign, Info, Loader2, Package, PlusCircle, Save, Search, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -349,19 +349,6 @@ const QuickEntryPage = () => {
                           {u.name}
                         </SelectItem>
                       ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>نوع الإدخال</Label>
-                <Select value={entryType} onValueChange={setEntryType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر نوع الإدخال..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gifts">هدايا وندور</SelectItem>
-                    <SelectItem value="purchases">مشتريات</SelectItem>
-                    <SelectItem value="returned">مرتجع</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -796,7 +783,7 @@ const QuickEntryPage = () => {
 
             <div className="space-y-1 border-t pt-2">
               <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                <CalendarIconLucide className="h-3 w-3" /> آخر إدخال
+                <CalendarIcon className="h-3 w-3" /> آخر إدخال
               </div>
 
               <div className="text-sm">{(focusedItem as any).lastEntryDate || '-'}</div>

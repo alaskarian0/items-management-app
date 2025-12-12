@@ -62,12 +62,13 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useDocuments } from "@/hooks/use-inventory";
 
 // Import shared data and types
 import {
   documentStatusOptions,
   documentTypeOptions,
-  warehouseDocuments
+  warehouseDocuments as fallbackDocuments
 } from "@/lib/data/warehouse-data";
 import { type WarehouseDocument } from "@/lib/types/warehouse";
 
@@ -82,6 +83,12 @@ const WarehouseDocumentsPage = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<WarehouseDocument | null>(null);
+
+  // Fetch documents from database
+  const dbDocuments = useDocuments(selectedWarehouse?.id);
+
+  // Use database documents if available, otherwise fall back to static data
+  const warehouseDocuments = dbDocuments && dbDocuments.length > 0 ? dbDocuments : fallbackDocuments;
 
   // Filter documents based on search and filters
   const filteredDocuments = useMemo(() => {
@@ -142,6 +149,7 @@ const WarehouseDocumentsPage = () => {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }, [
+    warehouseDocuments,
     selectedWarehouse,
     searchTerm,
     typeFilter,
@@ -231,9 +239,11 @@ const WarehouseDocumentsPage = () => {
     );
   };
 
-  const uniqueDepartments = [
-    ...new Set(warehouseDocuments.map((d) => d.departmentName)),
-  ].filter(Boolean);
+  const uniqueDepartments = useMemo(() => {
+    return [
+      ...new Set(warehouseDocuments.map((d) => d.departmentName)),
+    ].filter(Boolean);
+  }, [warehouseDocuments]);
 
   return (
     <div className="space-y-6">
