@@ -83,12 +83,14 @@ export interface ItemMovement {
   id: number;
   itemCode: string;
   itemName: string;
+  unit: string;
   movementType: "إدخال" | "إصدار";
   quantity: number;
   balance: number;
   referenceNumber: string;
   date: string;
   department?: string;
+  division?: string;
   recipient?: string;
   supplier?: string;
   notes?: string;

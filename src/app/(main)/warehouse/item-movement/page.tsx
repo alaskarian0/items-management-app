@@ -141,9 +141,9 @@ const ItemMovementPage = () => {
   }, [searchTerm, movementTypeFilter, itemTypeFilter, departmentFilter, divisionFilter, unitFilter, dateFrom, dateTo]);
 
   // Extract unique values for filters
-  const departments = [...new Set(itemMovements.map((m) => m.department))];
-  const divisions = [...new Set(itemMovements.map((m) => m.division))].filter(Boolean);
-  const units = [...new Set(itemMovements.map((m) => m.division))].filter(Boolean);
+  const departments = [...new Set(itemMovements.map((m) => m.department))].filter(Boolean) as string[];
+  const divisions = [...new Set(itemMovements.map((m) => m.division))].filter(Boolean) as string[];
+  const units = [...new Set(itemMovements.map((m) => m.division))].filter(Boolean) as string[];
   const itemTypes = [...new Set(itemMovements.map((m) => m.movementType))];
 
   // Calculate statistics
