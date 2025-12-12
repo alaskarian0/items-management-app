@@ -45,7 +45,8 @@ import { useMemo, useState } from "react";
 // Import shared data and types
 import {
   movementTypes,
-  warehouses
+  warehouses,
+  itemMovements as fallbackMovements
 } from "@/lib/data/warehouse-data";
 import { useMovements } from "@/hooks/use-inventory";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -56,7 +57,12 @@ import { Badge } from "@/components/ui/badge";
 
 const ItemMovementPage = () => {
   const { selectedWarehouse } = useWarehouse();
-  const itemMovements = useMovements(selectedWarehouse?.id || 0) || [];
+
+  // Fetch movements from database
+  const dbMovements = useMovements(selectedWarehouse?.id || 0);
+
+  // Use database movements if available, otherwise fall back to static data
+  const itemMovements = dbMovements && dbMovements.length > 0 ? dbMovements : fallbackMovements;
   const [searchTerm, setSearchTerm] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState<string>("all");
   const [itemTypeFilter, setItemTypeFilter] = useState<string>("all");

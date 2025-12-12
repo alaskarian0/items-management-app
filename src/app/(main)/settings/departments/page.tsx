@@ -733,25 +733,6 @@ const DepartmentsPage = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="divHead">رئيس الشعبة</Label>
-              <Input
-                id="divHead"
-                value={divisionForm.headOfDivision}
-                onChange={(e) => setDivisionForm(f => ({ ...f, headOfDivision: e.target.value }))}
-                placeholder="اسم رئيس الشعبة"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="divEmployees">عدد الموظفين</Label>
-              <Input
-                id="divEmployees"
-                type="number"
-                value={divisionForm.employeeCount}
-                onChange={(e) => setDivisionForm(f => ({ ...f, employeeCount: parseInt(e.target.value) || 0 }))}
-                placeholder="عدد الموظفين في الشعبة"
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="divDepartment">القسم التابع له</Label>
               <select
                 id="divDepartment"
@@ -824,25 +805,6 @@ const DepartmentsPage = () => {
                 onChange={(e) => setUnitForm(f => ({ ...f, description: e.target.value }))}
                 placeholder="وصف الوحدة ومسؤولياتها"
                 rows={3}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unitHead">رئيس الوحدة</Label>
-              <Input
-                id="unitHead"
-                value={unitForm.unitHead}
-                onChange={(e) => setUnitForm(f => ({ ...f, unitHead: e.target.value }))}
-                placeholder="اسم رئيس الوحدة"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unitEmployees">عدد الموظفين</Label>
-              <Input
-                id="unitEmployees"
-                type="number"
-                value={unitForm.employeeCount}
-                onChange={(e) => setUnitForm(f => ({ ...f, employeeCount: parseInt(e.target.value) || 0 }))}
-                placeholder="عدد الموظفين في الوحدة"
               />
             </div>
             <div className="space-y-2">
