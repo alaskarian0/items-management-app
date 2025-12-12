@@ -305,7 +305,6 @@ const ItemIssuancePage = () => {
                     <TableHead className="text-right">
                       الكمية المطلوبة
                     </TableHead>
-                    <TableHead className="text-right">اسم المورد</TableHead>
                     <TableHead className="text-right">ملاحظات</TableHead>
                     <TableHead className="text-right">إجراء</TableHead>
                   </TableRow>
@@ -314,7 +313,7 @@ const ItemIssuancePage = () => {
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={7}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -494,32 +493,6 @@ const ItemIssuancePage = () => {
                             className="w-24 text-right"
                             min="1"
                           />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Select
-                            value={item.vendorId ? String(item.vendorId) : ""}
-                            onValueChange={(value) => {
-                              const selectedSupplier = suppliers.find(
-                                (s) => s.id === Number(value)
-                              );
-                              updateItemsList((draft) => {
-                                draft[index].vendorId = Number(value);
-                                draft[index].vendorName =
-                                  selectedSupplier?.name || "";
-                              });
-                            }}
-                          >
-                            <SelectTrigger className="w-48">
-                              <SelectValue placeholder="اختر المورد..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {suppliers.map((s) => (
-                                <SelectItem key={s.id} value={String(s.id)}>
-                                  {s.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                         </TableCell>
                         <TableCell className="text-right">
                           <Input

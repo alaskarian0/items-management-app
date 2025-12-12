@@ -80,6 +80,7 @@ const ItemEntryPage = () => {
   const [division, setDivision] = useState<string>();
   const [unit, setUnit] = useState<string>();
   const [supplier, setSupplier] = useState<string>();
+  const [recipientName, setRecipientName] = useState("");
   const [notes, setNotes] = useState("");
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
@@ -97,6 +98,10 @@ const ItemEntryPage = () => {
         price: 0,
         vendorName: "",
         vendorId: null,
+        invoiceNumber: "",
+        warrantyPeriod: 1,
+        warrantyUnit: "year",
+        expiryDate: undefined,
       });
     });
   };
@@ -286,6 +291,14 @@ const ItemEntryPage = () => {
                   onChange={(e) => setDocNumber(e.target.value)}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>اسم المستلم</Label>
+                <Input
+                  value={recipientName}
+                  onChange={(e) => setRecipientName(e.target.value)}
+                  placeholder="أدخل اسم المستلم"
+                />
+              </div>
               <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-4">
                 <Label>البيان أو الملاحظات العامة</Label>
                 <Textarea
@@ -317,6 +330,8 @@ const ItemEntryPage = () => {
                     <TableHead className="text-right">الكمية</TableHead>
                     <TableHead className="text-right">سعر المفرد</TableHead>
                     <TableHead className="text-right">اسم المورد</TableHead>
+                    <TableHead className="text-right">رقم الفاتورة</TableHead>
+                    <TableHead className="text-right">تاريخ الانتهاء</TableHead>
                     <TableHead className="text-right">الضمان</TableHead>
                     <TableHead className="text-right">إجراء</TableHead>
                   </TableRow>
@@ -325,7 +340,7 @@ const ItemEntryPage = () => {
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={10}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -531,17 +546,77 @@ const ItemEntryPage = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <Input
-                            value={item.warranty || ""}
+                            value={item.invoiceNumber || ""}
                             onChange={(e) =>
                               handleItemChange(
                                 index,
-                                "warranty",
+                                "invoiceNumber",
                                 e.target.value
                               )
                             }
-                            placeholder="مثال: سنة"
+                            placeholder="رقم الفاتورة"
                             className="w-32 text-right"
                           />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className="w-full justify-start text-right font-normal"
+                              >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {item.expiryDate ? (
+                                  format(item.expiryDate, "PPP", { locale: ar })
+                                ) : (
+                                  <span>اختر تاريخ الانتهاء</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={item.expiryDate}
+                                onSelect={(date) =>
+                                  handleItemChange(index, "expiryDate", date)
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              type="number"
+                              value={item.warrantyPeriod || 1}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "warrantyPeriod",
+                                  Number(e.target.value)
+                                )
+                              }
+                              placeholder="1"
+                              className="w-16 text-right"
+                              min="1"
+                            />
+                            <Select
+                              value={item.warrantyUnit || "year"}
+                              onValueChange={(value) =>
+                                handleItemChange(index, "warrantyUnit", value)
+                              }
+                            >
+                              <SelectTrigger className="w-24">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="day">يوم</SelectItem>
+                                <SelectItem value="month">شهر</SelectItem>
+                                <SelectItem value="year">سنة</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

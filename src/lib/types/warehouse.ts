@@ -61,9 +61,13 @@ export interface DocumentItem {
   price?: number;
   stock?: number;
   warranty?: string;
+  warrantyPeriod?: number;
+  warrantyUnit?: "day" | "month" | "year";
+  expiryDate?: Date;
   notes?: string;
   vendorName?: string;
   vendorId?: number;
+  invoiceNumber?: string;
 }
 
 export interface StockItem extends Item {

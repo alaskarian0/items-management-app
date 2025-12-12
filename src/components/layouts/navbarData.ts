@@ -17,6 +17,10 @@ import {
   TrendingDown,
   Gift,
   BarChart3,
+  BellRing,
+  Bell,
+  ShieldAlert,
+  CalendarClock,
 } from "lucide-react";
 
 export interface NavItem {
@@ -76,6 +80,28 @@ export const navbarData: NavbarData = {
           title: "الرصيد المخزني",
           url: "/warehouse/stock-balance",
           icon: Boxes,
+        },
+      ],
+    },
+    {
+      title: "التنبيهات والإشعارات",
+      url: "/alerts",
+      icon: Bell,
+      items: [
+        {
+          title: "تنبيهات إعادة الطلب",
+          url: "/alerts/reorder-alerts",
+          icon: BellRing,
+        },
+        {
+          title: "تنبيهات انتهاء الصلاحية",
+          url: "/alerts/expiry-alerts",
+          icon: CalendarClock,
+        },
+        {
+          title: "تنبيهات انتهاء الضمان",
+          url: "/alerts/warranty-alerts",
+          icon: ShieldAlert,
         },
       ],
     },
