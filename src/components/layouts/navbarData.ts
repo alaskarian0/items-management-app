@@ -111,12 +111,12 @@ export const navbarData: NavbarData = {
       items: [
         {
           title: "إدخال سريع",
-          url: "/new",
+          url: "/direct-entry/new",
           icon: PackagePlus,
         },
         {
           title: "شجرة المواد",
-          url: "/items",
+          url: "/direct-entry/items",
           icon: Boxes,
         },
       ],
