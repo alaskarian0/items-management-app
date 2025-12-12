@@ -3,6 +3,7 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -21,6 +22,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -44,6 +50,7 @@ import {
   AlertCircle,
   ArrowDownLeft,
   ArrowUpRight,
+  CalendarIcon,
   Download,
   Edit,
   Eye,
@@ -71,6 +78,8 @@ const WarehouseDocumentsPage = () => {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<WarehouseDocument | null>(null);
 
@@ -114,6 +123,21 @@ const WarehouseDocumentsPage = () => {
       );
     }
 
+    // Date range filter
+    if (dateFrom) {
+      filtered = filtered.filter(
+        (doc) => new Date(doc.date) >= dateFrom
+      );
+    }
+
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(
+        (doc) => new Date(doc.date) <= endOfDay
+      );
+    }
+
     return filtered.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -123,6 +147,8 @@ const WarehouseDocumentsPage = () => {
     typeFilter,
     statusFilter,
     departmentFilter,
+    dateFrom,
+    dateTo,
   ]);
 
   // Calculate statistics
@@ -147,6 +173,8 @@ const WarehouseDocumentsPage = () => {
     setTypeFilter("all");
     setStatusFilter("all");
     setDepartmentFilter("all");
+    setDateFrom(undefined);
+    setDateTo(undefined);
   };
 
   const handleDeleteDocument = (doc: WarehouseDocument) => {
@@ -367,6 +395,64 @@ const WarehouseDocumentsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Date Range Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">من تاريخ</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {dateFrom ? (
+                          format(dateFrom, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ البداية</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateFrom}
+                        onSelect={setDateFrom}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">إلى تاريخ</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {dateTo ? (
+                          format(dateTo, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ النهاية</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={setDateTo}
+                        initialFocus
+                        disabled={(date) => dateFrom ? date < dateFrom : false}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -384,9 +470,8 @@ const WarehouseDocumentsPage = () => {
                       <TableHead className="text-right">النوع</TableHead>
                       <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">القسم</TableHead>
-                      <TableHead className="text-right">
-                        المورد/المستلم
-                      </TableHead>
+                      <TableHead className="text-right">اسم المورد</TableHead>
+                      <TableHead className="text-right">اسم المستلم</TableHead>
                       <TableHead className="text-right">عدد المواد</TableHead>
                       <TableHead className="text-right">القيمة</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
@@ -397,7 +482,7 @@ const WarehouseDocumentsPage = () => {
                     {filteredDocuments.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={9}
+                          colSpan={10}
                           className="text-center py-8 text-muted-foreground"
                         >
                           لا توجد مستندات مطابقة للفلاتر المحددة
@@ -430,9 +515,10 @@ const WarehouseDocumentsPage = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right text-sm">
-                            {doc.type === "entry"
-                              ? doc.supplierName
-                              : doc.recipientName}
+                            {doc.supplierName || "-"}
+                          </TableCell>
+                          <TableCell className="text-right text-sm">
+                            {doc.recipientName || "-"}
                           </TableCell>
                           <TableCell className="text-right">
                             <Badge variant="outline">{doc.itemCount}</Badge>

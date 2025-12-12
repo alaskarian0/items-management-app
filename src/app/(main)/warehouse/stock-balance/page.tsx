@@ -449,7 +449,6 @@ const StockBalancePage = () => {
                       <TableHead className="text-right">المجموعة</TableHead>
                       <TableHead className="text-right">المورد</TableHead>
                       <TableHead className="text-right">الحد الأدنى</TableHead>
-                      <TableHead className="text-right">الحد الأعلى</TableHead>
                       <TableHead className="text-right">الرصيد الحالي</TableHead>
                       <TableHead className="text-right">الحالة</TableHead>
                       <TableHead className="text-right">آخر شراء</TableHead>
@@ -479,7 +478,6 @@ const StockBalancePage = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-center">{item.minStock}</TableCell>
-                          <TableCell className="text-center">{(item as any).maxStock}</TableCell>
                           <TableCell>
                             <span className={`font-bold text-lg ${getStockStatusColor(item.stock, item.minStock || 0, (item as any).maxStock || 100)}`}>
                               {item.stock}
@@ -502,7 +500,7 @@ const StockBalancePage = () => {
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={11}
+                          colSpan={10}
                           className="text-center text-muted-foreground h-24"
                         >
                           لا توجد مواد تطابق معايير البحث والتصفية

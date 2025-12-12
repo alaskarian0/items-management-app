@@ -54,7 +54,8 @@ const ItemMovementPage = () => {
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [divisionFilter, setDivisionFilter] = useState<string>("all");
   const [unitFilter, setUnitFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<Date | undefined>();
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
 
   // Filter movements based on search and filters
   const filteredMovements = useMemo(() => {
@@ -98,15 +99,23 @@ const ItemMovementPage = () => {
       );
     }
 
-    // Date filter
-    if (dateFilter) {
+    // Date range filter
+    if (dateFrom) {
       filtered = filtered.filter(
-        (movement) => new Date(movement.date).toDateString() === dateFilter.toDateString()
+        (movement) => new Date(movement.date) >= dateFrom
+      );
+    }
+
+    if (dateTo) {
+      const endOfDay = new Date(dateTo);
+      endOfDay.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(
+        (movement) => new Date(movement.date) <= endOfDay
       );
     }
 
     return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [searchTerm, movementTypeFilter, itemTypeFilter, departmentFilter, divisionFilter, unitFilter, dateFilter]);
+  }, [searchTerm, movementTypeFilter, itemTypeFilter, departmentFilter, divisionFilter, unitFilter, dateFrom, dateTo]);
 
   // Extract unique values for filters
   const departments = [...new Set(itemMovements.map((m) => m.department))];
@@ -130,7 +139,8 @@ const ItemMovementPage = () => {
     setDepartmentFilter("all");
     setDivisionFilter("all");
     setUnitFilter("all");
-    setDateFilter(undefined);
+    setDateFrom(undefined);
+    setDateTo(undefined);
   };
 
   return (
@@ -272,19 +282,61 @@ const ItemMovementPage = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Date Range Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">من تاريخ</label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-48 justify-start text-right">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-right font-normal"
+                      >
                         <CalendarIcon className="ml-2 h-4 w-4" />
-                        {dateFilter ? format(dateFilter, "PPP", { locale: ar }) : "اختر التاريخ"}
+                        {dateFrom ? (
+                          format(dateFrom, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ البداية</span>
+                        )}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={dateFilter}
-                        onSelect={setDateFilter}
+                        selected={dateFrom}
+                        onSelect={setDateFrom}
                         initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">إلى تاريخ</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-right font-normal"
+                      >
+                        <CalendarIcon className="ml-2 h-4 w-4" />
+                        {dateTo ? (
+                          format(dateTo, "PPP", { locale: ar })
+                        ) : (
+                          <span>اختر تاريخ النهاية</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateTo}
+                        onSelect={setDateTo}
+                        initialFocus
+                        disabled={(date) => dateFrom ? date < dateFrom : false}
                       />
                     </PopoverContent>
                   </Popover>

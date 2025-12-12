@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -39,13 +40,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useNotificationStore } from "@/context/notification-store";
 import { useWarehouse } from "@/context/warehouse-context";
 import { saveDocument, useItems, useSuppliers } from "@/hooks/use-inventory";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { CalendarIcon, Calendar as CalendarIconLucide, DollarSign, Info, Package, PlusCircle, Search, Trash2, Zap } from "lucide-react";
+import { AlertCircle, CalendarIcon, Loader2, PlusCircle, Save, Search, Trash2, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useImmer } from "use-immer";
@@ -84,7 +87,13 @@ type DirectEntryItem = {
   itemCode: string;
   unit: string;
   quantity: number;
+  price?: number;
+  vendorName?: string;
+  vendorId?: number;
   invoiceNumber?: string;
+  warrantyPeriod?: number;
+  warrantyUnit?: "day" | "month" | "year";
+  expiryDate?: Date;
   notes?: string;
 };
 
@@ -135,69 +144,100 @@ const QuickEntryPage = () => {
         itemName: "",
         unit: "",
         quantity: 1,
+        price: 0,
+        vendorName: "",
+        vendorId: undefined,
+        invoiceNumber: "",
+        warrantyPeriod: 1,
+        warrantyUnit: "year",
+        expiryDate: undefined,
       });
     });
   };
 
-  const handleQuantityChange = (index: number, quantity: number) => {
+  const handleItemChange = <K extends keyof DirectEntryItem>(
+    index: number,
+    field: K,
+    value: DirectEntryItem[K]
+  ) => {
     updateItemsList((draft) => {
-      if (draft[index]) {
-        draft[index].quantity = quantity;
+      const item = draft[index];
+      if (item) {
+        item[field] = value;
+        if (field === "itemName") {
+          // Try to find if item exists in DB items
+          const selectedItem = items.find((i) => i.name === value);
+          if (selectedItem) {
+            item.unit = selectedItem.unit;
+            item.itemId = selectedItem.id;
+            item.itemCode = selectedItem.code;
+            if (selectedItem.price) {
+              item.price = selectedItem.price;
+            }
+          }
+        }
       }
     });
   };
 
-  const handleInvoiceNumberChange = (index: number, invoiceNumber: string) => {
-    updateItemsList((draft) => {
-      if (draft[index]) {
-        draft[index].invoiceNumber = invoiceNumber;
-      }
-    });
-  };
-
-  const handleNotesChange = (index: number, notes: string) => {
-    updateItemsList((draft) => {
-      if (draft[index]) {
-        draft[index].notes = notes;
-      }
-    });
-  };
   const handleRemoveItem = (index: number) => {
     updateItemsList((draft) => {
       draft.splice(index, 1);
     });
   };
 
+  const calculateTotal = () => {
+    return itemsList
+      .reduce((acc, item) => acc + item.quantity * (item.price || 0), 0)
+      .toFixed(2);
+  };
+
   const handleSave = async () => {
-    if (!selectedWarehouse || itemsList.length === 0 || !date) return;
-
     try {
-      setIsSaving(true);
-      await saveDocument({
-        docNumber,
-        type: 'entry',
-        entryType: entryType || 'purchases',
-        date: date,
-        warehouseId: selectedWarehouse.id,
-        departmentId: department ? Number(department) : undefined,
-        divisionId: division ? Number(division) : undefined,
-        unitId: unit ? Number(unit) : undefined,
-        recipientName,
-        itemCount: itemsList.length,
-        status: 'approved',
-        notes: generalNotes,
-      }, itemsList.map(i => ({ ...i, vendorName: supplierName })));
+      if (!selectedWarehouse) {
+        toast.error("الرجاء اختيار المخزن");
+        return;
+      }
+      if (!entryType) {
+        toast.error("الرجاء اختيار نوع الإدخال");
+        return;
+      }
+      if (itemsList.length === 0) {
+        toast.error("الرجاء إضافة مواد للقائمة");
+        return;
+      }
 
-      addNotification("تم الحفظ بنجاح", `تم إنشاء مستند الإدخال رقم ${docNumber}`, "success");
+      setIsSaving(true);
+
+      // Save Document
+      await saveDocument(
+        {
+          docNumber,
+          type: "entry",
+          date: date || new Date(),
+          warehouseId: selectedWarehouse.id,
+          departmentId: department ? Number(department) : undefined,
+          divisionId: division ? Number(division) : undefined,
+          unitId: unit ? Number(unit) : undefined,
+          entryType,
+          notes: generalNotes,
+          itemCount: itemsList.length,
+          totalValue: Number(calculateTotal()),
+          status: "approved",
+        },
+        itemsList
+      );
+
+      toast.success("تم حفظ مستند الإدخال بنجاح");
 
       // Reset Form
-      updateItemsList([]);
       setDocNumber((prev) => String(Number(prev) + 1));
-      setRecipientName("");
-
+      updateItemsList(() => []);
+      setGeneralNotes("");
+      setSearchValue("");
     } catch (error) {
-      console.error(error);
-      addNotification("خطأ في الحفظ", "حدث خطأ أثناء حفظ المستند", "error");
+      console.error("Error saving document:", error);
+      toast.error("حدث خطأ أثناء حفظ المستند");
     } finally {
       setIsSaving(false);
     }
@@ -368,51 +408,6 @@ const QuickEntryPage = () => {
                   placeholder="اسم المستلم"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>اسم المورد</Label>
-                <Popover
-                  open={supplierSearchOpen}
-                  onOpenChange={setSupplierSearchOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start text-right"
-                    >
-                      {supplierName || "ابحث عن اسم المورد..."}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="p-0"
-                    align="start"
-                    style={{ width: "var(--radix-popover-trigger-width)" }}
-                  >
-                    <Command>
-                      <CommandInput
-                        placeholder="ابحث عن مورد..."
-                        value={supplierSearchValue}
-                        onValueChange={setSupplierSearchValue}
-                      />
-                      <CommandList>
-                        <CommandEmpty>لم يتم العثور على مورد</CommandEmpty>
-                        <CommandGroup>
-                          {filteredSuppliers.map((supplier) => (
-                            <CommandItem
-                              key={supplier.id}
-                              onSelect={() => {
-                                setSupplierName(supplier.name);
-                                setSupplierSearchOpen(false);
-                              }}
-                            >
-                              {supplier.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -430,14 +425,15 @@ const QuickEntryPage = () => {
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-2/5 text-right">
-                      كود المادة
-                    </TableHead>
+                    <TableHead className="text-right">كود المادة</TableHead>
                     <TableHead className="text-right">اسم المادة</TableHead>
                     <TableHead className="text-right">الوحدة</TableHead>
                     <TableHead className="text-right">الكمية</TableHead>
+                    <TableHead className="text-right">سعر المفرد</TableHead>
+                    <TableHead className="text-right">اسم المورد</TableHead>
                     <TableHead className="text-right">رقم الفاتورة</TableHead>
-                    <TableHead className="text-right">ملاحظات</TableHead>
+                    <TableHead className="text-right">تاريخ الانتهاء</TableHead>
+                    <TableHead className="text-right">الضمان</TableHead>
                     <TableHead className="text-right">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -445,7 +441,7 @@ const QuickEntryPage = () => {
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={10}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -458,23 +454,19 @@ const QuickEntryPage = () => {
                         className={focusedItemIndex === index ? "bg-muted/50" : ""}
                         onClick={() => setFocusedItemIndex(index)}
                       >
-                        <TableCell className="text-right">
-                          {item.itemId ? (
-                            <div className="font-mono text-sm font-medium">
-                              {item.itemCode}
-                            </div>
-                          ) : (
-                            <Input
-                              value={item.itemCode || ""}
-                              onChange={(e) =>
-                                updateItemsList((draft) => {
-                                  draft[index].itemCode = e.target.value;
-                                })
-                              }
-                              placeholder="أدخل كود المادة"
-                              className="text-right"
-                            />
-                          )}
+                        <TableCell className="text-right w-32">
+                          <Input
+                            value={item.itemCode || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "itemCode",
+                                e.target.value
+                              )
+                            }
+                            placeholder="أدخل كود المادة"
+                            className="text-right"
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           {item.itemId ? (
@@ -553,6 +545,8 @@ const QuickEntryPage = () => {
                                                   itemData.code;
                                                 draft[index].unit =
                                                   itemData.unit;
+                                                draft[index].price =
+                                                  itemData.price || 0;
                                               });
                                               setSearchOpen(false);
                                               setSearchValue("");
@@ -582,57 +576,125 @@ const QuickEntryPage = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {item.itemId ? (
-                            <span className="font-mono text-sm">
-                              {item.unit}
-                            </span>
-                          ) : (
-                            <Input
-                              value={item.unit || ""}
-                              onChange={(e) =>
-                                updateItemsList((draft) => {
-                                  draft[index].unit = e.target.value;
-                                })
-                              }
-                              placeholder="الوحدة"
-                              className="w-20 text-right"
-                            />
-                          )}
+                          <Input
+                            value={item.unit || ""}
+                            onChange={(e) =>
+                              handleItemChange(index, "unit", e.target.value)
+                            }
+                            placeholder="الوحدة"
+                            className="w-20 text-right"
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           <Input
                             type="number"
                             value={item.quantity}
                             onChange={(e) =>
-                              handleQuantityChange(
+                              handleItemChange(
                                 index,
+                                "quantity",
                                 Number(e.target.value)
                               )
                             }
                             className="w-24 text-right"
+                            min="1"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            value={item.price}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "price",
+                                Number(e.target.value)
+                              )
+                            }
+                            placeholder="السعر"
+                            className="w-24 text-right"
                             min="0"
-                            step="0.01"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            value={item.vendorName || ""}
+                            onChange={(e) =>
+                              handleItemChange(index, "vendorName", e.target.value)
+                            }
+                            placeholder="اسم المورد"
+                            className="w-32 text-right"
                           />
                         </TableCell>
                         <TableCell className="text-right">
                           <Input
                             value={item.invoiceNumber || ""}
                             onChange={(e) =>
-                              handleInvoiceNumberChange(index, e.target.value)
+                              handleItemChange(index, "invoiceNumber", e.target.value)
                             }
-                            placeholder="رقم الفاتورة..."
+                            placeholder="رقم الفاتورة"
                             className="w-32 text-right"
                           />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Input
-                            value={item.notes || ""}
-                            onChange={(e) =>
-                              handleNotesChange(index, e.target.value)
-                            }
-                            placeholder="ملاحظات..."
-                            className="w-32 text-right"
-                          />
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant={"outline"}
+                                className="w-full justify-start text-right font-normal"
+                              >
+                                <CalendarIcon className="ml-2 h-4 w-4" />
+                                {item.expiryDate ? (
+                                  format(item.expiryDate, "PPP", { locale: ar })
+                                ) : (
+                                  <span>اختر تاريخ الانتهاء</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                              <Calendar
+                                mode="single"
+                                selected={item.expiryDate}
+                                onSelect={(date) =>
+                                  handleItemChange(index, "expiryDate", date)
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex gap-2">
+                            <Input
+                              type="number"
+                              value={item.warrantyPeriod || 1}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "warrantyPeriod",
+                                  Number(e.target.value)
+                                )
+                              }
+                              placeholder="المدة"
+                              className="w-20 text-right"
+                              min="1"
+                            />
+                            <Select
+                              value={item.warrantyUnit || "year"}
+                              onValueChange={(value) =>
+                                handleItemChange(index, "warrantyUnit", value as "day" | "month" | "year")
+                              }
+                            >
+                              <SelectTrigger className="w-24">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="day">يوم</SelectItem>
+                                <SelectItem value="month">شهر</SelectItem>
+                                <SelectItem value="year">سنة</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -667,18 +729,32 @@ const QuickEntryPage = () => {
                 <span className="text-2xl font-bold text-primary">
                   {itemsList.reduce((sum, item) => sum + item.quantity, 0)}
                 </span>
+                <span className="text-muted-foreground">|</span>
+                <span className="text-lg font-bold">الإجمالي:</span>
+                <span className="text-2xl font-bold text-primary">
+                  {calculateTotal()} د.ع
+                </span>
               </div>
             )}
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button variant="outline">مستند جديد</Button>
             <Button
               disabled={
                 itemsList.length === 0 || !department || !selectedWarehouse || isSaving
               }
               onClick={handleSave}
             >
-              {isSaving ? "جاري الحفظ..." : "حفظ الإدخال المباشر"}
+              {isSaving ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <Save className="ml-2 h-4 w-4" />
+                  حفظ الإدخال المباشر
+                </>
+              )}
             </Button>
           </CardFooter>
         </Card>

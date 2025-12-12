@@ -332,11 +332,11 @@ const ItemIssuancePage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>رقم مستند الإدخال المرجعي (اختياري)</Label>
+                <Label>رقم الطلب</Label>
                 <Input
                   value={refDocNumber}
                   onChange={(e) => setRefDocNumber(e.target.value)}
-                  placeholder="رقم المستند..."
+                  placeholder="رقم الطلب..."
                 />
               </div>
               <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-4">

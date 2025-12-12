@@ -505,7 +505,7 @@ const WarrantyAlertsPage = () => {
                 <div className="relative">
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="ابحث بالاسم أو الكود أو الرقم التسلسلي..."
+                    placeholder="ابحث بالاسم أو الكود أو رقم المستند..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pr-10"
@@ -584,7 +584,7 @@ const WarrantyAlertsPage = () => {
                       <TableHead className="text-right">اسم المادة</TableHead>
                       <TableHead className="text-right">الفئة</TableHead>
                       <TableHead className="text-right">الكمية</TableHead>
-                      <TableHead className="text-right">الرقم التسلسلي</TableHead>
+                      <TableHead className="text-right">رقم المستند</TableHead>
                       <TableHead className="text-right">تاريخ الشراء</TableHead>
                       <TableHead className="text-right">مدة الضمان</TableHead>
                       <TableHead className="text-right">تاريخ الانتهاء</TableHead>

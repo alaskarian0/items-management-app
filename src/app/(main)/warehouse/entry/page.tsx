@@ -417,27 +417,28 @@ const ItemEntryPage = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* --- ITEMS TABLE --- */}
-            <div className="border rounded-md">
+            <div className="border rounded-md overflow-x-auto">
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">كود المادة</TableHead>
-                    <TableHead className="text-right">اسم المادة</TableHead>
-                    <TableHead className="text-right">الوحدة</TableHead>
-                    <TableHead className="text-right">الكمية</TableHead>
-                    <TableHead className="text-right">سعر المفرد</TableHead>
-                    <TableHead className="text-right">اسم المورد</TableHead>
-                    <TableHead className="text-right">رقم الفاتورة</TableHead>
-                    <TableHead className="text-right">تاريخ الانتهاء</TableHead>
-                    <TableHead className="text-right">الضمان</TableHead>
-                    <TableHead className="text-right">إجراء</TableHead>
+                    <TableHead className="text-right min-w-[120px]">كود المادة</TableHead>
+                    <TableHead className="text-right min-w-[200px]">اسم المادة</TableHead>
+                    <TableHead className="text-right min-w-[100px]">الوحدة</TableHead>
+                    <TableHead className="text-right min-w-[100px]">الكمية</TableHead>
+                    <TableHead className="text-right min-w-[120px]">سعر المفرد</TableHead>
+                    <TableHead className="text-right min-w-[120px]">المجموع</TableHead>
+                    <TableHead className="text-right min-w-[150px]">اسم المورد</TableHead>
+                    <TableHead className="text-right min-w-[120px]">رقم الفاتورة</TableHead>
+                    <TableHead className="text-right min-w-[180px]">تاريخ الانتهاء</TableHead>
+                    <TableHead className="text-right min-w-[180px]">الضمان</TableHead>
+                    <TableHead className="text-right min-w-[80px]">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={10}
+                        colSpan={11}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -446,7 +447,7 @@ const ItemEntryPage = () => {
                   ) : (
                     itemsList.map((item, index) => (
                       <TableRow key={item.id}>
-                        <TableCell className="text-right w-32">
+                        <TableCell className="text-right min-w-[120px]">
                           <Input
                             value={item.itemCode || ""}
                             onChange={(e) =>
@@ -460,7 +461,7 @@ const ItemEntryPage = () => {
                             className="text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[200px]">
                           {item.itemId ? (
                             <div className="font-medium">{item.itemName}</div>
                           ) : (
@@ -564,17 +565,17 @@ const ItemEntryPage = () => {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[100px]">
                           <Input
                             value={item.unit || ""}
                             onChange={(e) =>
                               handleItemChange(index, "unit", e.target.value)
                             }
                             placeholder="الوحدة"
-                            className="w-20 text-right"
+                            className="w-full text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[100px]">
                           <Input
                             type="number"
                             value={item.quantity}
@@ -585,11 +586,12 @@ const ItemEntryPage = () => {
                                 Number(e.target.value)
                               )
                             }
-                            className="w-24 text-right"
+                            placeholder="الكمية"
+                            className="w-full text-right"
                             min="1"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[120px]">
                           <Input
                             type="number"
                             value={item.price}
@@ -600,12 +602,28 @@ const ItemEntryPage = () => {
                                 Number(e.target.value)
                               )
                             }
-                            className="w-28 text-right"
+                            placeholder="السعر"
+                            className="w-full text-right"
                             min="0"
                             step="0.01"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[120px]">
+                          <div className="font-semibold text-primary">
+                            {(item.quantity * (item.price || 0)).toFixed(2)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right min-w-[150px]">
+                          <Input
+                            value={item.vendorName || ""}
+                            onChange={(e) =>
+                              handleItemChange(index, "vendorName", e.target.value)
+                            }
+                            placeholder="اسم المورد"
+                            className="w-full text-right"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right min-w-[120px]">
                           <Input
                             value={item.invoiceNumber || ""}
                             onChange={(e) =>
@@ -616,10 +634,10 @@ const ItemEntryPage = () => {
                               )
                             }
                             placeholder="رقم الفاتورة"
-                            className="w-32 text-right"
+                            className="w-full text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[180px]">
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
@@ -646,7 +664,7 @@ const ItemEntryPage = () => {
                             </PopoverContent>
                           </Popover>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[180px]">
                           <div className="flex gap-2 items-center">
                             <Input
                               type="number"
@@ -658,8 +676,8 @@ const ItemEntryPage = () => {
                                   Number(e.target.value)
                                 )
                               }
-                              placeholder="1"
-                              className="w-16 text-right"
+                              placeholder="المدة"
+                              className="w-20 text-right"
                               min="1"
                             />
                             <Select
@@ -679,7 +697,7 @@ const ItemEntryPage = () => {
                             </Select>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[80px]">
                           <Button
                             variant="ghost"
                             size="icon"
