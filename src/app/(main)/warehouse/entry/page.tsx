@@ -1,16 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -18,12 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
   TableBody,
@@ -33,46 +41,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  CalendarIcon,
-  PlusCircle,
-  Trash2,
-  AlertCircle,
-  PackagePlus,
-  Search,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
-import { useImmer } from "use-immer";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { saveDocument, useItems } from "@/hooks/use-inventory";
+import { db } from "@/lib/db";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  AlertCircle,
+  CalendarIcon,
+  Loader2,
+  PackagePlus,
+  PlusCircle,
+  Save,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useImmer } from "use-immer";
 
 // Import shared data and types
 import {
   departments,
   divisions,
-  units,
-  suppliers,
-  items,
   entryTypes,
-  getDivisionsByDepartment,
-  getUnitsByDivision,
-  searchItems,
-  type DocumentItem,
-  type EntryFormData
+  suppliers,
+  units,
+  type DocumentItem
 } from "@/lib/data/warehouse-data";
+import { type Item } from "@/lib/types/warehouse";
 
 const ItemEntryPage = () => {
   const { selectedWarehouse } = useWarehouse();
+  const allItems = useItems() || []; // Load items from DB
   const [entryType, setEntryType] = useState<string>();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("1101");
@@ -85,6 +87,16 @@ const ItemEntryPage = () => {
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Filter items based on search
+  const filteredItems = searchValue
+    ? allItems.filter(
+      (i) =>
+        i.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+        i.code.toLowerCase().includes(searchValue.toLowerCase())
+    )
+    : allItems.slice(0, 50); // Limit to 50 when not searching
 
   const handleAddItem = () => {
     updateItemsList((draft) => {
@@ -116,10 +128,15 @@ const ItemEntryPage = () => {
       if (item) {
         item[field] = value;
         if (field === "itemName") {
-          const selectedItem = items.find((i) => i.name === value);
+          // Try to find if item exists in DB items
+          const selectedItem = allItems.find((i) => i.name === value);
           if (selectedItem) {
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
+            item.itemCode = selectedItem.code;
+            if (selectedItem.price) {
+              item.price = selectedItem.price;
+            }
           }
         }
       }
@@ -134,11 +151,81 @@ const ItemEntryPage = () => {
 
   const calculateTotal = () => {
     return itemsList
-      .reduce((acc, item) => acc + item.quantity * item.price, 0)
+      .reduce((acc, item) => acc + item.quantity * (item.price || 0), 0)
       .toFixed(2);
   };
 
-  const filteredItems = searchItems(searchValue);
+  const handleSave = async () => {
+    try {
+      if (!selectedWarehouse) {
+        toast.error("الرجاء اختيار المخزن");
+        return;
+      }
+      if (!entryType) {
+        toast.error("الرجاء اختيار نوع الإدخال");
+        return;
+      }
+      if (itemsList.length === 0) {
+        toast.error("الرجاء إضافة مواد للقائمة");
+        return;
+      }
+
+      setIsSaving(true);
+
+      // 1. Handle New Items (items with no ID)
+      const processedItems = [...itemsList];
+      for (let i = 0; i < processedItems.length; i++) {
+        const item = processedItems[i];
+        if (!item.itemId && item.itemName) {
+          // Creating new item
+          const newCode = item.itemCode || `AUTO-${Date.now()}-${i}`;
+          // Dexie handles ID generation
+          const newItemId = await db.items.add({
+            name: item.itemName,
+            code: newCode,
+            unit: item.unit || "قطعة",
+            stock: 0,
+            price: item.price || 0,
+            category: "أخرى", // Default category
+          } as Item);
+          processedItems[i] = { ...item, itemId: newItemId, itemCode: newCode };
+        }
+      }
+
+      // 2. Save Document
+      await saveDocument(
+        {
+          docNumber,
+          type: "entry",
+          date: date || new Date(),
+          warehouseId: selectedWarehouse.id,
+          departmentId: department ? Number(department) : undefined,
+          divisionId: division ? Number(division) : undefined,
+          unitId: unit ? Number(unit) : undefined,
+          supplierId: supplier ? Number(supplier) : undefined,
+          entryType,
+          notes,
+          itemCount: processedItems.length,
+          totalValue: Number(calculateTotal()),
+          status: "approved",
+        },
+        processedItems
+      );
+
+      toast.success("تم حفظ مستند الإدخال بنجاح");
+
+      // Reset Form
+      setDocNumber((prev) => String(Number(prev) + 1));
+      updateItemsList(() => []);
+      setNotes("");
+      setSearchValue("");
+    } catch (error) {
+      console.error("Error saving document:", error);
+      toast.error("حدث خطأ أثناء حفظ المستند");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -188,7 +275,14 @@ const ItemEntryPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>القسم</Label>
-                <Select onValueChange={setDepartment}>
+                <Select
+                  value={department}
+                  onValueChange={(val) => {
+                    setDepartment(val);
+                    setDivision("");
+                    setUnit("");
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر القسم..." />
                   </SelectTrigger>
@@ -209,16 +303,19 @@ const ItemEntryPage = () => {
                     setDivision(value);
                     setUnit(""); // Reset unit when division changes
                   }}
+                  disabled={!department}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الشعبة..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {divisions.map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
+                    {divisions
+                      .filter((d) => d.departmentId === Number(department))
+                      .map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -245,7 +342,7 @@ const ItemEntryPage = () => {
               </div>
               <div className="space-y-2">
                 <Label>نوع الإدخال</Label>
-                <Select onValueChange={setEntryType}>
+                <Select value={entryType} onValueChange={setEntryType}>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر نوع الإدخال..." />
                   </SelectTrigger>
@@ -350,24 +447,18 @@ const ItemEntryPage = () => {
                     itemsList.map((item, index) => (
                       <TableRow key={item.id}>
                         <TableCell className="text-right w-32">
-                          {item.itemId ? (
-                            <div className="font-mono text-sm font-medium">
-                              {item.itemCode}
-                            </div>
-                          ) : (
-                            <Input
-                              value={item.itemCode || ""}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  index,
-                                  "itemCode",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="أدخل كود المادة"
-                              className="text-right"
-                            />
-                          )}
+                          <Input
+                            value={item.itemCode || ""}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "itemCode",
+                                e.target.value
+                              )
+                            }
+                            placeholder="أدخل كود المادة"
+                            className="text-right"
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           {item.itemId ? (
@@ -428,7 +519,7 @@ const ItemEntryPage = () => {
                                             }}
                                           >
                                             <PlusCircle className="ml-2 h-4 w-4" />
-                                            إضافة "{searchValue}" كمادة جديدة
+                                            إضافة &quot;{searchValue}&quot; كمادة جديدة
                                           </Button>
                                         </div>
                                       </CommandEmpty>
@@ -446,6 +537,8 @@ const ItemEntryPage = () => {
                                                   itemData.code;
                                                 draft[index].unit =
                                                   itemData.unit;
+                                                draft[index].price =
+                                                  itemData.price || 0;
                                               });
                                               setSearchOpen(false);
                                               setSearchValue("");
@@ -472,20 +565,14 @@ const ItemEntryPage = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {item.itemId ? (
-                            <span className="font-mono text-sm">
-                              {item.unit}
-                            </span>
-                          ) : (
-                            <Input
-                              value={item.unit || ""}
-                              onChange={(e) =>
-                                handleItemChange(index, "unit", e.target.value)
-                              }
-                              placeholder="الوحدة"
-                              className="w-20 text-right"
-                            />
-                          )}
+                          <Input
+                            value={item.unit || ""}
+                            onChange={(e) =>
+                              handleItemChange(index, "unit", e.target.value)
+                            }
+                            placeholder="الوحدة"
+                            className="w-20 text-right"
+                          />
                         </TableCell>
                         <TableCell className="text-right">
                           <Input
@@ -517,32 +604,6 @@ const ItemEntryPage = () => {
                             min="0"
                             step="0.01"
                           />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Select
-                            value={item.vendorId ? String(item.vendorId) : ""}
-                            onValueChange={(value) => {
-                              const selectedSupplier = suppliers.find(
-                                (s) => s.id === Number(value)
-                              );
-                              updateItemsList((draft) => {
-                                draft[index].vendorId = Number(value);
-                                draft[index].vendorName =
-                                  selectedSupplier?.name || "";
-                              });
-                            }}
-                          >
-                            <SelectTrigger className="w-48">
-                              <SelectValue placeholder="اختر المورد..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {suppliers.map((s) => (
-                                <SelectItem key={s.id} value={String(s.id)}>
-                                  {s.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                         </TableCell>
                         <TableCell className="text-right">
                           <Input
@@ -649,8 +710,24 @@ const ItemEntryPage = () => {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
-            <Button variant="outline">مستند جديد</Button>
-            <Button>حفظ المستند</Button>
+            <Button variant="outline" onClick={() => {
+              setDocNumber((prev) => String(Number(prev) + 1));
+              updateItemsList(() => []);
+              setNotes("");
+            }}>مستند جديد</Button>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  جاري الحفظ...
+                </>
+              ) : (
+                <>
+                  <Save className="ml-2 h-4 w-4" />
+                  حفظ المستند
+                </>
+              )}
+            </Button>
           </CardFooter>
         </Card>
       )}

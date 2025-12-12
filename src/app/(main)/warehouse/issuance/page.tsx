@@ -1,16 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -18,12 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Table,
   TableBody,
@@ -33,47 +41,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  CalendarIcon,
-  PlusCircle,
-  Trash2,
-  AlertCircle,
-  PackageMinus,
-  Search,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
-import { useImmer } from "use-immer";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  AlertCircle,
+  CalendarIcon,
+  PackageMinus,
+  PlusCircle,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { useImmer } from "use-immer";
 
 // Import shared data and types
+import { useNotificationStore } from "@/context/notification-store";
+import { db } from "@/lib/db";
+import { saveDocument, useItems } from "@/hooks/use-inventory";
 import {
   departments,
   divisions,
-  units,
-  items,
   suppliers,
-  getDivisionsByDepartment,
-  getUnitsByDivision,
-  searchItems,
-  type DocumentItem,
-  type IssuanceFormData
+  units
 } from "@/lib/data/warehouse-data";
+import { DocumentItem } from "@/lib/types/warehouse";
 
 const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("2305");
+  const [refDocNumber, setRefDocNumber] = useState("");
   const [division, setDivision] = useState<string>();
   const [unit, setUnit] = useState<string>();
   const [department, setDepartment] = useState<string>();
@@ -82,6 +81,14 @@ const ItemIssuancePage = () => {
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+
+  const items = useItems() || [];
+  const { addNotification } = useNotificationStore();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Helper to get stock for a specific item (can be optimized)
+  // For now, we rely on the item selection to populate initial stock, 
+  // but real applications might want a bulk stock query.
 
   const handleAddItem = () => {
     updateItemsList((draft) => {
@@ -94,7 +101,7 @@ const ItemIssuancePage = () => {
         quantity: 1,
         stock: 0,
         vendorName: "",
-        vendorId: null,
+        vendorId: undefined,
       });
     });
   };
@@ -110,10 +117,23 @@ const ItemIssuancePage = () => {
         item[field] = value;
         if (field === "itemName") {
           const selectedItem = items.find((i) => i.name === value);
-          if (selectedItem) {
+          if (selectedItem && selectedWarehouse) {
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
-            item.stock = selectedItem.stock;
+            item.itemCode = selectedItem.code;
+
+            // Fetch real stock from database
+            db.inventory.get({
+              warehouseId: selectedWarehouse.id,
+              itemId: selectedItem.id
+            }).then(inventoryRecord => {
+              updateItemsList((draft) => {
+                const currentItem = draft[index];
+                if (currentItem && currentItem.itemId === selectedItem.id) {
+                  currentItem.stock = inventoryRecord?.quantity || 0;
+                }
+              });
+            });
           }
         }
       }
@@ -126,7 +146,45 @@ const ItemIssuancePage = () => {
     });
   };
 
-  const filteredItems = searchItems(searchValue);
+  const handleSave = async () => {
+    if (!selectedWarehouse || itemsList.length === 0 || !date) return;
+
+    try {
+      setIsSaving(true);
+      await saveDocument({
+        docNumber,
+        type: 'issuance',
+        date: date,
+        warehouseId: selectedWarehouse.id,
+        departmentId: department ? Number(department) : undefined,
+        divisionId: division ? Number(division) : undefined,
+        unitId: unit ? Number(unit) : undefined,
+        recipientName,
+        itemCount: itemsList.length,
+        status: 'approved',
+        notes: generalNotes,
+        refDocNumber: refDocNumber
+      }, itemsList);
+
+      addNotification("تم الحفظ بنجاح", `تم إنشاء مستند الصرف رقم ${docNumber}`, "success");
+
+      // Reset
+      updateItemsList([]);
+      setDocNumber((prev) => String(Number(prev) + 1));
+
+    } catch (error) {
+      console.error(error);
+      addNotification("خطأ في الحفظ", "حدث خطأ أثناء حفظ المستند", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredItems = (items || []).filter(
+    (item) =>
+      item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      item.code.toLowerCase().includes(searchValue.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -273,6 +331,14 @@ const ItemIssuancePage = () => {
                   onChange={(e) => setDocNumber(e.target.value)}
                 />
               </div>
+              <div className="space-y-2">
+                <Label>رقم مستند الإدخال المرجعي (اختياري)</Label>
+                <Input
+                  value={refDocNumber}
+                  onChange={(e) => setRefDocNumber(e.target.value)}
+                  placeholder="رقم المستند..."
+                />
+              </div>
               <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-4">
                 <Label>البيان أو الملاحظات العامة</Label>
                 <Textarea
@@ -402,7 +468,7 @@ const ItemIssuancePage = () => {
                                             }}
                                           >
                                             <PlusCircle className="ml-2 h-4 w-4" />
-                                            إضافة "{searchValue}" كمادة جديدة
+                                            إضافة &quot;{searchValue}&quot; كمادة جديدة
                                           </Button>
                                         </div>
                                       </CommandEmpty>
@@ -468,15 +534,14 @@ const ItemIssuancePage = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <span
-                            className={`font-medium ${
-                              item.quantity > item.stock
-                                ? "text-red-500"
-                                : item.itemId && item.stock > 0
+                            className={`font-medium ${item.quantity > (item.stock ?? 0)
+                              ? "text-red-500"
+                              : item.itemId && (item.stock ?? 0) > 0
                                 ? "text-green-600"
                                 : "text-muted-foreground"
-                            }`}
+                              }`}
                           >
-                            {item.stock}
+                            {item.stock ?? 0}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
@@ -536,7 +601,13 @@ const ItemIssuancePage = () => {
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
             <Button variant="outline">مستند جديد</Button>
-            <Button>حفظ المستند</Button>
+            <Button
+              onClick={handleSave}
+              disabled={itemsList.some(item => item.quantity > (item.stock ?? 0)) || isSaving}
+              title={itemsList.some(item => item.quantity > (item.stock ?? 0)) ? "لا يمكن الحفظ: الكمية المطلوبة أكبر من الرصيد" : ""}
+            >
+              {isSaving ? "جاري الحفظ..." : "حفظ المستند"}
+            </Button>
           </CardFooter>
         </Card>
       )}

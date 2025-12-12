@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -13,12 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
   Table,
   TableBody,
   TableCell,
@@ -26,27 +26,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft,
-  History,
-  Search,
-  Download,
-  Filter,
-  CalendarIcon,
-  ArrowDownLeft,
-  ArrowUpRight,
-  FileText,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  Package,
-} from "lucide-react";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
-import Link from "next/link";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import {
+  ArrowDownLeft,
+  ArrowLeft,
+  ArrowUpRight,
+  CalendarIcon,
+  Download,
+  FileText,
+  Filter,
+  History,
+  Package,
+  Search
+} from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 // Mock data for item movement reports
 const movementData = [

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,25 +20,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  ArrowLeft,
-  Boxes,
-  Search,
-  Download,
-  Filter,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  BarChart3,
-  Warehouse,
-  Truck,
-  Calendar,
-} from "lucide-react";
-import Link from "next/link";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Boxes,
+  Filter,
+  Search,
+  TrendingDown,
+  TrendingUp
+} from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 // Mock data for stock balance reports
 const stockData = [

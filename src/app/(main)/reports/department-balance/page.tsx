@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,24 +19,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft,
-  Building2,
-  Search,
-  Download,
-  Filter,
-  TrendingUp,
-  TrendingDown,
-  Package,
-  Users,
-  BarChart3,
-  AlertTriangle,
-  CheckCircle,
-} from "lucide-react";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Building2,
+  CheckCircle,
+  Download,
+  Filter,
+  Package,
+  Search,
+  TrendingDown,
+  TrendingUp,
+  Users
+} from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 // Mock data for department balance reports
 const departmentData = [

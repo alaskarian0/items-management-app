@@ -1,21 +1,9 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  FileText,
-  PackagePlus,
-  PackageMinus,
-  Calendar,
-  Search,
-  Filter,
-  Download,
-  TrendingUp,
-  Building2,
-  Truck,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -33,14 +20,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  BarChart,
+  Building2,
+  Calendar,
+  Download,
+  FileText,
+  Filter,
+  PackageMinus,
+  PackagePlus,
+  Search,
+  TrendingUp,
+  Truck,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import {
   Bar,
-  XAxis,
-  YAxis,
+  BarChart,
   CartesianGrid,
-  Tooltip,
   Legend,
   ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 type DocumentType = "entry" | "issuance";

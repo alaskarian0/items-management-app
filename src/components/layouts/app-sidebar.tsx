@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
 import {
   Warehouse,
 } from "lucide-react";
+import * as React from "react";
 
 import { NavGroup } from "@/components/layouts/NavGroup";
 import { NavUser } from "@/components/layouts/nav-user";
@@ -23,8 +23,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   // Get filtered navigation data based on user role
   const filteredNavData = React.useMemo(() => {
-    // return getFilteredNavbarData(user?.role);
-    return getFilteredNavbarData("admin");
+    return getFilteredNavbarData(user?.role);
   }, [user?.role]);
 
   return (

@@ -1,16 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Card,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -26,28 +39,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Zap, Trash2, Search, CalendarIcon, PlusCircle } from "lucide-react";
-import { useImmer } from "use-immer";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
+import { useNotificationStore } from "@/context/notification-store";
+import { useWarehouse } from "@/context/warehouse-context";
+import { saveDocument, useItems, useSuppliers } from "@/hooks/use-inventory";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
-import { useWarehouse } from "@/context/warehouse-context";
+import { CalendarIcon, Calendar as CalendarIconLucide, DollarSign, Info, Package, PlusCircle, Search, Trash2, Zap } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useImmer } from "use-immer";
 
 // --- MOCK DATA ---
 const departments = [
@@ -73,28 +74,8 @@ const units = [
   { id: 6, name: "وحدة الموارد البشرية", divisionId: 4 },
 ];
 
-const availableItems = [
-  { id: 1, name: "كرسي مكتب", code: "FUR-CHR-001", unit: "قطعة", stock: 50 },
-  {
-    id: 2,
-    name: "طاولة اجتماعات",
-    code: "FUR-TBL-001",
-    unit: "قطعة",
-    stock: 10,
-  },
-  { id: 3, name: "مكتب خشبي", code: "FUR-DSK-001", unit: "قطعة", stock: 35 },
-  { id: 4, name: "خزانة ملفات", code: "FUR-CAB-001", unit: "قطعة", stock: 15 },
-  {
-    id: 5,
-    name: "ورق طباعة A4",
-    code: "OFF-PAP-001",
-    unit: "حزمة",
-    stock: 200,
-  },
-  { id: 6, name: "حاسوب محمول", code: "TEC-LAP-001", unit: "جهاز", stock: 25 },
-  { id: 7, name: "طابعة ليزر", code: "TEC-PRN-001", unit: "جهاز", stock: 12 },
-  { id: 8, name: "أقلام حبر", code: "OFF-PEN-001", unit: "علبة", stock: 150 },
-];
+// Removed mock items
+
 
 type DirectEntryItem = {
   id: number;
@@ -123,6 +104,18 @@ const QuickEntryPage = () => {
   const [itemsList, updateItemsList] = useImmer<DirectEntryItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
+
+  const items = useItems() || [];
+  const suppliersList = useSuppliers() || [];
+  const { addNotification } = useNotificationStore();
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Get currently focused item details
+  const focusedItem = focusedItemIndex !== null && itemsList[focusedItemIndex]?.itemId
+    ? items.find(i => i.id === itemsList[focusedItemIndex].itemId)
+    : null;
 
   // Mock suppliers data for autocomplete
   const [suppliers] = useState([
@@ -169,20 +162,54 @@ const QuickEntryPage = () => {
       }
     });
   };
-
   const handleRemoveItem = (index: number) => {
     updateItemsList((draft) => {
       draft.splice(index, 1);
     });
   };
 
-  const filteredItems = availableItems.filter(
+  const handleSave = async () => {
+    if (!selectedWarehouse || itemsList.length === 0 || !date) return;
+
+    try {
+      setIsSaving(true);
+      await saveDocument({
+        docNumber,
+        type: 'entry',
+        entryType: entryType || 'purchases',
+        date: date,
+        warehouseId: selectedWarehouse.id,
+        departmentId: department ? Number(department) : undefined,
+        divisionId: division ? Number(division) : undefined,
+        unitId: unit ? Number(unit) : undefined,
+        recipientName,
+        itemCount: itemsList.length,
+        status: 'approved',
+        notes: generalNotes,
+      }, itemsList.map(i => ({ ...i, vendorName: supplierName })));
+
+      addNotification("تم الحفظ بنجاح", `تم إنشاء مستند الإدخال رقم ${docNumber}`, "success");
+
+      // Reset Form
+      updateItemsList([]);
+      setDocNumber((prev) => String(Number(prev) + 1));
+      setRecipientName("");
+
+    } catch (error) {
+      console.error(error);
+      addNotification("خطأ في الحفظ", "حدث خطأ أثناء حفظ المستند", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const filteredItems = (items || []).filter(
     (item) =>
       item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
       item.code.toLowerCase().includes(searchValue.toLowerCase())
   );
 
-  const filteredSuppliers = suppliers.filter((supplier) =>
+  const filteredSuppliers = (suppliersList || []).filter((supplier) =>
     supplier.name.toLowerCase().includes(supplierSearchValue.toLowerCase())
   );
 
@@ -294,6 +321,7 @@ const QuickEntryPage = () => {
                   <SelectContent>
                     <SelectItem value="gifts">هدايا وندور</SelectItem>
                     <SelectItem value="purchases">مشتريات</SelectItem>
+                    <SelectItem value="returned">مرتجع</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -425,7 +453,11 @@ const QuickEntryPage = () => {
                     </TableRow>
                   ) : (
                     itemsList.map((item, index) => (
-                      <TableRow key={item.id}>
+                      <TableRow
+                        key={item.id}
+                        className={focusedItemIndex === index ? "bg-muted/50" : ""}
+                        onClick={() => setFocusedItemIndex(index)}
+                      >
                         <TableCell className="text-right">
                           {item.itemId ? (
                             <div className="font-mono text-sm font-medium">
@@ -642,12 +674,69 @@ const QuickEntryPage = () => {
             <Button variant="outline">مستند جديد</Button>
             <Button
               disabled={
-                itemsList.length === 0 || !department || !selectedWarehouse
+                itemsList.length === 0 || !department || !selectedWarehouse || isSaving
               }
+              onClick={handleSave}
             >
-              حفظ الإدخال المباشر
+              {isSaving ? "جاري الحفظ..." : "حفظ الإدخال المباشر"}
             </Button>
           </CardFooter>
+        </Card>
+      )}
+
+      {/* Material Info Panel (Floating/Fixed) */}
+      {focusedItem && (
+        <Card className="fixed left-6 top-24 w-80 shadow-lg border-l-4 border-l-primary hidden xl:block animate-in slide-in-from-right-4">
+          <CardHeader className="pb-2 bg-muted/30">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              معلومات المادة
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-muted-foreground">اسم المادة</div>
+              <div className="font-bold">{focusedItem.name}</div>
+              <div className="text-xs font-mono bg-muted px-2 py-1 rounded w-fit mt-1">
+                {focusedItem.code}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Package className="h-3 w-3" /> الرصيد الحالي
+                </div>
+                <div className="font-bold text-lg">{focusedItem.stock} {focusedItem.unit}</div>
+              </div>
+              <div className="space-y-1">
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" /> آخر سعر
+                </div>
+
+                <div className="font-bold">{focusedItem.price?.toLocaleString() || '-'} د.ع</div>
+              </div>
+            </div>
+
+            <div className="space-y-1 border-t pt-2">
+              <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+                <CalendarIconLucide className="h-3 w-3" /> آخر إدخال
+              </div>
+
+              <div className="text-sm">{(focusedItem as any).lastEntryDate || '-'}</div>
+            </div>
+
+
+            {(focusedItem as any).specs && (
+              <div className="space-y-1 border-t pt-2">
+                <div className="text-xs text-muted-foreground mb-1">المواصفات</div>
+                <div className="text-sm bg-muted/50 p-2 rounded text-muted-foreground">
+
+                  {(focusedItem as any).specs}
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
       )}
     </div>

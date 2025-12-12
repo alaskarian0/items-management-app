@@ -3,11 +3,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 // --- TYPE DEFINITIONS ---
-export type Warehouse = {
-  id: string;
-  name: string;
-  children: Warehouse[];
-};
+import { db } from "@/lib/db";
+import { useLiveQuery } from "dexie-react-hooks";
+import { Warehouse } from "@/lib/types/warehouse";
+
+// --- TYPE DEFINITIONS ---
+// Export Warehouse for consumers of this context
+export type { Warehouse };
 
 type WarehouseContextType = {
   selectedWarehouse: Warehouse | null;
@@ -20,65 +22,46 @@ type WarehouseContextType = {
 const WarehouseContext = createContext<WarehouseContextType | undefined>(undefined);
 
 // --- MOCK DATA (replace with API call later) ---
-const initialWarehouseData: Warehouse[] = [
-  {
-    id: 'store-1',
-    name: 'المخزن الرئيسي',
-    children: [
-      {
-        id: 'group-1-1',
-        name: 'مخزن شعبة المواد الثابتة',
-        children: [
-          { id: 'sub-1-1-1', name: 'مخزن الأثاث والممتلكات العامة', children: [] },
-          { id: 'sub-1-1-2', name: 'مخزن السجاد والمفروشات', children: [] },
-        ],
-      },
-      {
-        id: 'group-1-2',
-        name: 'مخزن شعبة المواد الاستهلاكية',
-        children: [
-          { id: 'sub-1-2-1', name: 'مخزن المواد العامة', children: [] },
-        ],
-      },
-    ],
-  },
-];
-
 // --- HELPER: Flatten warehouse tree ---
 const flattenWarehouses = (warehouses: Warehouse[]): Warehouse[] => {
   const result: Warehouse[] = [];
 
-  const flatten = (wh: Warehouse, level = 0) => {
+  const flatten = (wh: Warehouse) => {
     result.push(wh);
-    wh.children.forEach(child => flatten(child, level + 1));
+    if (wh.children) wh.children.forEach(child => flatten(child));
   };
 
   warehouses.forEach(wh => flatten(wh));
   return result;
 };
 
+// --- HELPER: Flatten warehouse tree ---
+
+
 // --- PROVIDER COMPONENT ---
 export function WarehouseProvider({ children }: { children: React.ReactNode }) {
   const [selectedWarehouse, setSelectedWarehouseState] = useState<Warehouse | null>(null);
-  const warehouses = initialWarehouseData;
+
+  // Use LiveQuery to allow reactivity
+  const warehouses = useLiveQuery(() => db.warehouses.toArray()) || [];
   const allWarehouses = flattenWarehouses(warehouses);
 
   // Load from localStorage on mount
   useEffect(() => {
     const savedWarehouseId = localStorage.getItem('selectedWarehouseId');
-    if (savedWarehouseId) {
-      const warehouse = allWarehouses.find(wh => wh.id === savedWarehouseId);
+    if (savedWarehouseId && allWarehouses.length > 0) {
+      const warehouse = allWarehouses.find(wh => String(wh.id) === savedWarehouseId);
       if (warehouse) {
         setSelectedWarehouseState(warehouse);
       }
     }
-  }, []);
+  }, [allWarehouses.length]); // Re-run when warehouses load
 
   // Save to localStorage when changed
   const setSelectedWarehouse = (warehouse: Warehouse | null) => {
     setSelectedWarehouseState(warehouse);
     if (warehouse) {
-      localStorage.setItem('selectedWarehouseId', warehouse.id);
+      localStorage.setItem('selectedWarehouseId', String(warehouse.id));
     } else {
       localStorage.removeItem('selectedWarehouseId');
     }

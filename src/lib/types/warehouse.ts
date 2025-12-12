@@ -18,7 +18,7 @@ export interface Unit {
   divisionId: number;
 }
 
-export interface Supplier {
+export interface BasicSupplier {
   id: number;
   name: string;
 }

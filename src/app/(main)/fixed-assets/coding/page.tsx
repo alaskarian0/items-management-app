@@ -1,10 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { BarcodeQRPrintModal } from "@/components/features/barcode-printing";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogOverlay,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,43 +29,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogOverlay,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import "@/styles/barcode-print.css";
 import {
   Barcode,
-  Search,
-  Printer,
-  QrCode,
+  CheckCircle2,
   Download,
   Filter,
-  CheckCircle2,
+  Printer,
+  QrCode,
+  Search,
   XCircle
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { BarcodeQRPrintModal } from "@/components/features/barcode-printing";
-import "@/styles/barcode-print.css";
+import { useState } from 'react';
 
 // Import shared data and types
 import {
-  fixedAssets,
-  getAssetByCode,
-  searchAssets,
-  type FixedAsset,
-  type AssetCoding
+  fixedAssets
 } from "@/lib/data/fixed-assets-data";
+import { type FixedAsset } from "@/lib/types/fixed-assets";
 
 const CodingPage = () => {
   const [assets, setAssets] = useState<FixedAsset[]>(fixedAssets);
@@ -63,8 +60,8 @@ const CodingPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.name.includes(searchTerm) ||
-                         asset.serialNumber?.includes(searchTerm) ||
-                         asset.barcode?.includes(searchTerm);
+      asset.serialNumber?.includes(searchTerm) ||
+      asset.barcode?.includes(searchTerm);
     const matchesFilter = filterStatus === 'all' || (asset.barcode ? 'coded' : 'pending') === filterStatus;
     return matchesSearch && matchesFilter;
   });
@@ -79,7 +76,7 @@ const CodingPage = () => {
     if (selectedAsset && barcodeInput) {
       setAssets(assets.map(asset =>
         asset.id === selectedAsset.id
-          ? { ...asset, barcode: barcodeInput, status: 'coded' as const }
+          ? { ...asset, barcode: barcodeInput, status: 'active' as const }
           : asset
       ));
       setIsDialogOpen(false);
@@ -90,7 +87,8 @@ const CodingPage = () => {
 
   const handleGenerateBarcode = () => {
     if (selectedAsset) {
-      const newBarcode = `BC-${selectedAsset.serialNumber.split('-')[2]}-${new Date().getFullYear()}`;
+      const serial = selectedAsset.serialNumber || 'SN-000';
+      const newBarcode = `BC-${serial.split('-')[2] || 'GEN'}-${new Date().getFullYear()}`;
       setBarcodeInput(newBarcode);
     }
   };
@@ -338,7 +336,7 @@ const CodingPage = () => {
       <BarcodeQRPrintModal
         open={isPrintModalOpen}
         onOpenChange={setIsPrintModalOpen}
-        assets={assets}
+        assets={assets as any}
         selectedAssets={selectedAssetsForPrint}
         onSelectedAssetsChange={setSelectedAssetsForPrint}
       />

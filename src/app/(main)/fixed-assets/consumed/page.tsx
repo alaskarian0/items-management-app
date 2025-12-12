@@ -1,10 +1,33 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,60 +37,36 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  TrendingDown,
-  Search,
-  FileText,
-  Download,
-  Filter,
   AlertTriangle,
   Calendar,
   DollarSign,
-  Package,
+  Download,
   Edit,
-  Trash2,
-  Printer,
   Eye,
+  FileCheck,
+  FileText,
+  Filter,
   MoreHorizontal,
-  FileCheck
+  Package,
+  Printer,
+  Search,
+  Trash2,
+  TrendingDown
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useState } from 'react';
 
 // Import shared data and types
 import {
   assetConsumed,
-  fixedAssets,
-  getAssetById,
-  type AssetConsumed
+  getAssetById
 } from "@/lib/data/fixed-assets-data";
+import { type AssetConsumed } from "@/lib/types/fixed-assets";
 
 // View model for consumed assets display
 type ConsumedAssetView = AssetConsumed & {
   assetName: string;
   assetCode: string;
+  consumedBy?: string;
   category: string;
   remainingValue: number;
 };
@@ -96,12 +95,12 @@ const ConsumedPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetName.includes(searchTerm) ||
-                         asset.assetCode.includes(searchTerm) ||
-                         asset.consumedBy?.includes(searchTerm) ||
-                         asset.consumptionReason.includes(searchTerm);
+      asset.assetCode.includes(searchTerm) ||
+      asset.consumedBy?.includes(searchTerm) ||
+      asset.consumptionReason.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' ||
-                         (filterStatus === 'complete' && asset.consumptionMethod === 'end-of-life') ||
-                         (filterStatus === 'partial' && asset.consumptionMethod !== 'end-of-life');
+      (filterStatus === 'complete' && asset.consumptionMethod === 'end-of-life') ||
+      (filterStatus === 'partial' && asset.consumptionMethod !== 'end-of-life');
     const matchesCategory = filterCategory === 'all' || asset.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
   });

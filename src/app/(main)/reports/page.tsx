@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, BarChart2, Boxes, History, Building, Building2, FileText, Truck } from "lucide-react";
+import { ArrowLeft, BarChart2, Boxes, Building, Building2, FileText, History, Truck } from "lucide-react";
 import Link from 'next/link';
+import React from 'react';
 
 type ReportCardProps = {
   title: string;

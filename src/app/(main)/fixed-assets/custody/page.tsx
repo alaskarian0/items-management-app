@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,47 +28,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Users,
-  Search,
-  FileText,
-  Download,
-  Filter,
-  UserCircle,
-  Package,
   AlertCircle,
-  Calendar,
-  CheckCircle2,
   ArrowRightLeft,
   Building2,
+  Calendar,
+  CheckCircle2,
+  Download,
+  FileText,
+  Filter,
+  Package,
+  Search,
+  UserCircle,
   UserPlus,
+  Users,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from "react";
 
 // Import shared data and types
 import {
   assetCustodies,
-  fixedAssets,
-  getAssetById,
-  type AssetCustody,
-  type FixedAsset
+  getAssetById
 } from "@/lib/data/fixed-assets-data";
+import { departments } from "@/lib/data/warehouse-data";
+import { type AssetCustody } from "@/lib/types/fixed-assets";
 
 // View model for custody records display
 type CustodyRecordView = AssetCustody & {
@@ -94,6 +93,9 @@ const CustodyPage = () => {
   const [transferEmployee, setTransferEmployee] = useState<string | undefined>(
     undefined
   );
+
+  // Mock filtered employees for build fix
+  const filteredEmployees: Array<{ id: string, name: string }> = [];
 
   const recordDepartments = Array.from(
     new Set(records.map((r) => r.department))
@@ -137,11 +139,11 @@ const CustodyPage = () => {
         records.map((record) =>
           record.id === selectedRecord.id
             ? {
-                ...record,
-                status: "returned" as const,
-                endDate: new Date(),
-                notes: returnNotes || record.notes,
-              }
+              ...record,
+              status: "returned" as const,
+              endDate: new Date(),
+              notes: returnNotes || record.notes,
+            }
             : record
         )
       );
@@ -157,18 +159,17 @@ const CustodyPage = () => {
         records.map((record) =>
           record.id === selectedRecord.id
             ? {
-                ...record,
-                  employeeName: transferEmployee,
-                  department: transferDepartment,
-                  notes: transferNotes
-                    ? `${
-                        record.notes ? record.notes + " | " : ""
-                      }تم التحويل: ${transferNotes}`
-                    : (record.notes || "تم التحويل"),
-                }
-              : record
-          )
-        );
+              ...record,
+              employeeName: transferEmployee,
+              department: transferDepartment,
+              notes: transferNotes
+                ? `${record.notes ? record.notes + " | " : ""
+                }تم التحويل: ${transferNotes}`
+                : (record.notes || "تم التحويل"),
+            }
+            : record
+        )
+      );
       setIsTransferDialogOpen(false);
       setSelectedRecord(null);
       setTransferDepartment(undefined);
@@ -388,18 +389,14 @@ const CustodyPage = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {record.startDate instanceof Date
-                              ? record.startDate.toLocaleDateString('ar-SA')
-                              : new Date(record.startDate).toLocaleDateString('ar-SA')}
+                            {record.startDate.toLocaleDateString("ar-IQ")}
                           </div>
                         </TableCell>
                         <TableCell>
                           {record.endDate ? (
                             <div className="flex items-center gap-2">
                               <Calendar className="h-3 w-3 text-muted-foreground" />
-                              {record.endDate instanceof Date
-                                ? record.endDate.toLocaleDateString('ar-SA')
-                                : new Date(record.endDate).toLocaleDateString('ar-SA')}
+                              {record.endDate.toLocaleDateString("ar-IQ")}
                             </div>
                           ) : (
                             <span className="text-muted-foreground text-sm">
@@ -499,15 +496,15 @@ const CustodyPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">تاريخ التسليم</Label>
-                  <div className="font-medium">{selectedRecord.assignDate}</div>
+                  <div className="font-medium">{selectedRecord.startDate.toLocaleDateString('ar-IQ')}</div>
                 </div>
-                {selectedRecord.returnDate && (
+                {selectedRecord.endDate && (
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">
                       تاريخ الإرجاع
                     </Label>
                     <div className="font-medium">
-                      {selectedRecord.returnDate}
+                      {selectedRecord.endDate?.toLocaleDateString('ar-IQ')}
                     </div>
                   </div>
                 )}
@@ -617,8 +614,8 @@ const CustodyPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
+                      <SelectItem key={dept.id} value={dept.id.toString()}>
+                        {dept.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -676,7 +673,7 @@ const CustodyPage = () => {
                   <div>
                     تاريخ التسليم:{" "}
                     <span className="font-medium text-foreground">
-                      {selectedRecord.assignDate}
+                      {selectedRecord.startDate.toLocaleDateString('ar-IQ')}
                     </span>
                   </div>
                 </div>

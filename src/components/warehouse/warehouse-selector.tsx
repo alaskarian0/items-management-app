@@ -1,9 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Warehouse as WarehouseIcon, Check, ChevronsUpDown, Search } from "lucide-react";
-import { useWarehouse } from "@/context/warehouse-context";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -13,12 +9,16 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useWarehouse } from "@/context/warehouse-context";
 import { cn } from "@/lib/utils";
+import { Check, ChevronsUpDown, Search, Warehouse as WarehouseIcon } from "lucide-react";
+import { useState } from "react";
 
 interface WarehouseSelectorProps {
   label?: string;

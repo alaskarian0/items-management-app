@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,47 +29,34 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Gift,
-  Search,
-  FileText,
-  Download,
-  Filter,
   Building2,
   Calendar,
   DollarSign,
+  Download,
+  FileText,
+  Filter,
+  Gift,
+  Heart,
   Package,
-  Heart
+  Search
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState } from 'react';
 
 // Import shared data and types
 import {
   assetDonated,
-  fixedAssets,
-  getAssetById,
-  type AssetDonated
+  getAssetById
 } from "@/lib/data/fixed-assets-data";
+import { type AssetDonated } from "@/lib/types/fixed-assets";
 
 // View model for donated assets display
 type DonatedAssetView = AssetDonated & {
   assetName: string;
   assetCode: string;
   category: string;
+  value: number;
+  condition?: string;
+  documentNumber?: string;
 };
 
 // Convert donated assets data to view model
@@ -65,8 +67,9 @@ const donatedAssetsView: DonatedAssetView[] = assetDonated.map(donation => {
     assetName: asset?.name || 'غير معروف',
     assetCode: asset?.assetCode || 'غير معروف',
     category: asset?.category || 'غير معروف',
-    // Map fairMarketValue to value for backward compatibility
-    value: donation.fairMarketValue
+    value: donation.fairMarketValue,
+    condition: asset?.condition,
+    documentNumber: donation.receiptNumber
   };
 });
 
@@ -82,10 +85,10 @@ const DonatedPage = () => {
 
   const filteredAssets = assets.filter(asset => {
     const matchesSearch = asset.assetName.includes(searchTerm) ||
-                         asset.assetCode.includes(searchTerm) ||
-                         asset.donatedTo.includes(searchTerm) ||
-                         asset.receiptNumber?.includes(searchTerm) ||
-                         asset.donationReason.includes(searchTerm);
+      asset.assetCode.includes(searchTerm) ||
+      asset.donatedTo.includes(searchTerm) ||
+      asset.receiptNumber?.includes(searchTerm) ||
+      asset.donationReason.includes(searchTerm);
     const matchesStatus = filterStatus === 'all' || asset.status === filterStatus;
     const matchesCategory = filterCategory === 'all' || asset.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
@@ -99,7 +102,7 @@ const DonatedPage = () => {
   const stats = {
     total: assets.length,
     totalValue: assets.reduce((sum, a) => sum + a.value, 0),
-    delivered: assets.filter(a => a.status === 'delivered').length,
+    delivered: assets.filter(a => a.status === 'completed').length,
     approved: assets.filter(a => a.status === 'approved').length,
     pending: assets.filter(a => a.status === 'pending').length,
     organizations: new Set(assets.map(a => a.donatedTo)).size,
@@ -257,7 +260,7 @@ const DonatedPage = () => {
                 ) : (
                   filteredAssets.map((asset) => {
                     const statusBadge = getStatusBadge(asset.status);
-                    const conditionBadge = getConditionBadge(asset.condition);
+                    const conditionBadge = getConditionBadge(asset.condition || 'good');
 
                     return (
                       <TableRow key={asset.id}>
@@ -283,9 +286,11 @@ const DonatedPage = () => {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {asset.donationDate instanceof Date
-                              ? asset.donationDate.toLocaleDateString('ar-SA')
-                              : new Date(asset.donationDate).toLocaleDateString('ar-SA')}
+                            <span>
+                              {asset.donationDate instanceof Date
+                                ? asset.donationDate.toLocaleDateString('ar-SA')
+                                : new Date(asset.donationDate).toLocaleDateString('ar-SA')}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -355,8 +360,8 @@ const DonatedPage = () => {
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">الحالة</Label>
                     <div>
-                      <Badge variant={getConditionBadge(selectedAsset.condition).variant}>
-                        {getConditionBadge(selectedAsset.condition).label}
+                      <Badge variant={getConditionBadge(selectedAsset.condition || 'good').variant}>
+                        {getConditionBadge(selectedAsset.condition || 'good').label}
                       </Badge>
                     </div>
                   </div>
@@ -388,13 +393,19 @@ const DonatedPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">رقم الوثيقة</Label>
-                    <code className="px-2 py-1 bg-muted rounded text-sm">
-                      {selectedAsset.documentNumber}
-                    </code>
+                    <div className="flex items-center gap-2">
+                      <code className="px-2 py-1 bg-muted rounded text-sm">
+                        {selectedAsset.documentNumber || '-'}
+                      </code>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">تاريخ المنح</Label>
-                    <div className="font-medium">{selectedAsset.donationDate}</div>
+                    <div className="font-medium">
+                      {selectedAsset.donationDate instanceof Date
+                        ? selectedAsset.donationDate.toLocaleDateString('ar-SA')
+                        : new Date(selectedAsset.donationDate).toLocaleDateString('ar-SA')}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground">الموافقة من قبل</Label>

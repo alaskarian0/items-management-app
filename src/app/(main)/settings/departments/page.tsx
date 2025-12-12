@@ -1,15 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,39 +12,39 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  PlusCircle,
-  Edit,
-  Trash2,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import {
   Building2,
-  Search,
-  Users,
+  Edit,
   Eye,
   GitBranch,
-  Download,
-  Upload,
-  Filter,
   Plus,
+  Search,
+  Trash2,
+  Users
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 
 // Import shared data and types
 import {
   departments,
   divisions,
-  units,
-  getDepartmentById,
-  getDivisionById,
-  getUnitById,
-  getDivisionsByDepartment,
-  getUnitsByDivision,
+  units
+} from "@/lib/data/settings-data";
+import {
   type Department,
   type Division,
   type Unit
-} from "@/lib/data/settings-data";
+} from "@/lib/types/settings";
 
 
 const DepartmentsPage = () => {
@@ -144,10 +137,10 @@ const DepartmentsPage = () => {
       setDepartmentsList(departmentsList.map(dept =>
         dept.id === editingDepartment.id
           ? {
-              ...dept,
-              ...departmentForm,
-              updatedAt: new Date().toISOString()
-            }
+            ...dept,
+            ...departmentForm,
+            updatedAt: new Date().toISOString()
+          }
           : dept
       ));
     } else {
@@ -206,10 +199,10 @@ const DepartmentsPage = () => {
       setDivisionsList(divisionsList.map(div =>
         div.id === editingDivision.id
           ? {
-              ...div,
-              ...divisionForm,
-              updatedAt: new Date().toISOString()
-            }
+            ...div,
+            ...divisionForm,
+            updatedAt: new Date().toISOString()
+          }
           : div
       ));
     } else {
@@ -272,10 +265,10 @@ const DepartmentsPage = () => {
       setUnitsList(unitsList.map(unit =>
         unit.id === editingUnit.id
           ? {
-              ...unit,
-              ...unitForm,
-              updatedAt: new Date().toISOString()
-            }
+            ...unit,
+            ...unitForm,
+            updatedAt: new Date().toISOString()
+          }
           : unit
       ));
     } else {
@@ -687,7 +680,7 @@ const DepartmentsPage = () => {
                 rows={3}
               />
             </div>
-              <div className="flex items-center space-2">
+            <div className="flex items-center space-2">
               <input
                 type="checkbox"
                 id="deptActive"

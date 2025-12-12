@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from 'react';
 import JsBarcode from 'jsbarcode';
+import React, { useEffect, useRef } from 'react';
 
 interface BarcodeGeneratorProps {
   value: string;
