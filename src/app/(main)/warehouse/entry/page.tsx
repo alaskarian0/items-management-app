@@ -109,7 +109,7 @@ const ItemEntryPage = () => {
         quantity: 1,
         price: 0,
         vendorName: "",
-        vendorId: null,
+        vendorId: undefined,
         invoiceNumber: "",
         warrantyPeriod: 1,
         warrantyUnit: "year",
@@ -665,7 +665,7 @@ const ItemEntryPage = () => {
                             <Select
                               value={item.warrantyUnit || "year"}
                               onValueChange={(value) =>
-                                handleItemChange(index, "warrantyUnit", value)
+                                handleItemChange(index, "warrantyUnit", value as "day" | "month" | "year")
                               }
                             >
                               <SelectTrigger className="w-24">

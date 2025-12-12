@@ -60,9 +60,9 @@ import { useMemo, useState } from "react";
 import {
   documentStatusOptions,
   documentTypeOptions,
-  warehouseDocuments,
-  type WarehouseDocument
+  warehouseDocuments
 } from "@/lib/data/warehouse-data";
+import { type WarehouseDocument } from "@/lib/types/warehouse";
 
 const WarehouseDocumentsPage = () => {
   const router = useRouter();

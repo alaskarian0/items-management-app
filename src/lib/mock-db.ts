@@ -11,6 +11,7 @@ interface MockUser extends User {
 }
 
 // In-memory user storage
+// eslint-disable-next-line prefer-const
 let users: MockUser[] = [
     {
         id: 1,

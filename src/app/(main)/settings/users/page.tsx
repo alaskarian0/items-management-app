@@ -46,11 +46,9 @@ import {
   userRoles,
   getUserByUsername,
   getActiveUsers,
-  getUsersByRole,
-  type SystemUser,
-  type UserRole
+  getUsersByRole
 } from "@/lib/data/settings-data";
-import { USER_ROLES } from "@/lib/types/settings";
+import { USER_ROLES, type SystemUser, type UserRole } from "@/lib/types/settings";
 
 const UsersPage = () => {
   const [usersList, setUsersList] = useState<SystemUser[]>(systemUsers);

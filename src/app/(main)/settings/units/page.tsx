@@ -40,10 +40,9 @@ import {
 // Import shared data and types
 import {
   measurementUnits,
-  getMeasurementUnitsByType,
-  type MeasurementUnit
+  getMeasurementUnitsByType
 } from "@/lib/data/settings-data";
-import { UNIT_TYPES } from "@/lib/types/settings";
+import { UNIT_TYPES, type MeasurementUnit } from "@/lib/types/settings";
 
 const UnitsPage = () => {
   const [unitsList, setUnitsList] = useState<MeasurementUnit[]>(measurementUnits);
@@ -51,12 +50,21 @@ const UnitsPage = () => {
   const [currentUnit, setCurrentUnit] = useState<MeasurementUnit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    nameEnglish: string;
+    abbreviation: string;
+    abbreviationEnglish: string;
+    type: 'weight' | 'length' | 'volume' | 'area' | 'count' | 'time' | 'temperature';
+    baseUnit: string;
+    conversionFactor: number;
+    description: string;
+  }>({
     name: "",
     nameEnglish: "",
     abbreviation: "",
     abbreviationEnglish: "",
-    type: "count" as const,
+    type: "count",
     baseUnit: "",
     conversionFactor: 0,
     description: ""

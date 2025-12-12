@@ -1,8 +1,11 @@
 import {
   BarChart3,
   Barcode,
+  Bell,
+  BellRing,
   Boxes,
   Building2,
+  CalendarClock,
   Gift,
   History,
   Landmark,
@@ -11,13 +14,12 @@ import {
   PackageMinus,
   PackagePlus,
   Ruler,
-  TrendingDown,
-  Gift,
-  BarChart3,
-  BellRing,
-  Bell,
   ShieldAlert,
-  CalendarClock,
+  TrendingDown,
+  Truck,
+  Users,
+  Warehouse,
+  Zap,
 } from "lucide-react";
 
 export interface NavItem {

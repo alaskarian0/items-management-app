@@ -5,7 +5,7 @@ import type {
   Department,
   Division,
   Unit,
-  Supplier,
+  BasicSupplier,
   Customer,
   Warehouse,
   Item,
@@ -51,7 +51,7 @@ export const units: Unit[] = [
 ];
 
 // Suppliers
-export const suppliers: Supplier[] = [
+export const suppliers: BasicSupplier[] = [
   { id: 1, name: "شركة النبلاء للمواد المكتبي" },
   { id: 2, name: "موردون متحدون للأثاث" },
   { id: 3, name: "شركة الأوائل للأجهزة الكهربائية" },

@@ -31,10 +31,8 @@ import {
 import { produce } from 'immer';
 
 // Import shared data and types
-import {
-  warehouses,
-  type Warehouse
-} from "@/lib/data/warehouse-data";
+import { warehouses } from "@/lib/data/warehouse-data";
+import { type Warehouse } from "@/lib/types/warehouse";
 
 // Use hierarchical warehouse data for display
 const initialWarehouseData: Warehouse[] = warehouses;
@@ -67,7 +65,7 @@ const WarehouseNode = ({
     if (!term) return true;
     const lowerTerm = term.toLowerCase();
     if (wh.name.toLowerCase().includes(lowerTerm)) return true;
-    return wh.children && wh.children.length > 0 && wh.children.some(child => matchesSearch(child, term));
+    return !!(wh.children && wh.children.length > 0 && wh.children.some(child => matchesSearch(child, term)));
   };
 
   const isVisible = matchesSearch(warehouse, searchTerm);
@@ -236,7 +234,7 @@ const ManageWarehousesPage = () => {
       if (currentLevel === targetLevel) return nodes;
 
       return nodes.flatMap(node =>
-        filterByLevel(node.children, currentLevel + 1, targetLevel)
+        filterByLevel(node.children || [], currentLevel + 1, targetLevel)
       );
     };
 
@@ -308,8 +306,10 @@ const ManageWarehousesPage = () => {
       produce((draft) => {
         if (mode === 'add') {
           const newWarehouse: Warehouse = {
-            id: `wh-${Date.now()}`,
+            id: Date.now(),
             name: formData.name,
+            code: `WH-${Date.now()}`,
+            isActive: true,
             itemCount: 0,
             children: [],
           };
@@ -336,13 +336,13 @@ const ManageWarehousesPage = () => {
     closeModal();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     if (!confirm('هل أنت متأكد من حذف هذا المخزن وجميع المخازن الفرعية التابعة له؟')) return;
 
     setWarehouses(
       produce((draft) => {
         findAndModify(draft, id, (node, parent, index) => {
-          if (parent) {
+          if (parent && parent.children) {
             parent.children.splice(index, 1);
           } else {
             // root node
