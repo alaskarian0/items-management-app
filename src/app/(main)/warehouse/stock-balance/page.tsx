@@ -35,10 +35,26 @@ import {
   Truck,
   TrendingUp,
   TrendingDown,
-  X
+  X,
+  MoreHorizontal,
+  Settings2,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
 import { format } from "date-fns";
@@ -65,6 +81,11 @@ const StockBalancePage = () => {
   const [purchaseDateTo, setPurchaseDateTo] = useState<Date | undefined>();
   const [issueDateFrom, setIssueDateFrom] = useState<Date | undefined>();
   const [issueDateTo, setIssueDateTo] = useState<Date | undefined>();
+
+  // Dialog state for minimum order level
+  const [minOrderDialogOpen, setMinOrderDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [minOrderLevel, setMinOrderLevel] = useState<string>("");
 
   const fetchedItems = useInventoryStock(selectedWarehouse ? selectedWarehouse.id : 0) || [];
 
@@ -127,6 +148,23 @@ const StockBalancePage = () => {
     if (stock <= minStock) return "text-red-600";
     if (stock >= maxStock) return "text-orange-600";
     return "text-green-600";
+  };
+
+  const handleOpenMinOrderDialog = (item: any) => {
+    setSelectedItem(item);
+    setMinOrderLevel(item.minStock?.toString() || "");
+    setMinOrderDialogOpen(true);
+  };
+
+  const handleSaveMinOrderLevel = () => {
+    if (selectedItem && minOrderLevel) {
+      // Here you would typically call an API to update the minimum order level
+      console.log(`Setting minimum order level for ${selectedItem.name} to ${minOrderLevel}`);
+      // For now, just close the dialog
+      setMinOrderDialogOpen(false);
+      setSelectedItem(null);
+      setMinOrderLevel("");
+    }
   };
 
   return (
@@ -454,6 +492,7 @@ const StockBalancePage = () => {
                       <TableHead className="text-right">آخر شراء</TableHead>
                       <TableHead className="text-right">آخر صرف</TableHead>
                       <TableHead className="text-right">القيمة الإجمالية</TableHead>
+                      <TableHead className="text-right">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -495,12 +534,30 @@ const StockBalancePage = () => {
                           <TableCell className="font-medium">
                             {(item.totalValue / 1000).toFixed(0)}K
                           </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenMinOrderDialog(item)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Settings2 className="h-4 w-4" />
+                                  تحديد الحد الأدنى للطلب
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={10}
+                          colSpan={11}
                           className="text-center text-muted-foreground h-24"
                         >
                           لا توجد مواد تطابق معايير البحث والتصفية
@@ -514,6 +571,46 @@ const StockBalancePage = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Minimum Order Level Dialog */}
+      <Dialog open={minOrderDialogOpen} onOpenChange={setMinOrderDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>تحديد الحد الأدنى للطلب</DialogTitle>
+            <DialogDescription>
+              {selectedItem && (
+                <>
+                  تحديد الحد الأدنى للمادة: <strong>{selectedItem.name}</strong>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="minOrderLevel">الحد الأدنى للطلب</Label>
+              <Input
+                id="minOrderLevel"
+                type="number"
+                value={minOrderLevel}
+                onChange={(e) => setMinOrderLevel(e.target.value)}
+                placeholder="أدخل الحد الأدنى..."
+                min="0"
+              />
+              <p className="text-xs text-muted-foreground">
+                سيتم إرسال تنبيه عندما يصل الرصيد إلى هذا الحد
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMinOrderDialogOpen(false)}>
+              إلغاء
+            </Button>
+            <Button onClick={handleSaveMinOrderLevel}>
+              حفظ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
