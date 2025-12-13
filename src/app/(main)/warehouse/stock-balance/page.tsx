@@ -87,14 +87,32 @@ const StockBalancePage = () => {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [minOrderLevel, setMinOrderLevel] = useState<string>("");
 
+  // Local state to store minimum order level overrides
+  const [minOrderLevelOverrides, setMinOrderLevelOverrides] = useState<Record<string, number>>({});
+
   const fetchedItems = useInventoryStock(selectedWarehouse ? selectedWarehouse.id : 0) || [];
 
+  // Merge fetched items with local overrides
+  const itemsWithOverrides = useMemo(() => {
+    return fetchedItems.map(item => ({
+      ...item,
+      minStock: minOrderLevelOverrides[item.id] ?? item.minStock,
+      // Update status based on new minStock
+      status: (() => {
+        const minStock = minOrderLevelOverrides[item.id] ?? item.minStock ?? 0;
+        if (item.stock <= minStock * 0.5) return "critical";
+        if (item.stock <= minStock) return "low";
+        return "normal";
+      })()
+    }));
+  }, [fetchedItems, minOrderLevelOverrides]);
+
   const filteredItems = useMemo(() => {
-    return fetchedItems.filter((item) => {
+    return itemsWithOverrides.filter((item) => {
       // Safely access properties as they might be missing or different in mock vs db
       const itemGroup = (item as any).category || (item as any).group || 'أخرى';
       const itemVendor = (item as any).vendor || 'غير محدد';
-      const itemStatus = (item as any).status || 'normal';
+      const itemStatus = item.status || 'normal';
 
       const matchesGroup = selectedGroup === "all" || itemGroup === selectedGroup;
       const matchesVendor = selectedVendor === "all" || itemVendor === selectedVendor;
@@ -109,7 +127,7 @@ const StockBalancePage = () => {
 
       return matchesGroup && matchesVendor && matchesStatus && matchesSearch;
     });
-  }, [fetchedItems, searchTerm, selectedGroup, selectedVendor, selectedStatus]);
+  }, [itemsWithOverrides, searchTerm, selectedGroup, selectedVendor, selectedStatus]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -152,15 +170,26 @@ const StockBalancePage = () => {
 
   const handleOpenMinOrderDialog = (item: any) => {
     setSelectedItem(item);
-    setMinOrderLevel(item.minStock?.toString() || "");
+    // Use the override value if exists, otherwise use the item's minStock
+    const currentMinStock = minOrderLevelOverrides[item.id] ?? item.minStock;
+    setMinOrderLevel(currentMinStock?.toString() || "");
     setMinOrderDialogOpen(true);
   };
 
   const handleSaveMinOrderLevel = () => {
     if (selectedItem && minOrderLevel) {
-      // Here you would typically call an API to update the minimum order level
-      console.log(`Setting minimum order level for ${selectedItem.name} to ${minOrderLevel}`);
-      // For now, just close the dialog
+      const newMinLevel = parseInt(minOrderLevel, 10);
+
+      // Update local state with the new minimum order level
+      setMinOrderLevelOverrides(prev => ({
+        ...prev,
+        [selectedItem.id]: newMinLevel
+      }));
+
+      // Here you would typically also call an API to persist the change
+      console.log(`Setting minimum order level for ${selectedItem.name} to ${newMinLevel}`);
+
+      // Close the dialog
       setMinOrderDialogOpen(false);
       setSelectedItem(null);
       setMinOrderLevel("");
