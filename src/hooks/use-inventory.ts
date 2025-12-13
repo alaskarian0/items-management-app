@@ -1,7 +1,7 @@
 
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, DocumentRecord, InventoryRecord, MovementRecord } from "@/lib/db";
-import { DocumentItem } from "@/lib/types/warehouse";
+import { DocumentItem, ItemMovement } from "@/lib/types/warehouse";
 
 export function useItems() {
     return useLiveQuery(() => db.items.toArray());
@@ -160,7 +160,7 @@ export function useMovements(warehouseId: number) {
                 itemCode: item?.code || 'N/A',
                 itemName: item?.name || 'Unknown Item',
                 unit: item?.unit || 'قطعة',
-                movementType: movement.type === 'entry' ? 'إدخال' : 'إصدار',
+                movementType: (movement.type === 'entry' ? 'إدخال' : 'إصدار') as 'إدخال' | 'إصدار',
                 quantity: movement.quantity,
                 balance: 0, // Would need to calculate running balance
                 referenceNumber: document?.docNumber || 'N/A',
@@ -170,7 +170,7 @@ export function useMovements(warehouseId: number) {
                 recipient: document?.recipientName,
                 supplier: undefined, // Would need supplier join
                 notes: document?.notes
-            };
+            } as ItemMovement;
         });
     }, [warehouseId]);
 }
