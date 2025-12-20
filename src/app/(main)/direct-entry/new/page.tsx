@@ -42,7 +42,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
-import { useNotificationStore } from "@/context/notification-store";
 import { useWarehouse } from "@/context/warehouse-context";
 import { saveDocument, useItems } from "@/hooks/use-inventory";
 import { db } from "@/lib/db";
@@ -106,7 +105,6 @@ const QuickEntryPage = () => {
   const [vendorSearchValue, setVendorSearchValue] = useState("");
 
   const items = useItems() || [];
-  const { addNotification } = useNotificationStore();
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAddItem = () => {
