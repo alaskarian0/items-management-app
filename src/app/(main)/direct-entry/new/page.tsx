@@ -677,7 +677,7 @@ const QuickEntryPage = () => {
                           <div className="font-semibold text-primary">
                             {(item.quantity * (item.price || 0)).toLocaleString('ar-IQ', {
                               style: 'currency',
-                              currency: 'د.ع',
+                              currency: 'IQD',
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0
                             })}
@@ -868,7 +868,7 @@ const QuickEntryPage = () => {
                   <span className="text-2xl font-bold text-primary">
                     {calculateTotal().toLocaleString('ar-IQ', {
                       style: 'currency',
-                      currency: 'د.ع',
+                      currency: 'IQD',
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0
                     })}

@@ -604,7 +604,7 @@ const StockBalanceReportsPage = () => {
                         <TableCell className="font-medium text-right">
                           {item.totalValue.toLocaleString('ar-IQ', {
                             style: 'currency',
-                            currency: 'د.ع',
+                            currency: 'IQD',
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0
                           })}
