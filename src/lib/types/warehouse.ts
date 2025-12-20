@@ -33,6 +33,12 @@ export interface Warehouse {
   name: string;
   code: string;
   address?: string;
+  departmentId?: number;
+  departmentName?: string;
+  divisionId?: number;
+  divisionName?: string;
+  unitId?: number;
+  unitName?: string;
   isActive: boolean;
   children?: Warehouse[];
   level?: number;

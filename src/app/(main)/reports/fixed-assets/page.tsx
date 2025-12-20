@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import {
   Barcode,
   Download,
@@ -150,6 +151,8 @@ const mockAssets: FixedAsset[] = [
 ];
 
 const FixedAssetsReportPage = () => {
+  usePageTitle("تقارير الموجودات الثابتة");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -337,7 +340,7 @@ const FixedAssetsReportPage = () => {
         </CardHeader>
         <CardContent>
           <div className="text-4xl font-bold text-blue-700 dark:text-blue-400">
-            {stats.totalValue.toLocaleString()} IQD
+            {stats.totalValue.toLocaleString()} د.ع
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             القيمة الإجمالية لجميع الموجودات الثابتة المسجلة

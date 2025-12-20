@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import { useWarehouse } from "@/context/warehouse-context";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
@@ -110,6 +111,8 @@ const movementData = [
 ];
 
 const ItemMovementReportsPage = () => {
+  usePageTitle("تقارير حركة المواد");
+
   const { selectedWarehouse } = useWarehouse();
   const [searchTerm, setSearchTerm] = useState("");
   const [movementTypeFilter, setMovementTypeFilter] = useState<string>("all");

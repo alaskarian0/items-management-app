@@ -731,7 +731,7 @@ const ReorderAlertsPage = () => {
                           {alert.reorderQuantity} {alert.unit}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {(alert.estimatedCost / 1000).toFixed(0)}K IQD
+                          {(alert.estimatedCost / 1000).toFixed(0)}K د.ع
                         </p>
                       </div>
                     </div>

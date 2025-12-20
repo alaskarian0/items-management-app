@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import {
   ArrowLeft,
   Truck,
@@ -109,6 +110,8 @@ const suppliersData = [
 ];
 
 const SuppliersReportsPage = () => {
+  usePageTitle("تقارير الموردين");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");

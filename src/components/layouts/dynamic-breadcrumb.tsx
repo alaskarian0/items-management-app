@@ -8,6 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useBreadcrumb } from "@/context/breadcrumb-context";
 import { usePathname } from "next/navigation";
 import { generateRouteLabels, navbarData } from "./navbarData";
 
@@ -16,6 +17,7 @@ const routeLabels = generateRouteLabels(navbarData)
 
 export function DynamicBreadcrumb() {
   const pathname = usePathname()
+  const { pageTitle } = useBreadcrumb()
 
   const generateBreadcrumbs = () => {
     const pathSegments = pathname.split("/").filter(Boolean)
@@ -35,8 +37,13 @@ export function DynamicBreadcrumb() {
         currentPath += `/${segment}`
         const isLast = index === pathSegments.length - 1
 
-        // Get label from routeLabels or use segment as fallback
-        const label = routeLabels[currentPath] || segment
+        // Get label from context pageTitle (for last segment), routeLabels, or use segment as fallback
+        let label = routeLabels[currentPath] || segment
+
+        // If this is the last segment and we have a pageTitle from context, use it
+        if (isLast && pageTitle) {
+          label = pageTitle
+        }
 
         breadcrumbs.push({
           href: currentPath,

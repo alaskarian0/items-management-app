@@ -11,6 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -48,6 +55,7 @@ import { ar } from "date-fns/locale";
 import {
   AlertCircle,
   CalendarIcon,
+  Eye,
   PackageMinus,
   PlusCircle,
   Search,
@@ -55,6 +63,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useImmer } from "use-immer";
+import { toast } from "sonner";
 
 // Import shared data and types
 import { useNotificationStore } from "@/context/notification-store";
@@ -81,6 +90,7 @@ const ItemIssuancePage = () => {
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+  const [viewItemIndex, setViewItemIndex] = useState<number | null>(null);
 
   const items = useItems() || [];
   const { addNotification } = useNotificationStore();
@@ -114,6 +124,17 @@ const ItemIssuancePage = () => {
     updateItemsList((draft) => {
       const item = draft[index];
       if (item) {
+        // Check for duplicate item codes when manually entering code
+        if (field === "itemCode" && value) {
+          const duplicateIndex = draft.findIndex(
+            (i, idx) => idx !== index && i.itemCode === value
+          );
+          if (duplicateIndex !== -1) {
+            toast.error(`هذا الكود موجود بالفعل في السطر ${duplicateIndex + 1}`);
+            return;
+          }
+        }
+
         item[field] = value;
         if (field === "itemName") {
           const selectedItem = items.find((i) => i.name === value);
@@ -456,6 +477,18 @@ const ItemIssuancePage = () => {
                                               const newCode = searchValue
                                                 .toUpperCase()
                                                 .replace(/\s/g, "-");
+
+                                              // Check for duplicates before adding
+                                              const duplicateIndex = itemsList.findIndex(
+                                                (i, idx) => idx !== index && i.itemCode === newCode
+                                              );
+                                              if (duplicateIndex !== -1) {
+                                                toast.error(`هذا الكود موجود بالفعل في السطر ${duplicateIndex + 1}`);
+                                                setSearchOpen(false);
+                                                setSearchValue("");
+                                                return;
+                                              }
+
                                               updateItemsList((draft) => {
                                                 draft[index].itemName =
                                                   searchValue;
@@ -477,6 +510,17 @@ const ItemIssuancePage = () => {
                                           <CommandItem
                                             key={itemData.id}
                                             onSelect={() => {
+                                              // Check for duplicates before adding
+                                              const duplicateIndex = itemsList.findIndex(
+                                                (i, idx) => idx !== index && i.itemCode === itemData.code
+                                              );
+                                              if (duplicateIndex !== -1) {
+                                                toast.error(`هذا الكود موجود بالفعل في السطر ${duplicateIndex + 1}`);
+                                                setSearchOpen(false);
+                                                setSearchValue("");
+                                                return;
+                                              }
+
                                               updateItemsList((draft) => {
                                                 draft[index].itemId =
                                                   itemData.id;
@@ -570,13 +614,24 @@ const ItemIssuancePage = () => {
                           />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveItem(index)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
+                          <div className="flex items-center gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setViewItemIndex(index)}
+                              title="عرض التفاصيل"
+                            >
+                              <Eye className="h-4 w-4 text-blue-500" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveItem(index)}
+                              title="حذف"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -611,6 +666,148 @@ const ItemIssuancePage = () => {
           </CardFooter>
         </Card>
       )}
+
+      {/* Item Details Dialog */}
+      <Dialog open={viewItemIndex !== null} onOpenChange={(open) => !open && setViewItemIndex(null)}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تفاصيل المادة</DialogTitle>
+            <DialogDescription>
+              عرض المعلومات الكاملة للمادة المحددة
+            </DialogDescription>
+          </DialogHeader>
+          {viewItemIndex !== null && itemsList[viewItemIndex] && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">كود المادة</Label>
+                  <div className="font-mono font-semibold text-lg">
+                    {itemsList[viewItemIndex].itemCode || "غير محدد"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">اسم المادة</Label>
+                  <div className="font-semibold text-lg">
+                    {itemsList[viewItemIndex].itemName || "غير محدد"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">الوحدة</Label>
+                  <div className="font-medium">
+                    {itemsList[viewItemIndex].unit || "غير محدد"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">الكمية المطلوبة</Label>
+                  <div className="font-medium text-primary">
+                    {itemsList[viewItemIndex].quantity}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">الرصيد المتوفر</Label>
+                  <div className={`font-medium ${
+                    itemsList[viewItemIndex].quantity > (itemsList[viewItemIndex].stock ?? 0)
+                      ? "text-red-500"
+                      : "text-green-600"
+                  }`}>
+                    {itemsList[viewItemIndex].stock ?? 0}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {selectedWarehouse && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">المخزن</Label>
+                    <div className="font-medium">
+                      {selectedWarehouse.name} ({selectedWarehouse.code})
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">اسم المستلم</Label>
+                  <div className="font-medium">
+                    {recipientName || "غير محدد"}
+                  </div>
+                </div>
+              </div>
+
+              {itemsList[viewItemIndex].vendorName && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">المورد</Label>
+                  <div className="font-medium">
+                    {itemsList[viewItemIndex].vendorName}
+                  </div>
+                </div>
+              )}
+
+              {itemsList[viewItemIndex].invoiceNumber && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">رقم الفاتورة</Label>
+                  <div className="font-medium">
+                    {itemsList[viewItemIndex].invoiceNumber}
+                  </div>
+                </div>
+              )}
+
+              {itemsList[viewItemIndex].expiryDate && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">تاريخ الانتهاء</Label>
+                  <div className="font-medium">
+                    {format(new Date(itemsList[viewItemIndex].expiryDate!), "PPP", { locale: ar })}
+                  </div>
+                </div>
+              )}
+
+              {itemsList[viewItemIndex].warranty && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">الضمان</Label>
+                  <div className="font-medium">
+                    {itemsList[viewItemIndex].warranty}
+                    {itemsList[viewItemIndex].warrantyPeriod && itemsList[viewItemIndex].warrantyUnit && (
+                      <span className="text-muted-foreground mr-2">
+                        ({itemsList[viewItemIndex].warrantyPeriod} {
+                          itemsList[viewItemIndex].warrantyUnit === "day" ? "يوم" :
+                          itemsList[viewItemIndex].warrantyUnit === "month" ? "شهر" :
+                          itemsList[viewItemIndex].warrantyUnit === "year" ? "سنة" : ""
+                        })
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {itemsList[viewItemIndex].notes && (
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">الملاحظات</Label>
+                  <div className="font-medium p-3 bg-muted rounded-md">
+                    {itemsList[viewItemIndex].notes}
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 border-t">
+                <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                  <div>
+                    <span className="font-medium">تاريخ الإضافة:</span>{" "}
+                    {format(new Date(), "PPP", { locale: ar })}
+                  </div>
+                  {department && (
+                    <div>
+                      <span className="font-medium">القسم:</span>{" "}
+                      {departments.find(d => d.id === Number(department))?.name || "غير محدد"}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

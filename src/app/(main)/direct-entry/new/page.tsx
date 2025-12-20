@@ -44,41 +44,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useNotificationStore } from "@/context/notification-store";
 import { useWarehouse } from "@/context/warehouse-context";
-import { saveDocument, useItems, useSuppliers } from "@/hooks/use-inventory";
+import { saveDocument, useItems } from "@/hooks/use-inventory";
+import { db } from "@/lib/db";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
-import { AlertCircle, CalendarIcon, DollarSign, Info, Loader2, Package, PlusCircle, Save, Search, Trash2, Zap } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarIcon,
+  Loader2,
+  PlusCircle,
+  Save,
+  Search,
+  Trash2,
+  Zap
+} from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useImmer } from "use-immer";
 
-// --- MOCK DATA ---
-const departments = [
-  { id: 1, name: "قسم الشؤون الهندسية" },
-  { id: 2, name: "قسم الشؤون الإدارية" },
-  { id: 3, name: "قسم المحاسبة" },
-  { id: 4, name: "قسم تقنية المعلومات" },
-];
-
-const divisions = [
-  { id: 1, name: "شعبة الهندسة المدنية" },
-  { id: 2, name: "شعبة الهندسة الكهربائية" },
-  { id: 3, name: "شعبة الهندسة الميكانيكية" },
-  { id: 4, name: "شعبة الشؤون الإدارية" },
-];
-
-const units = [
-  { id: 1, name: "وحدة التخطيط", divisionId: 1 },
-  { id: 2, name: "وحدة التنفيذ", divisionId: 1 },
-  { id: 3, name: "وحدة الصيانة الكهربائية", divisionId: 2 },
-  { id: 4, name: "وحدة الصيانة الميكانيكية", divisionId: 3 },
-  { id: 5, name: "وحدة الشؤون المالية", divisionId: 4 },
-  { id: 6, name: "وحدة الموارد البشرية", divisionId: 4 },
-];
-
-// Removed mock items
-
+// Import shared data and types
+import {
+  departments,
+  divisions,
+  entryTypes,
+  suppliers,
+  units,
+} from "@/lib/data/warehouse-data";
+import { type Item } from "@/lib/types/warehouse";
 
 type DirectEntryItem = {
   id: number;
@@ -106,34 +98,16 @@ const QuickEntryPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("1101");
   const [recipientName, setRecipientName] = useState("");
-  const [supplierName, setSupplierName] = useState("");
-  const [supplierSearchOpen, setSupplierSearchOpen] = useState(false);
-  const [supplierSearchValue, setSupplierSearchValue] = useState("");
   const [generalNotes, setGeneralNotes] = useState("");
   const [itemsList, updateItemsList] = useImmer<DirectEntryItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
-  const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
+  const [vendorSearchOpen, setVendorSearchOpen] = useState<number | false>(false);
+  const [vendorSearchValue, setVendorSearchValue] = useState("");
 
   const items = useItems() || [];
-  const suppliersList = useSuppliers() || [];
   const { addNotification } = useNotificationStore();
-  const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-
-  // Get currently focused item details
-  const focusedItem = focusedItemIndex !== null && itemsList[focusedItemIndex]?.itemId
-    ? items.find(i => i.id === itemsList[focusedItemIndex].itemId)
-    : null;
-
-  // Mock suppliers data for autocomplete
-  const [suppliers] = useState([
-    { id: 1, name: "شركة النبلاء" },
-    { id: 2, name: "موردون متحدون" },
-    { id: 3, name: "شركة العراق للتجارة" },
-    { id: 4, name: "الموارد الحديثة" },
-    { id: 5, name: "شركة بغداد للمستلزمات" },
-  ]);
 
   const handleAddItem = () => {
     updateItemsList((draft) => {
@@ -160,6 +134,18 @@ const QuickEntryPage = () => {
     field: K,
     value: DirectEntryItem[K]
   ) => {
+    // Check for duplicate item code when manually entering
+    if (field === "itemCode" && typeof value === "string" && value.trim()) {
+      const existingItemIndex = itemsList.findIndex(
+        (item, idx) => idx !== index && item.itemCode === value
+      );
+
+      if (existingItemIndex !== -1) {
+        toast.error(`الكود "${value}" مستخدم بالفعل في السطر ${existingItemIndex + 1}`);
+        return;
+      }
+    }
+
     updateItemsList((draft) => {
       const item = draft[index];
       if (item) {
@@ -168,6 +154,16 @@ const QuickEntryPage = () => {
           // Try to find if item exists in DB items
           const selectedItem = items.find((i) => i.name === value);
           if (selectedItem) {
+            // Check if this item code is already in the list
+            const existingItemIndex = itemsList.findIndex(
+              (item, idx) => idx !== index && item.itemCode === selectedItem.code
+            );
+
+            if (existingItemIndex !== -1) {
+              toast.error(`المادة "${selectedItem.name}" موجودة بالفعل في السطر ${existingItemIndex + 1}`);
+              return;
+            }
+
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
             item.itemCode = selectedItem.code;
@@ -187,9 +183,11 @@ const QuickEntryPage = () => {
   };
 
   const calculateTotal = () => {
-    return itemsList
-      .reduce((acc, item) => acc + item.quantity * (item.price || 0), 0)
-      .toFixed(2);
+    return itemsList.reduce((acc, item) => acc + item.quantity * (item.price || 0), 0);
+  };
+
+  const calculateTotalQuantity = () => {
+    return itemsList.reduce((acc, item) => acc + item.quantity, 0);
   };
 
   const handleSave = async () => {
@@ -209,7 +207,26 @@ const QuickEntryPage = () => {
 
       setIsSaving(true);
 
-      // Save Document
+      // 1. Handle New Items (items with no ID)
+      const processedItems = [...itemsList];
+      for (let i = 0; i < processedItems.length; i++) {
+        const item = processedItems[i];
+        if (!item.itemId && item.itemName) {
+          // Creating new item
+          const newCode = item.itemCode || `AUTO-${Date.now()}-${i}`;
+          const newItemId = await db.items.add({
+            name: item.itemName,
+            code: newCode,
+            unit: item.unit || "قطعة",
+            stock: 0,
+            price: item.price || 0,
+            category: "أخرى",
+          } as Item);
+          processedItems[i] = { ...item, itemId: newItemId, itemCode: newCode };
+        }
+      }
+
+      // 2. Save Document
       await saveDocument(
         {
           docNumber,
@@ -221,11 +238,11 @@ const QuickEntryPage = () => {
           unitId: unit ? Number(unit) : undefined,
           entryType,
           notes: generalNotes,
-          itemCount: itemsList.length,
+          itemCount: processedItems.length,
           totalValue: Number(calculateTotal()),
           status: "approved",
         },
-        itemsList
+        processedItems
       );
 
       toast.success("تم حفظ مستند الإدخال بنجاح");
@@ -243,15 +260,19 @@ const QuickEntryPage = () => {
     }
   };
 
-  const filteredItems = (items || []).filter(
-    (item) =>
-      item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-      item.code.toLowerCase().includes(searchValue.toLowerCase())
-  );
+  const filteredItems = searchValue
+    ? items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+          item.code.toLowerCase().includes(searchValue.toLowerCase())
+      )
+    : items.slice(0, 50);
 
-  const filteredSuppliers = (suppliersList || []).filter((supplier) =>
-    supplier.name.toLowerCase().includes(supplierSearchValue.toLowerCase())
-  );
+  const filteredSuppliers = vendorSearchValue
+    ? suppliers.filter((supplier) =>
+        supplier.name.toLowerCase().includes(vendorSearchValue.toLowerCase())
+      )
+    : suppliers.slice(0, 50);
 
   return (
     <div className="space-y-6">
@@ -265,6 +286,7 @@ const QuickEntryPage = () => {
           إدخال مواد مباشرة إلى الأقسام بدون المرور بالمخزن
         </p>
       </div>
+
       {/* Warehouse Selector */}
       <Card>
         <CardHeader>
@@ -273,9 +295,12 @@ const QuickEntryPage = () => {
         <CardContent>
           {!selectedWarehouse ? (
             <div className="space-y-4">
-              <div className="text-center text-muted-foreground">
-                الرجاء اختيار المخزن للمتابعة في عملية الإدخال
-              </div>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  الرجاء اختيار المخزن للمتابعة في عملية الإدخال
+                </AlertDescription>
+              </Alert>
               <WarehouseSelector />
             </div>
           ) : (
@@ -297,7 +322,14 @@ const QuickEntryPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label>القسم</Label>
-                <Select value={department} onValueChange={setDepartment}>
+                <Select
+                  value={department}
+                  onValueChange={(val) => {
+                    setDepartment(val);
+                    setDivision("");
+                    setUnit("");
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر القسم..." />
                   </SelectTrigger>
@@ -311,23 +343,26 @@ const QuickEntryPage = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>الشعبة أو الوحدة</Label>
+                <Label>الشعبة</Label>
                 <Select
                   value={division}
                   onValueChange={(value) => {
                     setDivision(value);
-                    setUnit(""); // Reset unit when division changes
+                    setUnit("");
                   }}
+                  disabled={!department}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الشعبة..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {divisions.map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
+                    {divisions
+                      .filter((d) => d.departmentId === Number(department))
+                      .map((d) => (
+                        <SelectItem key={d.id} value={String(d.id)}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -352,7 +387,21 @@ const QuickEntryPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-
+              <div className="space-y-2">
+                <Label>نوع الإدخال</Label>
+                <Select value={entryType} onValueChange={setEntryType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر نوع الإدخال..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {entryTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>رقم المستند</Label>
                 <Input
@@ -395,6 +444,14 @@ const QuickEntryPage = () => {
                   placeholder="اسم المستلم"
                 />
               </div>
+              <div className="space-y-2 col-span-1 md:col-span-2 lg:col-span-4">
+                <Label>البيان أو الملاحظات العامة</Label>
+                <Textarea
+                  value={generalNotes}
+                  onChange={(e) => setGeneralNotes(e.target.value)}
+                  placeholder="اكتب ملاحظاتك هنا..."
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -408,27 +465,28 @@ const QuickEntryPage = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Items Table */}
-            <div className="border rounded-md">
+            <div className="border rounded-md overflow-x-auto">
               <Table dir="rtl">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-right">كود المادة</TableHead>
-                    <TableHead className="text-right">اسم المادة</TableHead>
-                    <TableHead className="text-right">الوحدة</TableHead>
-                    <TableHead className="text-right">الكمية</TableHead>
-                    <TableHead className="text-right">سعر المفرد</TableHead>
-                    <TableHead className="text-right">اسم المورد</TableHead>
-                    <TableHead className="text-right">رقم الفاتورة</TableHead>
-                    <TableHead className="text-right">تاريخ الانتهاء</TableHead>
-                    <TableHead className="text-right">الضمان</TableHead>
-                    <TableHead className="text-right">إجراء</TableHead>
+                    <TableHead className="text-right min-w-[120px]">كود المادة</TableHead>
+                    <TableHead className="text-right min-w-[200px]">اسم المادة</TableHead>
+                    <TableHead className="text-right min-w-[100px]">الوحدة</TableHead>
+                    <TableHead className="text-right min-w-[100px]">الكمية</TableHead>
+                    <TableHead className="text-right min-w-[120px]">سعر المفرد</TableHead>
+                    <TableHead className="text-right min-w-[120px]">المجموع</TableHead>
+                    <TableHead className="text-right min-w-[150px]">اسم المورد</TableHead>
+                    <TableHead className="text-right min-w-[120px]">رقم الفاتورة</TableHead>
+                    <TableHead className="text-right min-w-[180px]">تاريخ الانتهاء</TableHead>
+                    <TableHead className="text-right min-w-[180px]">الضمان</TableHead>
+                    <TableHead className="text-right min-w-[80px]">إجراء</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={10}
+                        colSpan={11}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -436,12 +494,8 @@ const QuickEntryPage = () => {
                     </TableRow>
                   ) : (
                     itemsList.map((item, index) => (
-                      <TableRow
-                        key={item.id}
-                        className={focusedItemIndex === index ? "bg-muted/50" : ""}
-                        onClick={() => setFocusedItemIndex(index)}
-                      >
-                        <TableCell className="text-right w-32">
+                      <TableRow key={item.id}>
+                        <TableCell className="text-right min-w-[120px]">
                           <Input
                             value={item.itemCode || ""}
                             onChange={(e) =>
@@ -455,7 +509,7 @@ const QuickEntryPage = () => {
                             className="text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[200px]">
                           {item.itemId ? (
                             <div className="font-medium">{item.itemName}</div>
                           ) : (
@@ -499,13 +553,24 @@ const QuickEntryPage = () => {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => {
-                                              // Create new material with search value
                                               const newCode = searchValue
                                                 .toUpperCase()
                                                 .replace(/\s/g, "-");
+
+                                              // Check for duplicates
+                                              const existingItemIndex = itemsList.findIndex(
+                                                (item, idx) => idx !== index && item.itemCode === newCode
+                                              );
+
+                                              if (existingItemIndex !== -1) {
+                                                toast.error(`المادة بالكود "${newCode}" موجودة بالفعل في السطر ${existingItemIndex + 1}`);
+                                                setSearchOpen(false);
+                                                setSearchValue("");
+                                                return;
+                                              }
+
                                               updateItemsList((draft) => {
-                                                draft[index].itemName =
-                                                  searchValue;
+                                                draft[index].itemName = searchValue;
                                                 draft[index].itemCode = newCode;
                                                 draft[index].unit = "قطعة";
                                               });
@@ -523,17 +588,24 @@ const QuickEntryPage = () => {
                                           <CommandItem
                                             key={itemData.id}
                                             onSelect={() => {
+                                              // Check for duplicates
+                                              const existingItemIndex = itemsList.findIndex(
+                                                (item, idx) => idx !== index && item.itemCode === itemData.code
+                                              );
+
+                                              if (existingItemIndex !== -1) {
+                                                toast.error(`المادة "${itemData.name}" موجودة بالفعل في السطر ${existingItemIndex + 1}`);
+                                                setSearchOpen(false);
+                                                setSearchValue("");
+                                                return;
+                                              }
+
                                               updateItemsList((draft) => {
-                                                draft[index].itemId =
-                                                  itemData.id;
-                                                draft[index].itemName =
-                                                  itemData.name;
-                                                draft[index].itemCode =
-                                                  itemData.code;
-                                                draft[index].unit =
-                                                  itemData.unit;
-                                                draft[index].price =
-                                                  itemData.price || 0;
+                                                draft[index].itemId = itemData.id;
+                                                draft[index].itemName = itemData.name;
+                                                draft[index].itemCode = itemData.code;
+                                                draft[index].unit = itemData.unit;
+                                                draft[index].price = itemData.price || 0;
                                               });
                                               setSearchOpen(false);
                                               setSearchValue("");
@@ -562,17 +634,17 @@ const QuickEntryPage = () => {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[100px]">
                           <Input
                             value={item.unit || ""}
                             onChange={(e) =>
                               handleItemChange(index, "unit", e.target.value)
                             }
                             placeholder="الوحدة"
-                            className="w-20 text-right"
+                            className="w-full text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[100px]">
                           <Input
                             type="number"
                             value={item.quantity}
@@ -583,11 +655,11 @@ const QuickEntryPage = () => {
                                 Number(e.target.value)
                               )
                             }
-                            className="w-24 text-right"
+                            className="w-full text-right"
                             min="1"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[120px]">
                           <Input
                             type="number"
                             value={item.price}
@@ -599,31 +671,111 @@ const QuickEntryPage = () => {
                               )
                             }
                             placeholder="السعر"
-                            className="w-24 text-right"
+                            className="w-full text-right"
                             min="0"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            value={item.vendorName || ""}
-                            onChange={(e) =>
-                              handleItemChange(index, "vendorName", e.target.value)
-                            }
-                            placeholder="اسم المورد"
-                            className="w-32 text-right"
-                          />
+                        <TableCell className="text-right min-w-[120px]">
+                          <div className="font-semibold text-primary">
+                            {(item.quantity * (item.price || 0)).toLocaleString('ar-IQ', {
+                              style: 'currency',
+                              currency: 'د.ع',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0
+                            })}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[150px]">
+                          {item.vendorId ? (
+                            <div className="font-medium">{item.vendorName}</div>
+                          ) : (
+                            <Popover
+                              open={vendorSearchOpen === index}
+                              onOpenChange={(open) =>
+                                setVendorSearchOpen(open ? index : false)
+                              }
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start text-right text-muted-foreground"
+                                >
+                                  <Search className="ml-2 h-4 w-4" />
+                                  {item.vendorName || "ابحث عن مورد..."}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="p-0"
+                                align="start"
+                                style={{
+                                  width: "var(--radix-popover-trigger-width)",
+                                }}
+                              >
+                                <Command>
+                                  <CommandInput
+                                    placeholder="ابحث بالاسم..."
+                                    value={vendorSearchValue}
+                                    onValueChange={setVendorSearchValue}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      <div className="p-2">
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                          لم يتم العثور على موردين
+                                        </p>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            updateItemsList((draft) => {
+                                              draft[index].vendorName = vendorSearchValue;
+                                              draft[index].vendorId = undefined;
+                                            });
+                                            setVendorSearchOpen(false);
+                                            setVendorSearchValue("");
+                                          }}
+                                        >
+                                          <PlusCircle className="ml-2 h-4 w-4" />
+                                          إضافة &quot;{vendorSearchValue}&quot; كمورد جديد
+                                        </Button>
+                                      </div>
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      {filteredSuppliers.map((vendor) => (
+                                        <CommandItem
+                                          key={vendor.id}
+                                          onSelect={() => {
+                                            updateItemsList((draft) => {
+                                              draft[index].vendorId = vendor.id;
+                                              draft[index].vendorName = vendor.name;
+                                            });
+                                            setVendorSearchOpen(false);
+                                            setVendorSearchValue("");
+                                          }}
+                                        >
+                                          <div className="font-medium">
+                                            {vendor.name}
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right min-w-[120px]">
                           <Input
                             value={item.invoiceNumber || ""}
                             onChange={(e) =>
                               handleItemChange(index, "invoiceNumber", e.target.value)
                             }
                             placeholder="رقم الفاتورة"
-                            className="w-32 text-right"
+                            className="w-full text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[180px]">
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button
@@ -650,8 +802,8 @@ const QuickEntryPage = () => {
                             </PopoverContent>
                           </Popover>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-2">
+                        <TableCell className="text-right min-w-[180px]">
+                          <div className="flex gap-2 items-center">
                             <Input
                               type="number"
                               value={item.warrantyPeriod || 1}
@@ -683,7 +835,7 @@ const QuickEntryPage = () => {
                             </Select>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right min-w-[80px]">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -706,25 +858,38 @@ const QuickEntryPage = () => {
 
             {/* Summary */}
             {itemsList.length > 0 && (
-              <div className="flex justify-end items-center gap-4 p-4 bg-muted rounded-md">
-                <span className="text-lg font-bold">إجمالي الأصناف:</span>
-                <span className="text-2xl font-bold text-primary">
-                  {itemsList.length}
-                </span>
-                <span className="text-muted-foreground">|</span>
-                <span className="text-lg font-bold">إجمالي الكميات:</span>
-                <span className="text-2xl font-bold text-primary">
-                  {itemsList.reduce((sum, item) => sum + item.quantity, 0)}
-                </span>
-                <span className="text-muted-foreground">|</span>
-                <span className="text-lg font-bold">الإجمالي:</span>
-                <span className="text-2xl font-bold text-primary">
-                  {calculateTotal()} د.ع
-                </span>
+              <div className="space-y-3 p-4 bg-muted rounded-md">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold">إجمالي الكميات:</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {calculateTotalQuantity().toLocaleString('ar-IQ')} قطعة
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-lg font-bold">المجموع النهائي:</span>
+                  <span className="text-2xl font-bold text-primary">
+                    {calculateTotal().toLocaleString('ar-IQ', {
+                      style: 'currency',
+                      currency: 'د.ع',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    })}
+                  </span>
+                </div>
               </div>
             )}
           </CardContent>
           <CardFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDocNumber((prev) => String(Number(prev) + 1));
+                updateItemsList(() => []);
+                setGeneralNotes("");
+              }}
+            >
+              مستند جديد
+            </Button>
             <Button
               disabled={
                 itemsList.length === 0 || !department || !selectedWarehouse || isSaving
@@ -744,62 +909,6 @@ const QuickEntryPage = () => {
               )}
             </Button>
           </CardFooter>
-        </Card>
-      )}
-
-      {/* Material Info Panel (Floating/Fixed) */}
-      {focusedItem && (
-        <Card className="fixed left-6 top-24 w-80 shadow-lg border-l-4 border-l-primary hidden xl:block animate-in slide-in-from-right-4">
-          <CardHeader className="pb-2 bg-muted/30">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Info className="h-5 w-5 text-primary" />
-              معلومات المادة
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-muted-foreground">اسم المادة</div>
-              <div className="font-bold">{focusedItem.name}</div>
-              <div className="text-xs font-mono bg-muted px-2 py-1 rounded w-fit mt-1">
-                {focusedItem.code}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Package className="h-3 w-3" /> الرصيد الحالي
-                </div>
-                <div className="font-bold text-lg">{focusedItem.stock} {focusedItem.unit}</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" /> آخر سعر
-                </div>
-
-                <div className="font-bold">{focusedItem.price?.toLocaleString() || '-'} د.ع</div>
-              </div>
-            </div>
-
-            <div className="space-y-1 border-t pt-2">
-              <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
-                <CalendarIcon className="h-3 w-3" /> آخر إدخال
-              </div>
-
-              <div className="text-sm">{(focusedItem as any).lastEntryDate || '-'}</div>
-            </div>
-
-
-            {(focusedItem as any).specs && (
-              <div className="space-y-1 border-t pt-2">
-                <div className="text-xs text-muted-foreground mb-1">المواصفات</div>
-                <div className="text-sm bg-muted/50 p-2 rounded text-muted-foreground">
-
-                  {(focusedItem as any).specs}
-                </div>
-              </div>
-            )}
-          </CardContent>
         </Card>
       )}
     </div>

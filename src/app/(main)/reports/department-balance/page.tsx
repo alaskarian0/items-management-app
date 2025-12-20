@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import {
@@ -121,6 +122,8 @@ const departmentData = [
 ];
 
 const DepartmentBalanceReportsPage = () => {
+  usePageTitle("رصيد الأقسام");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");

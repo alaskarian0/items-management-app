@@ -87,6 +87,8 @@ const ItemEntryPage = () => {
   const [itemsList, updateItemsList] = useImmer<DocumentItem[]>([]);
   const [searchOpen, setSearchOpen] = useState<number | false>(false);
   const [searchValue, setSearchValue] = useState("");
+  const [vendorSearchOpen, setVendorSearchOpen] = useState<number | false>(false);
+  const [vendorSearchValue, setVendorSearchValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   // Filter items based on search
@@ -97,6 +99,14 @@ const ItemEntryPage = () => {
         i.code.toLowerCase().includes(searchValue.toLowerCase())
     )
     : allItems.slice(0, 50); // Limit to 50 when not searching
+
+  // Filter suppliers based on search
+  const filteredSuppliers = vendorSearchValue
+    ? suppliers.filter(
+      (s) =>
+        s.name.toLowerCase().includes(vendorSearchValue.toLowerCase())
+    )
+    : suppliers.slice(0, 50); // Limit to 50 when not searching
 
   const handleAddItem = () => {
     updateItemsList((draft) => {
@@ -123,6 +133,18 @@ const ItemEntryPage = () => {
     field: K,
     value: DocumentItem[K]
   ) => {
+    // Check for duplicate item code when manually entering
+    if (field === "itemCode" && typeof value === "string" && value.trim()) {
+      const existingItemIndex = itemsList.findIndex(
+        (item, idx) => idx !== index && item.itemCode === value
+      );
+
+      if (existingItemIndex !== -1) {
+        toast.error(`الكود "${value}" مستخدم بالفعل في السطر ${existingItemIndex + 1}`);
+        return;
+      }
+    }
+
     updateItemsList((draft) => {
       const item = draft[index];
       if (item) {
@@ -131,6 +153,16 @@ const ItemEntryPage = () => {
           // Try to find if item exists in DB items
           const selectedItem = allItems.find((i) => i.name === value);
           if (selectedItem) {
+            // Check if this item code is already in the list
+            const existingItemIndex = itemsList.findIndex(
+              (item, idx) => idx !== index && item.itemCode === selectedItem.code
+            );
+
+            if (existingItemIndex !== -1) {
+              toast.error(`المادة "${selectedItem.name}" موجودة بالفعل في السطر ${existingItemIndex + 1}`);
+              return;
+            }
+
             item.unit = selectedItem.unit;
             item.itemId = selectedItem.id;
             item.itemCode = selectedItem.code;
@@ -151,8 +183,11 @@ const ItemEntryPage = () => {
 
   const calculateTotal = () => {
     return itemsList
-      .reduce((acc, item) => acc + item.quantity * (item.price || 0), 0)
-      .toFixed(2);
+      .reduce((acc, item) => acc + item.quantity * (item.price || 0), 0);
+  };
+
+  const calculateTotalQuantity = () => {
+    return itemsList.reduce((acc, item) => acc + item.quantity, 0);
   };
 
   const handleSave = async () => {
@@ -509,6 +544,19 @@ const ItemEntryPage = () => {
                                               const newCode = searchValue
                                                 .toUpperCase()
                                                 .replace(/\s/g, "-");
+
+                                              // Check if item with this code already exists
+                                              const existingItemIndex = itemsList.findIndex(
+                                                (item, idx) => idx !== index && item.itemCode === newCode
+                                              );
+
+                                              if (existingItemIndex !== -1) {
+                                                toast.error(`المادة بالكود "${newCode}" موجودة بالفعل في السطر ${existingItemIndex + 1}`);
+                                                setSearchOpen(false);
+                                                setSearchValue("");
+                                                return;
+                                              }
+
                                               updateItemsList((draft) => {
                                                 draft[index].itemName =
                                                   searchValue;
@@ -529,6 +577,18 @@ const ItemEntryPage = () => {
                                           <CommandItem
                                             key={itemData.id}
                                             onSelect={() => {
+                                              // Check if item already exists in the list
+                                              const existingItemIndex = itemsList.findIndex(
+                                                (item, idx) => idx !== index && item.itemCode === itemData.code
+                                              );
+
+                                              if (existingItemIndex !== -1) {
+                                                toast.error(`المادة "${itemData.name}" موجودة بالفعل في السطر ${existingItemIndex + 1}`);
+                                                setSearchOpen(false);
+                                                setSearchValue("");
+                                                return;
+                                              }
+
                                               updateItemsList((draft) => {
                                                 draft[index].itemId =
                                                   itemData.id;
@@ -610,18 +670,96 @@ const ItemEntryPage = () => {
                         </TableCell>
                         <TableCell className="text-right min-w-[120px]">
                           <div className="font-semibold text-primary">
-                            {(item.quantity * (item.price || 0)).toFixed(2)}
+                            {(item.quantity * (item.price || 0)).toLocaleString('ar-IQ', {
+                              style: 'currency',
+                              currency: 'د.ع',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0
+                            })}
                           </div>
                         </TableCell>
                         <TableCell className="text-right min-w-[150px]">
-                          <Input
-                            value={item.vendorName || ""}
-                            onChange={(e) =>
-                              handleItemChange(index, "vendorName", e.target.value)
-                            }
-                            placeholder="اسم المورد"
-                            className="w-full text-right"
-                          />
+                          {item.vendorId ? (
+                            <div className="font-medium">{item.vendorName}</div>
+                          ) : (
+                            <Popover
+                              open={vendorSearchOpen === index}
+                              onOpenChange={(open) =>
+                                setVendorSearchOpen(open ? index : false)
+                              }
+                            >
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className="w-full justify-start text-right text-muted-foreground"
+                                >
+                                  <Search className="ml-2 h-4 w-4" />
+                                  {item.vendorName || "ابحث عن مورد..."}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="p-0"
+                                align="start"
+                                style={{
+                                  width: "var(--radix-popover-trigger-width)",
+                                }}
+                              >
+                                <Command>
+                                  <CommandInput
+                                    placeholder="ابحث بالاسم..."
+                                    value={vendorSearchValue}
+                                    onValueChange={setVendorSearchValue}
+                                  />
+                                  <CommandList>
+                                    <CommandEmpty>
+                                      <div className="p-2">
+                                        <p className="text-sm text-muted-foreground mb-2">
+                                          لم يتم العثور على موردين
+                                        </p>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            updateItemsList((draft) => {
+                                              draft[index].vendorName = vendorSearchValue;
+                                              draft[index].vendorId = undefined;
+                                            });
+                                            setVendorSearchOpen(false);
+                                            setVendorSearchValue("");
+                                          }}
+                                        >
+                                          <PlusCircle className="ml-2 h-4 w-4" />
+                                          إضافة &quot;{vendorSearchValue}&quot; كمورد جديد
+                                        </Button>
+                                      </div>
+                                    </CommandEmpty>
+                                    <CommandGroup>
+                                      {filteredSuppliers.map((vendor) => (
+                                        <CommandItem
+                                          key={vendor.id}
+                                          onSelect={() => {
+                                            updateItemsList((draft) => {
+                                              draft[index].vendorId = vendor.id;
+                                              draft[index].vendorName = vendor.name;
+                                            });
+                                            setVendorSearchOpen(false);
+                                            setVendorSearchValue("");
+                                          }}
+                                          className="flex items-center justify-between"
+                                        >
+                                          <div>
+                                            <div className="font-medium">
+                                              {vendor.name}
+                                            </div>
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          )}
                         </TableCell>
                         <TableCell className="text-right min-w-[120px]">
                           <Input
@@ -719,12 +857,24 @@ const ItemEntryPage = () => {
             </div>
 
             {/* --- FOOTER --- */}
-            <div className="flex justify-end items-center gap-4 p-4 bg-muted rounded-md">
-              <span className="text-lg font-bold">المجموع النهائي:</span>
-              <span className="text-2xl font-bold text-primary">
-                {calculateTotal()}
-              </span>
-              <span className="font-semibold">دينار عراقي</span>
+            <div className="space-y-3 p-4 bg-muted rounded-md">
+              <div className="flex justify-between items-center">
+                <span className="text-lg font-semibold">إجمالي الكميات:</span>
+                <span className="text-xl font-bold text-blue-600">
+                  {calculateTotalQuantity().toLocaleString('ar-IQ')} قطعة
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-lg font-bold">المجموع النهائي:</span>
+                <span className="text-2xl font-bold text-primary">
+                  {calculateTotal().toLocaleString('ar-IQ', {
+                    style: 'currency',
+                    currency: 'د.ع',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                  })}
+                </span>
+              </div>
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2">

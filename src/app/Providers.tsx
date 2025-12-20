@@ -20,7 +20,7 @@ export function Providers({ children }: ProvidersProps) {
     <ThemeProvider>
       <SidebarProvider>
         {children}
-        <Toaster />
+        <Toaster position="bottom-left" />
       </SidebarProvider>
     </ThemeProvider>
   );

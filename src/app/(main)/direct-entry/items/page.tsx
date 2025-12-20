@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ChevronRight,
   Edit,
+  Eye,
   File as FileIcon,
   Filter,
   Folder,
@@ -150,6 +151,8 @@ const GroupNode = ({
   onOpenModal,
   onDelete,
   onManageWarehouses,
+  onSelectItem,
+  selectedItemId,
   searchTerm,
   level = 1,
 }: {
@@ -158,6 +161,8 @@ const GroupNode = ({
   onOpenModal: (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: any) => void;
   onDelete: (type: 'store' | 'group' | 'item', id: string) => void;
   onManageWarehouses: (item: Item) => void;
+  onSelectItem: (item: Item) => void;
+  selectedItemId: string | null;
   searchTerm: string;
   level?: number;
 }) => {
@@ -244,12 +249,13 @@ const GroupNode = ({
         {group.items.map((item) => {
           const itemMatches = matchesSearch(item.name) || matchesSearch(item.code);
           if (!itemMatches && searchTerm) return null;
+          const isSelected = item.id === selectedItemId;
 
           return (
             <div
               key={item.id}
-              className={`flex items-center gap-2 group mt-1 p-2 rounded-lg hover:bg-muted/50 transition-all border ${
-                itemMatches && searchTerm ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'
+              className={`flex items-center gap-2 group mt-1 p-2 rounded-lg transition-all border ${
+                isSelected ? 'bg-primary/10 border-primary' : itemMatches && searchTerm ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border hover:bg-muted/50'
               }`}
             >
               <div className="w-7 shrink-0"></div>
@@ -257,23 +263,28 @@ const GroupNode = ({
                 <FileIcon className="h-3.5 w-3.5" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-sm font-medium ${itemMatches && searchTerm ? 'text-primary' : ''}`}>
-                    {item.name}
-                  </span>
-                  <code className="text-xs px-1.5 py-0.5 bg-muted rounded">{item.code}</code>
-                  {item.quantity !== undefined && (
-                    <Badge variant="outline" className="text-xs h-5">
-                      {item.quantity} {item.unit}
-                    </Badge>
-                  )}
-                  {item.warehouses && item.warehouses.length > 0 && (
-                    <Badge variant="secondary" className="text-xs h-5 bg-green-100 text-green-700">
-                      <Warehouse className="h-3 w-3 ml-1" />
-                      {item.warehouses.length} مخزن
-                    </Badge>
-                  )}
-                </div>
+                <button
+                  onClick={() => onSelectItem(item)}
+                  className="w-full text-right"
+                >
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-sm font-medium hover:text-primary cursor-pointer ${isSelected || (itemMatches && searchTerm) ? 'text-primary' : ''}`}>
+                      {item.name}
+                    </span>
+                    <code className="text-xs px-1.5 py-0.5 bg-muted rounded">{item.code}</code>
+                    {item.quantity !== undefined && (
+                      <Badge variant="outline" className="text-xs h-5">
+                        {item.quantity} {item.unit}
+                      </Badge>
+                    )}
+                    {item.warehouses && item.warehouses.length > 0 && (
+                      <Badge variant="secondary" className="text-xs h-5 bg-green-100 text-green-700">
+                        <Warehouse className="h-3 w-3 ml-1" />
+                        {item.warehouses.length} مخزن
+                      </Badge>
+                    )}
+                  </div>
+                </button>
               </div>
               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <Button
@@ -318,12 +329,16 @@ const StoreNode = ({
   onOpenModal,
   onDelete,
   onManageWarehouses,
+  onSelectItem,
+  selectedItemId,
   searchTerm,
 }: {
   store: Store;
   onOpenModal: (mode: 'add' | 'edit', type: 'store' | 'group' | 'item', data: any) => void;
   onDelete: (type: 'store' | 'group' | 'item', id: string) => void;
   onManageWarehouses: (item: Item) => void;
+  onSelectItem: (item: Item) => void;
+  selectedItemId: string | null;
   searchTerm: string;
 }) => {
   const [isOpen, setIsOpen] = useState(true);
@@ -423,6 +438,8 @@ const StoreNode = ({
             onOpenModal={onOpenModal}
             onDelete={onDelete}
             onManageWarehouses={onManageWarehouses}
+            onSelectItem={onSelectItem}
+            selectedItemId={selectedItemId}
             searchTerm={searchTerm}
           />
         ))}
@@ -433,6 +450,7 @@ const StoreNode = ({
 
 const ItemsPage = () => {
   const [treeData, setTreeData] = useState<Store[]>(initialTreeData);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'add', type: null });
   const [warehouseModal, setWarehouseModal] = useState<WarehouseModalState>({
     isOpen: false,
@@ -688,29 +706,32 @@ const ItemsPage = () => {
         </Card>
       </div>
 
-      {/* Main Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <FolderTree className="h-5 w-5" />
-                شجرة المواد
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                إدارة المخازن والمجموعات والمواد في النظام
-              </p>
-            </div>
-            <Button
-              onClick={() => openModal('add', 'store', { id: `temp-${Date.now()}`, name: '' })}
-              className="shrink-0"
-            >
-              <PlusCircle className="ml-2 h-4 w-4" />
-              إضافة مجموعة جديدة
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
+      {/* Two Panel Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Panel - Items Tree */}
+        <div className="lg:col-span-7">
+          <Card className="h-full">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderTree className="h-5 w-5" />
+                    شجرة المواد
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    إدارة المخازن والمجموعات والمواد في النظام
+                  </p>
+                </div>
+                <Button
+                  onClick={() => openModal('add', 'store', { id: `temp-${Date.now()}`, name: '' })}
+                  className="shrink-0"
+                >
+                  <PlusCircle className="ml-2 h-4 w-4" />
+                  إضافة مجموعة جديدة
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
           {/* Search and Filters */}
           <div className="space-y-4 mb-6">
             {/* Search */}
@@ -815,13 +836,121 @@ const ItemsPage = () => {
                   onOpenModal={openModal}
                   onDelete={handleDelete}
                   onManageWarehouses={openWarehouseModal}
+                  onSelectItem={setSelectedItem}
+                  selectedItemId={selectedItem?.id || null}
                   searchTerm={searchTerm}
                 />
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Panel - Item Details */}
+        <div className="lg:col-span-5">
+          <Card className="h-full sticky top-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                تفاصيل المادة
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedItem ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">{selectedItem.name}</h3>
+                    <p className="text-sm text-muted-foreground font-mono">كود: {selectedItem.code}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedItem.quantity !== undefined && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">الكمية</p>
+                        <p className="font-semibold text-lg">{selectedItem.quantity}</p>
+                      </div>
+                    )}
+                    {selectedItem.unit && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">الوحدة</p>
+                        <p className="font-semibold">{selectedItem.unit}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedItem.warehouses && selectedItem.warehouses.length > 0 && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <h4 className="font-semibold text-sm flex items-center gap-2">
+                        <Warehouse className="h-4 w-4" />
+                        توزيع المخازن
+                      </h4>
+                      <div className="space-y-2">
+                        {selectedItem.warehouses.map((wh) => (
+                          <div
+                            key={wh.warehouseId}
+                            className="flex items-center justify-between p-3 rounded-md bg-muted/50"
+                          >
+                            <span className="text-sm font-medium">{wh.warehouseName}</span>
+                            <Badge variant="secondary" className="font-mono">
+                              {wh.stock} {selectedItem.unit}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-2 border-t">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-semibold">إجمالي الكمية:</span>
+                          <span className="text-lg font-bold text-primary">
+                            {selectedItem.warehouses.reduce((sum, w) => sum + w.stock, 0)} {selectedItem.unit}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openWarehouseModal(selectedItem)}
+                      className="flex-1"
+                    >
+                      <Warehouse className="ml-2 h-4 w-4" />
+                      إدارة المخازن
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openModal('edit', 'item', selectedItem)}
+                      className="flex-1"
+                    >
+                      <Edit className="ml-2 h-4 w-4" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete('item', selectedItem.id)}
+                      className="flex-1 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="ml-2 h-4 w-4" />
+                      حذف
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FileIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    اختر مادة من القائمة لعرض التفاصيل
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Item Edit Dialog */}
       <Dialog open={modal.isOpen} onOpenChange={closeModal}>

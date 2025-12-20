@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import { useWarehouse } from "@/context/warehouse-context";
 import {
   AlertTriangle,
@@ -147,6 +148,8 @@ const stockData = [
 ];
 
 const StockBalanceReportsPage = () => {
+  usePageTitle("تقارير الرصيد المخزني");
+
   const { selectedWarehouse } = useWarehouse();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -598,8 +601,13 @@ const StockBalanceReportsPage = () => {
                         <TableCell className="text-sm">
                           {item.supplier}
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {(item.totalValue / 1000).toFixed(0)}K
+                        <TableCell className="font-medium text-right">
+                          {item.totalValue.toLocaleString('ar-IQ', {
+                            style: 'currency',
+                            currency: 'د.ع',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          })}
                         </TableCell>
                       </TableRow>
                     ))}

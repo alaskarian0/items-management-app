@@ -33,6 +33,8 @@ import { produce } from 'immer';
 // Import shared data and types
 import { warehouses } from "@/lib/data/warehouse-data";
 import { type Warehouse } from "@/lib/types/warehouse";
+import { departments, divisions, units, getDivisionsByDepartment, getUnitsByDivision } from "@/lib/data/settings-data";
+import { usePageTitle } from "@/context/breadcrumb-context";
 
 // Use hierarchical warehouse data for display
 const initialWarehouseData: Warehouse[] = warehouses;
@@ -49,12 +51,16 @@ const WarehouseNode = ({
   warehouse,
   onOpenModal,
   onDelete,
+  onSelect,
+  selectedId,
   level = 0,
   searchTerm = '',
 }: {
   warehouse: Warehouse;
   onOpenModal: (mode: 'add' | 'edit', data: any) => void;
   onDelete: (id: number) => void;
+  onSelect: (warehouse: Warehouse) => void;
+  selectedId: number | null;
   level?: number;
   searchTerm?: string;
 }) => {
@@ -87,10 +93,12 @@ const WarehouseNode = ({
     return badges[level] || 'ثانوي';
   };
 
+  const isSelected = warehouse.id === selectedId;
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="pr-2 mt-1">
-      <div className={`flex items-center gap-2 group mb-0.5 rounded-lg hover:bg-muted/50 p-2 transition-all border ${
-        isHighlighted ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border'
+      <div className={`flex items-center gap-2 group mb-0.5 rounded-lg p-2 transition-all border ${
+        isSelected ? 'bg-primary/10 border-primary' : isHighlighted ? 'border-primary bg-primary/5' : 'border-transparent hover:border-border hover:bg-muted/50'
       }`}>
         <CollapsibleTrigger asChild>
           <Button
@@ -117,9 +125,12 @@ const WarehouseNode = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`font-semibold text-sm truncate ${isHighlighted ? 'text-primary' : ''}`}>
+            <button
+              onClick={() => onSelect(warehouse)}
+              className={`font-semibold text-sm truncate hover:text-primary cursor-pointer ${isHighlighted || isSelected ? 'text-primary' : ''}`}
+            >
               {warehouse.name}
-            </span>
+            </button>
             <Badge variant="outline" className="text-xs h-5">
               {getLevelBadge(level)}
             </Badge>
@@ -132,6 +143,21 @@ const WarehouseNode = ({
               <Badge variant="default" className="text-xs h-5 bg-blue-600">
                 <Package className="h-3 w-3 ml-1" />
                 {warehouse.itemCount.toLocaleString()} صنف
+              </Badge>
+            )}
+            {warehouse.departmentName && (
+              <Badge variant="outline" className="text-xs h-5 bg-green-50 text-green-700 border-green-200">
+                {warehouse.departmentName}
+              </Badge>
+            )}
+            {warehouse.divisionName && (
+              <Badge variant="outline" className="text-xs h-5 bg-purple-50 text-purple-700 border-purple-200">
+                {warehouse.divisionName}
+              </Badge>
+            )}
+            {warehouse.unitName && (
+              <Badge variant="outline" className="text-xs h-5 bg-orange-50 text-orange-700 border-orange-200">
+                {warehouse.unitName}
               </Badge>
             )}
           </div>
@@ -176,6 +202,8 @@ const WarehouseNode = ({
               warehouse={child}
               onOpenModal={onOpenModal}
               onDelete={onDelete}
+              onSelect={onSelect}
+              selectedId={selectedId}
               level={level + 1}
               searchTerm={searchTerm}
             />
@@ -187,11 +215,25 @@ const WarehouseNode = ({
 };
 
 const ManageWarehousesPage = () => {
+  usePageTitle("إدارة المخازن");
+
   const [warehouses, setWarehouses] = useState<Warehouse[]>(initialWarehouseData);
+  const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'add' });
-  const [formData, setFormData] = useState({ name: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    departmentId: 0,
+    departmentName: '',
+    divisionId: 0,
+    divisionName: '',
+    unitId: 0,
+    unitName: ''
+  });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState<string>('all');
+  const [filterDepartment, setFilterDepartment] = useState<string>('all');
+  const [filterDivision, setFilterDivision] = useState<string>('all');
+  const [filterUnit, setFilterUnit] = useState<string>('all');
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -226,9 +268,39 @@ const ManageWarehousesPage = () => {
     return countWarehouses(warehouses);
   }, [warehouses]);
 
-  // Filter warehouses by level
+  // Filter warehouses by level, department, division, and unit
   const filteredWarehouses = useMemo(() => {
-    if (filterLevel === 'all') return warehouses;
+    let result = warehouses;
+
+    // Apply department/division/unit filters
+    const applyOrgFilters = (nodes: Warehouse[]): Warehouse[] => {
+      return nodes.filter(node => {
+        let matches = true;
+
+        if (filterDepartment !== 'all') {
+          matches = matches && node.departmentId?.toString() === filterDepartment;
+        }
+        if (filterDivision !== 'all') {
+          matches = matches && node.divisionId?.toString() === filterDivision;
+        }
+        if (filterUnit !== 'all') {
+          matches = matches && node.unitId?.toString() === filterUnit;
+        }
+
+        return matches;
+      }).map(node => ({
+        ...node,
+        children: node.children ? applyOrgFilters(node.children) : []
+      }));
+    };
+
+    // Apply organizational filters first
+    if (filterDepartment !== 'all' || filterDivision !== 'all' || filterUnit !== 'all') {
+      result = applyOrgFilters(result);
+    }
+
+    // Then apply level filter
+    if (filterLevel === 'all') return result;
 
     const filterByLevel = (nodes: Warehouse[], currentLevel: number, targetLevel: number): Warehouse[] => {
       if (currentLevel === targetLevel) return nodes;
@@ -246,15 +318,15 @@ const ManageWarehousesPage = () => {
 
     const targetLevel = levelMap[filterLevel];
     if (targetLevel === 0) {
-      return warehouses;
+      return result;
     }
 
     // For sub-warehouses, show them in a flat structure
-    const result: Warehouse[] = [];
+    const flatResult: Warehouse[] = [];
     const collectLevel = (nodes: Warehouse[], currentLevel: number) => {
       nodes.forEach(node => {
         if (currentLevel === targetLevel) {
-          result.push(node);
+          flatResult.push(node);
         }
         if (node.children && node.children.length > 0) {
           collectLevel(node.children, currentLevel + 1);
@@ -262,18 +334,34 @@ const ManageWarehousesPage = () => {
       });
     };
 
-    collectLevel(warehouses, 0);
-    return result;
-  }, [warehouses, filterLevel]);
+    collectLevel(result, 0);
+    return flatResult;
+  }, [warehouses, filterLevel, filterDepartment, filterDivision, filterUnit]);
 
   const openModal = (mode: 'add' | 'edit', data: any) => {
     setModal({ isOpen: true, mode, data });
-    setFormData({ name: data?.name || '' });
+    setFormData({
+      name: data?.name || '',
+      departmentId: data?.departmentId || 0,
+      departmentName: data?.departmentName || '',
+      divisionId: data?.divisionId || 0,
+      divisionName: data?.divisionName || '',
+      unitId: data?.unitId || 0,
+      unitName: data?.unitName || ''
+    });
   };
 
   const closeModal = () => {
     setModal({ isOpen: false, mode: 'add' });
-    setFormData({ name: '' });
+    setFormData({
+      name: '',
+      departmentId: 0,
+      departmentName: '',
+      divisionId: 0,
+      divisionName: '',
+      unitId: 0,
+      unitName: ''
+    });
   };
 
   const findAndModify = (
@@ -309,6 +397,12 @@ const ManageWarehousesPage = () => {
             id: Date.now(),
             name: formData.name,
             code: `WH-${Date.now()}`,
+            departmentId: formData.departmentId || undefined,
+            departmentName: formData.departmentName || undefined,
+            divisionId: formData.divisionId || undefined,
+            divisionName: formData.divisionName || undefined,
+            unitId: formData.unitId || undefined,
+            unitName: formData.unitName || undefined,
             isActive: true,
             itemCount: 0,
             children: [],
@@ -328,6 +422,12 @@ const ManageWarehousesPage = () => {
         } else if (mode === 'edit') {
           findAndModify(draft, data.id, (node) => {
             node.name = formData.name;
+            node.departmentId = formData.departmentId || undefined;
+            node.departmentName = formData.departmentName || undefined;
+            node.divisionId = formData.divisionId || undefined;
+            node.divisionName = formData.divisionName || undefined;
+            node.unitId = formData.unitId || undefined;
+            node.unitName = formData.unitName || undefined;
           });
         }
       })
@@ -402,49 +502,98 @@ const ManageWarehousesPage = () => {
         </Card>
       </div>
 
-      {/* Main Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <WarehouseIcon className="h-5 w-5" />
-                إدارة شجرة المخازن
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                إدارة المخازن الرئيسية والفرعية في النظام
-              </p>
-            </div>
-            <Button onClick={() => openModal('add', {})} className="shrink-0">
-              <PlusCircle className="ml-2 h-4 w-4" />
-              إضافة مخزن رئيسي
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6">
+      {/* Two Panel Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Panel - Warehouse Tree */}
+        <div className="lg:col-span-7">
+          <Card className="h-full">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <WarehouseIcon className="h-5 w-5" />
+                    إدارة شجرة المخازن
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    إدارة المخازن الرئيسية والفرعية في النظام
+                  </p>
+                </div>
+                <Button onClick={() => openModal('add', {})} className="shrink-0">
+                  <PlusCircle className="ml-2 h-4 w-4" />
+                  إضافة مخزن رئيسي
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
           {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="البحث عن مخزن..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10"
-              />
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="البحث عن مخزن..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+              <Select value={filterLevel} onValueChange={setFilterLevel}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Filter className="ml-2 h-4 w-4" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع المستويات</SelectItem>
+                  <SelectItem value="main">رئيسية فقط</SelectItem>
+                  <SelectItem value="sub">فرعية فقط</SelectItem>
+                  <SelectItem value="subsub">ثانوية فقط</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={filterLevel} onValueChange={setFilterLevel}>
-              <SelectTrigger className="w-full sm:w-48">
-                <Filter className="ml-2 h-4 w-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">جميع المستويات</SelectItem>
-                <SelectItem value="main">رئيسية فقط</SelectItem>
-                <SelectItem value="sub">فرعية فقط</SelectItem>
-                <SelectItem value="subsub">ثانوية فقط</SelectItem>
-              </SelectContent>
-            </Select>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                <SelectTrigger>
+                  <SelectValue placeholder="القسم" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الأقسام</SelectItem>
+                  {departments.filter(d => d.isActive).map(dept => (
+                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterDivision} onValueChange={setFilterDivision}>
+                <SelectTrigger>
+                  <SelectValue placeholder="الشعبة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الشعب</SelectItem>
+                  {divisions.filter(d => d.isActive).map(div => (
+                    <SelectItem key={div.id} value={div.id.toString()}>
+                      {div.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterUnit} onValueChange={setFilterUnit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="الوحدة" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع الوحدات</SelectItem>
+                  {units.filter(u => u.isActive).map(unit => (
+                    <SelectItem key={unit.id} value={unit.id.toString()}>
+                      {unit.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Warehouse Tree */}
@@ -468,13 +617,140 @@ const ManageWarehousesPage = () => {
                   warehouse={wh}
                   onOpenModal={openModal}
                   onDelete={handleDelete}
+                  onSelect={setSelectedWarehouse}
+                  selectedId={selectedWarehouse?.id || null}
                   searchTerm={searchTerm}
                 />
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Panel - Warehouse Details */}
+        <div className="lg:col-span-5">
+          <Card className="h-full sticky top-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                تفاصيل المخزن
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {selectedWarehouse ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">{selectedWarehouse.name}</h3>
+                    <p className="text-sm text-muted-foreground">كود: {selectedWarehouse.code}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">الحالة</p>
+                      <Badge variant={selectedWarehouse.isActive ? "default" : "secondary"}>
+                        {selectedWarehouse.isActive ? "نشط" : "غير نشط"}
+                      </Badge>
+                    </div>
+                    {selectedWarehouse.itemCount !== undefined && (
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">عدد الأصناف</p>
+                        <p className="font-semibold">{selectedWarehouse.itemCount.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedWarehouse.address && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">العنوان</p>
+                      <p className="font-medium">{selectedWarehouse.address}</p>
+                    </div>
+                  )}
+
+                  {(selectedWarehouse.departmentName || selectedWarehouse.divisionName || selectedWarehouse.unitName) && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <h4 className="font-semibold text-sm">الهيكل التنظيمي</h4>
+                      {selectedWarehouse.departmentName && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">القسم</p>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {selectedWarehouse.departmentName}
+                          </Badge>
+                        </div>
+                      )}
+                      {selectedWarehouse.divisionName && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">الشعبة</p>
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                            {selectedWarehouse.divisionName}
+                          </Badge>
+                        </div>
+                      )}
+                      {selectedWarehouse.unitName && (
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">الوحدة</p>
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                            {selectedWarehouse.unitName}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedWarehouse.children && selectedWarehouse.children.length > 0 && (
+                    <div className="space-y-3 pt-4 border-t">
+                      <h4 className="font-semibold text-sm">المخازن الفرعية</h4>
+                      <p className="text-sm text-muted-foreground">
+                        يحتوي على {selectedWarehouse.children.length} مخزن فرعي
+                      </p>
+                      <div className="space-y-2">
+                        {selectedWarehouse.children.map((child) => (
+                          <div
+                            key={child.id}
+                            className="flex items-center gap-2 p-2 rounded-md bg-muted/50 cursor-pointer hover:bg-muted"
+                            onClick={() => setSelectedWarehouse(child)}
+                          >
+                            <WarehouseIcon className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{child.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openModal('edit', selectedWarehouse)}
+                      className="flex-1"
+                    >
+                      <Edit className="ml-2 h-4 w-4" />
+                      تعديل
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(selectedWarehouse.id)}
+                      className="flex-1 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="ml-2 h-4 w-4" />
+                      حذف
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    اختر مخزن من القائمة لعرض التفاصيل
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Add/Edit Dialog */}
       <Dialog open={modal.isOpen} onOpenChange={closeModal}>
@@ -485,17 +761,109 @@ const ManageWarehousesPage = () => {
               {modal.mode === 'add' ? 'إضافة مخزن' : 'تعديل مخزن'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto">
             <div className="space-y-2">
-              <Label htmlFor="name">اسم المخزن</Label>
+              <Label htmlFor="name">اسم المخزن *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ name: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="أدخل اسم المخزن..."
                 autoFocus
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="department">القسم</Label>
+              <Select
+                value={formData.departmentId ? formData.departmentId.toString() : ''}
+                onValueChange={(value) => {
+                  const deptId = parseInt(value);
+                  const dept = departments.find(d => d.id === deptId);
+                  setFormData(prev => ({
+                    ...prev,
+                    departmentId: deptId || 0,
+                    departmentName: dept?.name || '',
+                    divisionId: 0,
+                    divisionName: '',
+                    unitId: 0,
+                    unitName: ''
+                  }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر القسم" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.filter(d => d.isActive).map(dept => (
+                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.departmentId > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="division">الشعبة</Label>
+                <Select
+                  value={formData.divisionId ? formData.divisionId.toString() : ''}
+                  onValueChange={(value) => {
+                    const divId = parseInt(value);
+                    const div = divisions.find(d => d.id === divId);
+                    setFormData(prev => ({
+                      ...prev,
+                      divisionId: divId || 0,
+                      divisionName: div?.name || '',
+                      unitId: 0,
+                      unitName: ''
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الشعبة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getDivisionsByDepartment(formData.departmentId).filter(d => d.isActive).map(div => (
+                      <SelectItem key={div.id} value={div.id.toString()}>
+                        {div.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {formData.divisionId > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="unit">الوحدة</Label>
+                <Select
+                  value={formData.unitId ? formData.unitId.toString() : ''}
+                  onValueChange={(value) => {
+                    const unitId = parseInt(value);
+                    const unit = units.find(u => u.id === unitId);
+                    setFormData(prev => ({
+                      ...prev,
+                      unitId: unitId || 0,
+                      unitName: unit?.name || ''
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الوحدة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getUnitsByDivision(formData.divisionId).filter(u => u.isActive).map(unit => (
+                      <SelectItem key={unit.id} value={unit.id.toString()}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {modal.mode === 'add' && modal.data?.parentId && (
               <div className="rounded-lg bg-muted p-3">
                 <p className="text-sm text-muted-foreground">

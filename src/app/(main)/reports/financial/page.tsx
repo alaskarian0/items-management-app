@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import {
   BarChart3,
   Calendar,
@@ -143,6 +144,8 @@ const supplierExpenses: SupplierExpense[] = [
 ];
 
 const FinancialReportPage = () => {
+  usePageTitle("التقارير المالية");
+
   const [periodFilter, setPeriodFilter] = useState<string>("this-month");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
@@ -243,7 +246,7 @@ const FinancialReportPage = () => {
         </CardHeader>
         <CardContent>
           <div className="text-4xl font-bold text-green-700 dark:text-green-400">
-            {stats.netValue.toLocaleString()} IQD
+            {stats.netValue.toLocaleString()} د.ع
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             الفرق بين إجمالي المشتريات والإصدارات
@@ -312,7 +315,7 @@ const FinancialReportPage = () => {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value: number) => value.toLocaleString() + " IQD"}
+                  formatter={(value: number) => value.toLocaleString() + " د.ع"}
                 />
                 <Legend />
                 <Line
@@ -372,7 +375,7 @@ const FinancialReportPage = () => {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number) => value.toLocaleString() + " IQD"}
+                  formatter={(value: number) => value.toLocaleString() + " د.ع"}
                 />
               </RechartsPieChart>
             </ResponsiveContainer>
@@ -403,7 +406,7 @@ const FinancialReportPage = () => {
                   <div className="flex items-center gap-4">
                     <Badge variant="secondary">{category.percentage}%</Badge>
                     <span className="font-bold">
-                      {category.amount.toLocaleString()} IQD
+                      {category.amount.toLocaleString()} د.ع
                     </span>
                   </div>
                 </div>
@@ -454,7 +457,7 @@ const FinancialReportPage = () => {
                         {supplier.supplier}
                       </TableCell>
                       <TableCell className="font-bold text-blue-600">
-                        {supplier.totalAmount.toLocaleString()} IQD
+                        {supplier.totalAmount.toLocaleString()} د.ع
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">

@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { usePageTitle } from "@/context/breadcrumb-context";
 import {
   Building2,
   Calendar,
@@ -169,6 +170,8 @@ const monthlyData = [
 ];
 
 const EntryIssuanceReportPage = () => {
+  usePageTitle("تقارير الإدخال والإصدار");
+
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -324,7 +327,7 @@ const EntryIssuanceReportPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-700 dark:text-green-400">
-              {stats.totalEntryValue.toLocaleString()} IQD
+              {stats.totalEntryValue.toLocaleString()} د.ع
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               قيمة جميع مستندات الإدخال
@@ -341,7 +344,7 @@ const EntryIssuanceReportPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-700 dark:text-blue-400">
-              {stats.totalIssuanceValue.toLocaleString()} IQD
+              {stats.totalIssuanceValue.toLocaleString()} د.ع
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               قيمة جميع مستندات الإصدار
