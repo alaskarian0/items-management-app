@@ -57,12 +57,6 @@ export const navbarData: NavbarData = {
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
     },
     {
-      title: "ذمة الموظفين",
-      url: "/law-enforcement/employee-custody",
-      icon: Building2,
-      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
-    },
-    {
       title: "عمليات المخازن",
       url: "/warehouse",
       icon: Warehouse,

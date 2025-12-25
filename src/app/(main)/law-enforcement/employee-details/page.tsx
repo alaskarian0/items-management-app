@@ -23,7 +23,6 @@ import {
   ArrowLeft,
   User,
   Phone,
-  Mail,
   Building2,
   Briefcase,
   PackageCheck,
@@ -51,7 +50,6 @@ interface EmployeeWithItems {
   divisionName: string;
   unit?: string;
   phone?: string;
-  email?: string;
   items: AssignedItem[];
 }
 
@@ -64,7 +62,6 @@ const MOCK_EMPLOYEES_WITH_ITEMS: EmployeeWithItems[] = [
     divisionName: "شعبة التخطيط",
     unit: "وحدة التخطيط الاستراتيجي",
     phone: "07701234567",
-    email: "ahmed@example.com",
     items: [
       {
         id: "ITM001",
@@ -102,7 +99,6 @@ const MOCK_EMPLOYEES_WITH_ITEMS: EmployeeWithItems[] = [
     position: "مسؤولة المتابعة",
     divisionName: "شعبة المتابعة",
     phone: "07709876543",
-    email: "sara@example.com",
     items: [
       {
         id: "ITM004",
@@ -131,7 +127,6 @@ const MOCK_EMPLOYEES_WITH_ITEMS: EmployeeWithItems[] = [
     divisionName: "شعبة الحسابات",
     unit: "وحدة المحاسبة المالية",
     phone: "07705551234",
-    email: "mohammed@example.com",
     items: [
       {
         id: "ITM006",
@@ -150,7 +145,6 @@ const MOCK_EMPLOYEES_WITH_ITEMS: EmployeeWithItems[] = [
     position: "موظفة موارد بشرية",
     divisionName: "شعبة الموارد البشرية",
     phone: "07708889999",
-    email: "fatima@example.com",
     items: [],
   },
 ];
@@ -171,10 +165,10 @@ export default function EmployeeDetailsPage() {
             <div className="text-center space-y-4">
               <p className="text-lg text-muted-foreground">الموظف غير موجود</p>
               <Button
-                onClick={() => router.push("/law-enforcement/employee-custody")}
+                onClick={() => router.push("/law-enforcement/employees")}
               >
                 <ArrowLeft className="h-4 w-4 ml-2" />
-                العودة إلى ذمة الموظفين
+                العودة إلى قائمة الموظفين
               </Button>
             </div>
           </CardContent>
@@ -198,7 +192,7 @@ export default function EmployeeDetailsPage() {
         </div>
         <Button
           variant="outline"
-          onClick={() => router.push("/law-enforcement/employee-custody")}
+          onClick={() => router.push("/law-enforcement/employees")}
         >
           <ArrowLeft className="h-4 w-4 ml-2" />
           العودة
@@ -260,21 +254,6 @@ export default function EmployeeDetailsPage() {
                     رقم الهاتف
                   </Label>
                   <p className="font-medium font-mono">{employee.phone}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Email */}
-            {employee.email && (
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-muted rounded-lg">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">
-                    البريد الإلكتروني
-                  </Label>
-                  <p className="font-medium">{employee.email}</p>
                 </div>
               </div>
             )}

@@ -251,7 +251,7 @@ export default function LoginPage() {
                 تسجيل الدخول
               </CardTitle>
               <CardDescription>
-                أدخل بياناتك للوصول إلى نظام العلاوات والترفيعات
+                أدخل بياناتك للوصول إلى نظام إدارة المخازن
               </CardDescription>
             </CardHeader>
 

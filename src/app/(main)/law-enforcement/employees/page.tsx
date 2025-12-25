@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,7 +44,22 @@ import {
   Edit,
   Search,
   Building2,
+  PackageCheck,
+  Eye,
 } from "lucide-react";
+
+// Item assigned to employee
+interface AssignedItem {
+  id: string;
+  uniqueCode: string;
+  itemName: string;
+  itemType: "ثابت" | "استهلاكي";
+  sourceWarehouse: string;
+  assignedDate: string;
+  divisionName: string;
+  unit?: string;
+  notes?: string;
+}
 
 // Employee interface
 interface Employee {
@@ -54,8 +70,8 @@ interface Employee {
   divisionName: string;
   unit?: string;
   phone?: string;
-  email?: string;
   createdAt: string;
+  items: AssignedItem[];
 }
 
 // Mock divisions data
@@ -66,7 +82,7 @@ const DIVISIONS = [
   { id: "div4", name: "شعبة الموارد البشرية" },
 ];
 
-// Mock employees data
+// Mock employees data with items
 const MOCK_EMPLOYEES: Employee[] = [
   {
     id: "EMP001",
@@ -76,8 +92,37 @@ const MOCK_EMPLOYEES: Employee[] = [
     divisionName: "شعبة التخطيط",
     unit: "وحدة التخطيط الاستراتيجي",
     phone: "07701234567",
-    email: "ahmed@example.com",
     createdAt: "2024-01-01",
+    items: [
+      {
+        id: "ITM001",
+        uniqueCode: "FUR-CHR-2024-003",
+        itemName: "كرسي مكتبي دوار",
+        itemType: "ثابت",
+        sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
+        assignedDate: "2024-01-16",
+        divisionName: "شعبة التخطيط",
+        notes: "كرسي جديد للمكتب الرئيسي",
+      },
+      {
+        id: "ITM002",
+        uniqueCode: "FUR-DSK-2024-001",
+        itemName: "مكتب خشبي",
+        itemType: "ثابت",
+        sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
+        assignedDate: "2024-01-18",
+        divisionName: "شعبة التخطيط",
+      },
+      {
+        id: "ITM003",
+        uniqueCode: "IT-LAP-2024-005",
+        itemName: "حاسوب محمول Dell",
+        itemType: "ثابت",
+        sourceWarehouse: "مخزن المواد العامة",
+        assignedDate: "2024-01-20",
+        divisionName: "شعبة التخطيط",
+      },
+    ],
   },
   {
     id: "EMP002",
@@ -87,6 +132,26 @@ const MOCK_EMPLOYEES: Employee[] = [
     divisionName: "شعبة المتابعة",
     phone: "07709876543",
     createdAt: "2024-01-05",
+    items: [
+      {
+        id: "ITM004",
+        uniqueCode: "FUR-TBL-2024-003",
+        itemName: "طاولة اجتماعات خشبية",
+        itemType: "ثابت",
+        sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
+        assignedDate: "2024-01-17",
+        divisionName: "شعبة المتابعة",
+      },
+      {
+        id: "ITM005",
+        uniqueCode: "IT-PRN-2024-002",
+        itemName: "طابعة HP LaserJet",
+        itemType: "ثابت",
+        sourceWarehouse: "مخزن المواد العامة",
+        assignedDate: "2024-01-19",
+        divisionName: "شعبة المتابعة",
+      },
+    ],
   },
   {
     id: "EMP003",
@@ -97,6 +162,17 @@ const MOCK_EMPLOYEES: Employee[] = [
     unit: "وحدة المحاسبة المالية",
     phone: "07705551234",
     createdAt: "2024-01-10",
+    items: [
+      {
+        id: "ITM006",
+        uniqueCode: "CAR-PRS-2024-004",
+        itemName: "سجاد فارسي",
+        itemType: "ثابت",
+        sourceWarehouse: "مخزن السجاد والمفروشات",
+        assignedDate: "2024-01-15",
+        divisionName: "شعبة الحسابات",
+      },
+    ],
   },
   {
     id: "EMP004",
@@ -106,10 +182,12 @@ const MOCK_EMPLOYEES: Employee[] = [
     divisionName: "شعبة الموارد البشرية",
     phone: "07708889999",
     createdAt: "2024-01-12",
+    items: [],
   },
 ];
 
 export default function EmployeesPage() {
+  const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -124,7 +202,6 @@ export default function EmployeesPage() {
     divisionId: "",
     unit: "",
     phone: "",
-    email: "",
   });
 
   const resetForm = () => {
@@ -134,7 +211,6 @@ export default function EmployeesPage() {
       divisionId: "",
       unit: "",
       phone: "",
-      email: "",
     });
     setSelectedEmployee(null);
     setIsEditing(false);
@@ -153,7 +229,6 @@ export default function EmployeesPage() {
       divisionId: employee.divisionId,
       unit: employee.unit || "",
       phone: employee.phone || "",
-      email: employee.email || "",
     });
     setIsEditing(true);
     setDialogOpen(true);
@@ -188,7 +263,6 @@ export default function EmployeesPage() {
                 divisionName,
                 unit: formData.unit,
                 phone: formData.phone,
-                email: formData.email,
               }
             : e
         )
@@ -204,7 +278,6 @@ export default function EmployeesPage() {
         divisionName,
         unit: formData.unit,
         phone: formData.phone,
-        email: formData.email,
         createdAt: new Date().toISOString().split("T")[0],
       };
       setEmployees([...employees, newEmployee]);
@@ -226,9 +299,16 @@ export default function EmployeesPage() {
     return matchesSearch && matchesDivision;
   });
 
+  // Navigate to employee details
+  const handleViewDetails = (employee: Employee) => {
+    router.push(`/law-enforcement/employee-details?id=${employee.id}`);
+  };
+
   // Statistics
   const stats = {
     total: employees.length,
+    employeesWithItems: employees.filter((e) => e.items.length > 0).length,
+    totalItems: employees.reduce((sum, e) => sum + e.items.length, 0),
     byDivision: DIVISIONS.map((div) => ({
       ...div,
       count: employees.filter((e) => e.divisionId === div.id).length,
@@ -255,7 +335,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">إجمالي الموظفين</CardTitle>
@@ -267,18 +347,38 @@ export default function EmployeesPage() {
           </CardContent>
         </Card>
 
-        {stats.byDivision.map((div) => (
-          <Card key={div.id}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{div.name}</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{div.count}</div>
-              <p className="text-xs text-muted-foreground">موظف</p>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">موظفين لديهم مواد</CardTitle>
+            <PackageCheck className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.employeesWithItems}</div>
+            <p className="text-xs text-muted-foreground">موظف يحملون مواد</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">إجمالي المواد</CardTitle>
+            <PackageCheck className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalItems}</div>
+            <p className="text-xs text-muted-foreground">مادة موزعة</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">بدون مواد</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total - stats.employeesWithItems}</div>
+            <p className="text-xs text-muted-foreground">موظف بدون مواد</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters and Table */}
@@ -328,9 +428,9 @@ export default function EmployeesPage() {
                   <TableHead className="text-right min-w-[200px]">الاسم</TableHead>
                   <TableHead className="text-right min-w-[150px]">المنصب</TableHead>
                   <TableHead className="text-right min-w-[150px]">الشعبة</TableHead>
-                  <TableHead className="text-right min-w-[150px]">الوحدة</TableHead>
+                  <TableHead className="text-right min-w-[100px]">المواد</TableHead>
                   <TableHead className="text-right min-w-[120px]">رقم الهاتف</TableHead>
-                  <TableHead className="text-right min-w-[120px]">الإجراءات</TableHead>
+                  <TableHead className="text-right min-w-[150px]">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -342,23 +442,38 @@ export default function EmployeesPage() {
                   </TableRow>
                 ) : (
                   filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id}>
+                    <TableRow
+                      key={employee.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleViewDetails(employee)}
+                    >
                       <TableCell className="text-right font-mono">{employee.id}</TableCell>
                       <TableCell className="text-right font-medium">{employee.name}</TableCell>
                       <TableCell className="text-right">{employee.position}</TableCell>
                       <TableCell className="text-right">
                         <Badge variant="outline">{employee.divisionName}</Badge>
                       </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {employee.unit || "-"}
+                      <TableCell className="text-right">
+                        <Badge variant={employee.items.length > 0 ? "default" : "secondary"}>
+                          {employee.items.length} مادة
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono">{employee.phone || "-"}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewDetails(employee)}
+                            title="عرض التفاصيل"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleEditClick(employee)}
+                            title="تعديل"
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
@@ -366,6 +481,7 @@ export default function EmployeesPage() {
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDeleteClick(employee)}
+                            title="حذف"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -456,31 +572,16 @@ export default function EmployeesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="phone">رقم الهاتف</Label>
-                <Input
-                  id="phone"
-                  placeholder="07XXXXXXXXX"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">البريد الإلكتروني</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@email.com"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">رقم الهاتف</Label>
+              <Input
+                id="phone"
+                placeholder="07XXXXXXXXX"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
             </div>
           </div>
 

@@ -37,6 +37,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,7 +63,10 @@ import {
   Search,
   ChevronDown,
   ChevronRight,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Individual item with unique code
 interface IndividualItem {
@@ -134,6 +150,55 @@ const DIVISIONS = [
   { id: "div4", name: "شعبة الموارد البشرية" },
 ];
 
+// Employee interface
+interface Employee {
+  id: string;
+  name: string;
+  position: string;
+  divisionId: string;
+  divisionName: string;
+  unit?: string;
+  phone?: string;
+}
+
+// Mock employees data
+const MOCK_EMPLOYEES: Employee[] = [
+  {
+    id: "EMP001",
+    name: "أحمد محمد علي",
+    position: "مدير التخطيط",
+    divisionId: "div1",
+    divisionName: "شعبة التخطيط",
+    unit: "وحدة التخطيط الاستراتيجي",
+    phone: "07701234567",
+  },
+  {
+    id: "EMP002",
+    name: "سارة علي حسن",
+    position: "مسؤولة المتابعة",
+    divisionId: "div2",
+    divisionName: "شعبة المتابعة",
+    phone: "07709876543",
+  },
+  {
+    id: "EMP003",
+    name: "محمد حسن جاسم",
+    position: "محاسب",
+    divisionId: "div3",
+    divisionName: "شعبة الحسابات",
+    unit: "وحدة المحاسبة المالية",
+    phone: "07705551234",
+  },
+  {
+    id: "EMP004",
+    name: "فاطمة أحمد",
+    position: "موظفة موارد بشرية",
+    divisionId: "div4",
+    divisionName: "شعبة الموارد البشرية",
+    phone: "07708889999",
+  },
+];
+
 export default function ItemAssignmentsPage() {
   const [itemGroups, setItemGroups] = useState<ItemGroup[]>(MOCK_ITEM_GROUPS);
   const [selectedItem, setSelectedItem] = useState<{group: ItemGroup, item: IndividualItem} | null>(null);
@@ -141,13 +206,11 @@ export default function ItemAssignmentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [employeeComboboxOpen, setEmployeeComboboxOpen] = useState(false);
 
-  // Assignment form state (removed department)
+  // Assignment form state
   const [assignmentData, setAssignmentData] = useState({
-    division: "",
-    unit: "",
-    recipientName: "",
-    recipientPosition: "",
+    employeeId: "",
     notes: "",
   });
 
@@ -166,21 +229,26 @@ export default function ItemAssignmentsPage() {
   const handleAssignClick = (group: ItemGroup, item: IndividualItem) => {
     setSelectedItem({ group, item });
     setAssignmentData({
-      division: "",
-      unit: "",
-      recipientName: "",
-      recipientPosition: "",
+      employeeId: "",
       notes: "",
     });
+    setEmployeeComboboxOpen(false);
     setAssignDialogOpen(true);
   };
 
   const handleAssignSubmit = () => {
     if (!selectedItem) return;
 
-    // Validate required fields (removed department validation)
-    if (!assignmentData.division || !assignmentData.recipientName) {
-      toast.error("الرجاء ملء جميع الحقول المطلوبة (الشعبة واسم المستلم)");
+    // Validate required fields
+    if (!assignmentData.employeeId) {
+      toast.error("الرجاء اختيار الموظف");
+      return;
+    }
+
+    // Get selected employee data
+    const selectedEmployee = MOCK_EMPLOYEES.find(emp => emp.id === assignmentData.employeeId);
+    if (!selectedEmployee) {
+      toast.error("الموظف المحدد غير موجود");
       return;
     }
 
@@ -195,10 +263,10 @@ export default function ItemAssignmentsPage() {
                   ? {
                       ...item,
                       status: "assigned" as const,
-                      assignedTo: assignmentData.recipientName,
-                      assignedDivision: assignmentData.division,
-                      assignedUnit: assignmentData.unit,
-                      assignedPosition: assignmentData.recipientPosition,
+                      assignedTo: selectedEmployee.name,
+                      assignedDivision: selectedEmployee.divisionName,
+                      assignedUnit: selectedEmployee.unit,
+                      assignedPosition: selectedEmployee.position,
                       assignedDate: new Date().toISOString().split('T')[0],
                       notes: assignmentData.notes,
                     }
@@ -209,8 +277,7 @@ export default function ItemAssignmentsPage() {
       )
     );
 
-    const divisionName = DIVISIONS.find(d => d.id === assignmentData.division)?.name || assignmentData.division;
-    toast.success(`تم تعيين ${selectedItem.item.uniqueCode} إلى ${assignmentData.recipientName} (${divisionName}) بنجاح`);
+    toast.success(`تم تعيين ${selectedItem.item.uniqueCode} إلى ${selectedEmployee.name} (${selectedEmployee.divisionName}) بنجاح`);
     setAssignDialogOpen(false);
     setSelectedItem(null);
   };
@@ -468,66 +535,95 @@ export default function ItemAssignmentsPage() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="division">الشعبة *</Label>
-                <Select
-                  value={assignmentData.division}
-                  onValueChange={(value) =>
-                    setAssignmentData({ ...assignmentData, division: value })
-                  }
-                >
-                  <SelectTrigger id="division">
-                    <SelectValue placeholder="اختر الشعبة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DIVISIONS.map((div) => (
-                      <SelectItem key={div.id} value={div.id}>
-                        {div.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unit">الوحدة (اختياري)</Label>
-                <Input
-                  id="unit"
-                  placeholder="أدخل اسم الوحدة"
-                  value={assignmentData.unit}
-                  onChange={(e) =>
-                    setAssignmentData({ ...assignmentData, unit: e.target.value })
-                  }
-                />
-              </div>
+            {/* Employee Search and Selection (Combobox) */}
+            <div className="space-y-2">
+              <Label>الموظف *</Label>
+              <Popover open={employeeComboboxOpen} onOpenChange={setEmployeeComboboxOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employeeComboboxOpen}
+                    className="w-full justify-between"
+                  >
+                    {assignmentData.employeeId
+                      ? MOCK_EMPLOYEES.find((emp) => emp.id === assignmentData.employeeId)?.name
+                      : "ابحث واختر الموظف..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="ابحث عن موظف..." className="h-9" />
+                    <CommandList>
+                      <CommandEmpty>لا يوجد موظفين مطابقين للبحث</CommandEmpty>
+                      <CommandGroup>
+                        {MOCK_EMPLOYEES.map((emp) => (
+                          <CommandItem
+                            key={emp.id}
+                            value={`${emp.name} ${emp.position} ${emp.divisionName} ${emp.id}`}
+                            onSelect={() => {
+                              setAssignmentData({ ...assignmentData, employeeId: emp.id });
+                              setEmployeeComboboxOpen(false);
+                            }}
+                          >
+                            <div className="flex flex-col items-start flex-1">
+                              <span className="font-medium">{emp.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {emp.position} - {emp.divisionName}
+                              </span>
+                            </div>
+                            <Check
+                              className={cn(
+                                "ml-2 h-4 w-4",
+                                assignmentData.employeeId === emp.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="recipientName">اسم المستلم *</Label>
-                <Input
-                  id="recipientName"
-                  placeholder="أدخل اسم المستلم"
-                  value={assignmentData.recipientName}
-                  onChange={(e) =>
-                    setAssignmentData({ ...assignmentData, recipientName: e.target.value })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="recipientPosition">منصب المستلم</Label>
-                <Input
-                  id="recipientPosition"
-                  placeholder="أدخل المنصب"
-                  value={assignmentData.recipientPosition}
-                  onChange={(e) =>
-                    setAssignmentData({ ...assignmentData, recipientPosition: e.target.value })
-                  }
-                />
-              </div>
-            </div>
+            {/* Display selected employee details */}
+            {assignmentData.employeeId && (() => {
+              const selectedEmployee = MOCK_EMPLOYEES.find(emp => emp.id === assignmentData.employeeId);
+              return selectedEmployee ? (
+                <Card className="bg-muted/50">
+                  <CardContent className="pt-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <Label className="text-xs text-muted-foreground">الاسم</Label>
+                        <p className="font-medium">{selectedEmployee.name}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">المنصب</Label>
+                        <p className="font-medium">{selectedEmployee.position}</p>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground">الشعبة</Label>
+                        <p className="font-medium">{selectedEmployee.divisionName}</p>
+                      </div>
+                      {selectedEmployee.unit && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">الوحدة</Label>
+                          <p className="font-medium">{selectedEmployee.unit}</p>
+                        </div>
+                      )}
+                      {selectedEmployee.phone && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">رقم الهاتف</Label>
+                          <p className="font-medium font-mono">{selectedEmployee.phone}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()}
 
             <div className="space-y-2">
               <Label htmlFor="notes">ملاحظات</Label>

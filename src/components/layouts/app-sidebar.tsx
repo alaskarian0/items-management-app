@@ -45,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavGroup items={filteredNavData.navMain} groupLabel="الرئيسية" />
-        <NavGroup items={filteredNavData.projects} groupLabel="اعدادات النظام" />
+        {/* <NavGroup items={filteredNavData.projects} groupLabel="اعدادات النظام" /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />
