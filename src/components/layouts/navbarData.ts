@@ -29,6 +29,7 @@ export interface NavItem {
   isActive?: boolean;
   items?: NavItem[];
   roles?: string[]; // Roles that can access this item. If not specified, accessible to all
+  warehouses?: string[]; // Warehouse types that can access this item. If not specified, accessible to all warehouses
 }
 
 export interface NavbarData {
@@ -44,14 +45,34 @@ export const navbarData: NavbarData = {
       icon: LayoutDashboard,
     },
     {
+      title: "إدارة توزيع المواد",
+      url: "/law-enforcement/item-assignments",
+      icon: PackagePlus,
+      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+    },
+    {
+      title: "إدارة الموظفين",
+      url: "/law-enforcement/employees",
+      icon: Users,
+      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+    },
+    {
+      title: "ذمة الموظفين",
+      url: "/law-enforcement/employee-custody",
+      icon: Building2,
+      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+    },
+    {
       title: "عمليات المخازن",
       url: "/warehouse",
       icon: Warehouse,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
       items: [
         {
           title: "إدارة المخازن",
           url: "/warehouse/stores",
           icon: Warehouse,
+          roles: ["admin"], // Only admin can manage warehouses
         },
 
         {
@@ -86,6 +107,7 @@ export const navbarData: NavbarData = {
       title: "التنبيهات والإشعارات",
       url: "/alerts",
       icon: Bell,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
       items: [
         {
           title: "تنبيهات إعادة الطلب",
@@ -96,11 +118,13 @@ export const navbarData: NavbarData = {
           title: "تنبيهات انتهاء الصلاحية",
           url: "/alerts/expiry-alerts",
           icon: CalendarClock,
+          warehouses: ["dry", "frozen"], // Only warehouses with perishable items
         },
         {
           title: "تنبيهات انتهاء الضمان",
           url: "/alerts/warranty-alerts",
           icon: ShieldAlert,
+          warehouses: ["furniture", "carpet", "general", "construction"], // Only warehouses with warranty items
         },
       ],
     },
@@ -108,6 +132,7 @@ export const navbarData: NavbarData = {
       title: "الإدخال المباشر",
       url: "/direct-entry",
       icon: Zap,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
       items: [
         {
           title: "إدخال سريع",
@@ -125,21 +150,25 @@ export const navbarData: NavbarData = {
       title: "الموجودات الثابتة",
       url: "/fixed-assets",
       icon: Landmark,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
       items: [
         {
           title: "ترميز",
           url: "/fixed-assets/coding",
           icon: Barcode,
+          warehouses: ["furniture", "carpet", "general", "construction"], // Durable goods warehouses
         },
         {
           title: "الذمة",
           url: "/fixed-assets/custody",
           icon: Users,
+          warehouses: ["furniture", "carpet", "general"], // Items that can be assigned to people
         },
         {
           title: "المستهلك",
           url: "/fixed-assets/consumed",
           icon: TrendingDown,
+          warehouses: ["dry", "frozen", "fuel", "consumable"], // Consumable items warehouses
         },
       ],
     },
@@ -147,6 +176,7 @@ export const navbarData: NavbarData = {
       title: "مركز التقارير",
       url: "/reports",
       icon: BarChart3,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
     },
   ],
   projects: [
@@ -154,16 +184,19 @@ export const navbarData: NavbarData = {
       title: "الأقسام والشعب",
       url: "/settings/departments",
       icon: Building2,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
     },
     {
       title: "الموردين",
       url: "/settings/suppliers",
       icon: Truck,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
     },
     {
       title: "وحدات القياس",
       url: "/settings/units",
       icon: Ruler,
+      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
     },
     {
       title: "المستخدمين",
@@ -174,36 +207,46 @@ export const navbarData: NavbarData = {
   ],
 };
 
-// Utility function to filter navigation items based on user role
+// Utility function to filter navigation items based on user role and warehouse
 export function filterNavItemsByRole(
   items: NavItem[],
-  userRole?: string
+  userRole?: string,
+  userWarehouse?: string
 ): NavItem[] {
   // if (!userRole) return []; // If no user role, return empty array
 
   return items
     .filter((item) => {
-      // If no roles specified, item is accessible to all authenticated users
-      if (!item.roles || item.roles.length === 0) {
-        return true;
+      // Check role restrictions
+      if (item.roles && item.roles.length > 0) {
+        if (!userRole || !item.roles.includes(userRole)) {
+          return false;
+        }
       }
-      // Check if user's role is in the allowed roles
-      return userRole ? item.roles.includes(userRole) : false;
+
+      // Check warehouse restrictions
+      if (item.warehouses && item.warehouses.length > 0) {
+        if (!userWarehouse || !item.warehouses.includes(userWarehouse)) {
+          return false;
+        }
+      }
+
+      return true;
     })
     .map((item) => ({
       ...item,
       // Recursively filter subitems if they exist
       items: item.items
-        ? filterNavItemsByRole(item.items, userRole)
+        ? filterNavItemsByRole(item.items, userRole, userWarehouse)
         : undefined,
     }));
 }
 
-// Utility function to get filtered navbar data based on user role
-export function getFilteredNavbarData(userRole?: string): NavbarData {
+// Utility function to get filtered navbar data based on user role and warehouse
+export function getFilteredNavbarData(userRole?: string, userWarehouse?: string): NavbarData {
   return {
-    navMain: filterNavItemsByRole(navbarData.navMain, userRole),
-    projects: filterNavItemsByRole(navbarData.projects, userRole),
+    navMain: filterNavItemsByRole(navbarData.navMain, userRole, userWarehouse),
+    projects: filterNavItemsByRole(navbarData.projects, userRole, userWarehouse),
   };
 }
 

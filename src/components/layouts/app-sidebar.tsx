@@ -21,10 +21,10 @@ import { getFilteredNavbarData } from "./navbarData";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore();
 
-  // Get filtered navigation data based on user role
+  // Get filtered navigation data based on user role and warehouse
   const filteredNavData = React.useMemo(() => {
-    return getFilteredNavbarData(user?.role);
-  }, [user?.role]);
+    return getFilteredNavbarData(user?.role, user?.warehouse);
+  }, [user?.role, user?.warehouse]);
 
   return (
     <Sidebar collapsible="icon" {...props}>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuthStore } from "@/store/auth/authStore";
 import { useAuth } from "@/hooks/useAuth";
 import { loginSchema, type LoginFormData } from "@/store/auth/authValidation";
@@ -19,9 +20,75 @@ type LoginResponse = {
   data?: LoginResponse;
 };
 
+// Fake warehouse users for development/testing
+type WarehouseUser = {
+  id: string;
+  name: string;
+  userName: string;
+  password: string;
+};
+
+const WAREHOUSE_USERS: WarehouseUser[] = [
+  {
+    id: "furniture",
+    name: "مخزن الأثاث والممتلكات العامة",
+    userName: "furniture_admin",
+    password: "furniture123"
+  },
+  {
+    id: "carpet",
+    name: "مخزن السجاد والمفروشات",
+    userName: "carpet_admin",
+    password: "carpet123"
+  },
+  {
+    id: "general",
+    name: "مخزن المواد العامة",
+    userName: "general_admin",
+    password: "general123"
+  },
+  {
+    id: "construction",
+    name: "مخزن المواد الإنشائية",
+    userName: "construction_admin",
+    password: "construction123"
+  },
+  {
+    id: "dry",
+    name: "مخزن المواد الجافة",
+    userName: "dry_admin",
+    password: "dry123"
+  },
+  {
+    id: "frozen",
+    name: "مخزن المواد المجمّدة",
+    userName: "frozen_admin",
+    password: "frozen123"
+  },
+  {
+    id: "fuel",
+    name: "مخزن الوقود والزيوت",
+    userName: "fuel_admin",
+    password: "fuel123"
+  },
+  {
+    id: "consumable",
+    name: "مخزن المواد المستهلكة",
+    userName: "consumable_admin",
+    password: "consumable123"
+  },
+  {
+    id: "law_enforcement",
+    name: "مخزن قسم حفظ النظام",
+    userName: "law_enforcement_admin",
+    password: "law123"
+  }
+];
+
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
   const [formData, setFormData] = useState<LoginFormData>({
     userName: "",
     password: ""
@@ -61,7 +128,7 @@ export default function LoginPage() {
       ...prev,
       [field]: e.target.value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({
@@ -71,51 +138,60 @@ export default function LoginPage() {
     }
   };
 
+  const handleWarehouseSelect = (warehouseId: string) => {
+    setSelectedWarehouse(warehouseId);
+
+    // Find the selected warehouse user
+    const warehouseUser = WAREHOUSE_USERS.find(w => w.id === warehouseId);
+
+    if (warehouseUser) {
+      // Auto-fill username and password
+      setFormData({
+        userName: warehouseUser.userName,
+        password: warehouseUser.password
+      });
+
+      // Clear any existing errors
+      setErrors({});
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form data
-    const validation = loginSchema.safeParse(formData);
-    if (!validation.success) {
-      const formErrors: Record<string, string> = {};
-      validation.error.issues.forEach((issue) => {
-        if (issue.path[0]) {
-          formErrors[issue.path[0] as string] = issue.message;
-        }
-      });
-      setErrors(formErrors);
+
+    // Check if warehouse is selected
+    if (!selectedWarehouse) {
+      toast.error("يرجى اختيار المخزن أولاً");
       return;
     }
 
-    try {
-      await login({
-        data: formData,
-        onSuccess: (response: unknown) => {
-          const responseData = (response as LoginResponse)?.data || (response as LoginResponse);
-          const { access_token, user } = responseData;
-          
-          if (user.isTempPass) {
-            setLoggedInUser(user);
-            setAccessToken(access_token);
-            setChangePasswordData({
-              currentPassword: formData.password,
-              newPassword: ""
-            });
-            setShowChangePassword(true);
-            setErrors({});
-          } else {
-            setAuth(user, access_token);
-            router.push("/");
-          }
-        },
-        onError: (error: unknown) => {
-          console.error("Login error:", error);
-          toast.error("فشل في تسجيل الدخول. يرجى التحقق من البيانات والمحاولة مرة أخرى.");
-        }
-      });
-    } catch (error) {
-      console.error("Login error:", error);
+    // Find the selected warehouse user
+    const warehouseUser = WAREHOUSE_USERS.find(w => w.id === selectedWarehouse);
+
+    if (!warehouseUser) {
+      toast.error("خطأ في اختيار المخزن");
+      return;
     }
+
+    // Create dummy user object
+    const dummyUser: User = {
+      id: parseInt(selectedWarehouse.split('_')[0]) || 1,
+      userName: warehouseUser.userName,
+      fullName: `مسؤول ${warehouseUser.name}`,
+      role: 'warehouse_manager',
+      warehouse: selectedWarehouse, // Set warehouse type
+      isTempPass: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Create dummy access token
+    const dummyToken = `dummy_token_${selectedWarehouse}_${Date.now()}`;
+
+    // Set auth and redirect to home
+    setAuth(dummyUser, dummyToken);
+    toast.success(`مرحباً ${dummyUser.fullName}`);
+    router.push("/");
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -183,6 +259,22 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
 
                 <div className="space-y-2">
+                  <Label htmlFor="warehouse">اختر المخزن</Label>
+                  <Select value={selectedWarehouse} onValueChange={handleWarehouseSelect}>
+                    <SelectTrigger id="warehouse">
+                      <SelectValue placeholder="اختر المخزن للدخول" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {WAREHOUSE_USERS.map((warehouse) => (
+                        <SelectItem key={warehouse.id} value={warehouse.id}>
+                          {warehouse.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="userName">اسم المستخدم</Label>
                   <Input
                     id="userName"
@@ -191,6 +283,7 @@ export default function LoginPage() {
                     onChange={handleInputChange("userName")}
                     placeholder="أدخل اسم المستخدم"
                     className={errors.userName ? "border-red-500" : ""}
+                    readOnly
                   />
                   {errors.userName && (
                     <p className="text-sm text-red-600 dark:text-red-400">
@@ -208,6 +301,7 @@ export default function LoginPage() {
                     onChange={handleInputChange("password")}
                     placeholder="أدخل كلمة المرور"
                     className={errors.password ? "border-red-500" : ""}
+                    readOnly
                   />
                   {errors.password && (
                     <p className="text-sm text-red-600 dark:text-red-400">

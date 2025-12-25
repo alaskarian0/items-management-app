@@ -57,12 +57,6 @@ const ReportsPage = () => {
       link: "/reports/suppliers",
     },
     {
-      title: "تقارير الموجودات الثابتة",
-      description: "تقارير شاملة عن الأصول الثابتة وتتبعها.",
-      icon: Building,
-      link: "/reports/fixed-assets",
-    },
-    {
       title: "رصيد الأقسام",
       description: "عرض المواد التي تم إصدارها إلى الأقسام المختلفة.",
       icon: Building2,

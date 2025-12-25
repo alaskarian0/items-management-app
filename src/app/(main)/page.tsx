@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthStore } from "@/store/auth/authStore";
 import {
   AlertCircle,
   Barcode,
@@ -29,6 +30,19 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+// Warehouse names mapping
+const WAREHOUSE_NAMES: Record<string, string> = {
+  furniture: "مخزن الأثاث والممتلكات العامة",
+  carpet: "مخزن السجاد والمفروشات",
+  general: "مخزن المواد العامة",
+  construction: "مخزن المواد الإنشائية",
+  dry: "مخزن المواد الجافة",
+  frozen: "مخزن المواد المجمّدة",
+  fuel: "مخزن الوقود والزيوت",
+  consumable: "مخزن المواد المستهلكة",
+  law_enforcement: "مخزن قسم حفظ النظام",
+};
 
 // Warehouse stock data
 const warehouseStockData = [
@@ -136,16 +150,33 @@ const StatCard = ({
 );
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
   const totalItems = warehouseStockData.reduce((sum, w) => sum + w.items, 0);
   const totalFixedAssets = fixedAssetsData.reduce((sum, a) => sum + a.value, 0);
+
+  // Get warehouse name
+  const warehouseName = user?.warehouse
+    ? WAREHOUSE_NAMES[user.warehouse] || user.warehouse
+    : "المخزن الرئيسي";
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">لوحة التحكم الرئيسية</h2>
-        <p className="text-muted-foreground mt-1">
-          نظرة شاملة على حالة المخزون والموجودات الثابتة
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-3xl font-bold tracking-tight">لوحة التحكم الرئيسية</h2>
+          {user?.warehouse && (
+            <Badge variant="outline" className="text-base px-3 py-1">
+              <Warehouse className="h-4 w-4 ml-2" />
+              {warehouseName}
+            </Badge>
+          )}
+        </div>
+        <p className="text-muted-foreground">
+          {user?.warehouse === "law_enforcement"
+            ? "مرحباً في لوحة التحكم - قسم حفظ النظام"
+            : "نظرة شاملة على حالة المخزون والموجودات الثابتة"
+          }
         </p>
       </div>
 

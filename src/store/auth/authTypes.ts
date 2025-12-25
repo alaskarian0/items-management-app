@@ -5,6 +5,7 @@ export interface User {
   userName: string
   fullName: string
   role: string
+  warehouse?: string // Warehouse type: furniture, carpet, general, construction, dry, frozen, fuel, consumable, law_enforcement
   isTempPass: boolean
   createdAt?: string
   updatedAt?: string
