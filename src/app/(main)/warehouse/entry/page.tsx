@@ -40,6 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
@@ -75,6 +76,7 @@ import { type Item } from "@/lib/types/warehouse";
 const ItemEntryPage = () => {
   const { selectedWarehouse } = useWarehouse();
   const allItems = useItems() || []; // Load items from DB
+  const [entryMode, setEntryMode] = useState<"indirect" | "direct">("indirect");
   const [entryType, setEntryType] = useState<string>();
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("1101");
@@ -275,27 +277,89 @@ const ItemEntryPage = () => {
         </p>
       </div>
 
-      {/* Warehouse Selector */}
+      {/* Warehouse & Entry Mode Selection */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">اختيار المخزن</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">إعدادات الإدخال</CardTitle>
         </CardHeader>
-        <CardContent>
-          {!selectedWarehouse ? (
-            <div className="space-y-4">
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  الرجاء اختيار المخزن للمتابعة في عملية الإدخال
-                </AlertDescription>
-              </Alert>
+        <CardContent className="space-y-6">
+          {/* Warehouse Selector */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">اختيار المخزن</Label>
+            {!selectedWarehouse ? (
+              <div className="space-y-3">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    الرجاء اختيار المخزن للمتابعة في عملية الإدخال
+                  </AlertDescription>
+                </Alert>
+                <WarehouseSelector />
+              </div>
+            ) : (
               <WarehouseSelector />
+            )}
+          </div>
+
+          {/* Entry Mode Selection */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">نوع الإدخال</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Indirect Entry */}
+              <div
+                className={`cursor-pointer transition-all duration-200 flex items-center gap-3 p-4 rounded-lg border-2 ${
+                  entryMode === "indirect"
+                    ? "border-blue-500 bg-blue-50 dark:bg-blue-950 shadow-md"
+                    : "border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:bg-blue-950/50"
+                }`}
+                onClick={() => setEntryMode("indirect")}
+              >
+                <div
+                  className={`p-3 rounded-full ${
+                    entryMode === "indirect"
+                      ? "bg-blue-500 text-white"
+                      : "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+                  }`}
+                >
+                  <Search className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col flex-1">
+                  <span className="font-bold text-base">إدخال غير مباشر</span>
+                  <span className="text-sm text-muted-foreground">اختيار من المواد الموجودة</span>
+                </div>
+                {entryMode === "indirect" && (
+                  <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                )}
+              </div>
+
+              {/* Direct Entry */}
+              <div
+                className={`cursor-pointer transition-all duration-200 flex items-center gap-3 p-4 rounded-lg border-2 ${
+                  entryMode === "direct"
+                    ? "border-green-500 bg-green-50 dark:bg-green-950 shadow-md"
+                    : "border-gray-200 dark:border-gray-700 hover:border-green-300 hover:bg-green-50/50 dark:hover:bg-green-950/50"
+                }`}
+                onClick={() => setEntryMode("direct")}
+              >
+                <div
+                  className={`p-3 rounded-full ${
+                    entryMode === "direct"
+                      ? "bg-green-500 text-white"
+                      : "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300"
+                  }`}
+                >
+                  <PlusCircle className="h-6 w-6" />
+                </div>
+                <div className="flex flex-col flex-1">
+                  <span className="font-bold text-base">إدخال مباشر</span>
+                  <span className="text-sm text-muted-foreground">إنشاء مواد جديدة</span>
+                </div>
+                {entryMode === "direct" && (
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                )}
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <WarehouseSelector />
-            </div>
-          )}
+          </div>
         </CardContent>
       </Card>
 
@@ -499,6 +563,19 @@ const ItemEntryPage = () => {
                         <TableCell className="text-right min-w-[200px]">
                           {item.itemId ? (
                             <div className="font-medium">{item.itemName}</div>
+                          ) : entryMode === "direct" ? (
+                            <Input
+                              value={item.itemName || ""}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  index,
+                                  "itemName",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="أدخل اسم المادة"
+                              className="text-right"
+                            />
                           ) : (
                             <div className="space-y-2">
                               <Popover
@@ -514,7 +591,7 @@ const ItemEntryPage = () => {
                                   >
                                     <Search className="ml-2 h-4 w-4" />
                                     {item.itemName ||
-                                      "ابحث أو أضف مادة جديدة..."}
+                                      "ابحث عن مادة موجودة..."}
                                   </Button>
                                 </PopoverTrigger>
                                 <PopoverContent

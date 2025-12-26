@@ -79,6 +79,7 @@ const WarehouseDocumentsPage = () => {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+  const [entryModeFilter, setEntryModeFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -130,6 +131,13 @@ const WarehouseDocumentsPage = () => {
       );
     }
 
+    // Entry mode filter
+    if (entryModeFilter !== "all") {
+      filtered = filtered.filter(
+        (doc) => (doc as any).entryMode === entryModeFilter
+      );
+    }
+
     // Date range filter
     if (dateFrom) {
       filtered = filtered.filter(
@@ -155,6 +163,7 @@ const WarehouseDocumentsPage = () => {
     typeFilter,
     statusFilter,
     departmentFilter,
+    entryModeFilter,
     dateFrom,
     dateTo,
   ]);
@@ -181,6 +190,7 @@ const WarehouseDocumentsPage = () => {
     setTypeFilter("all");
     setStatusFilter("all");
     setDepartmentFilter("all");
+    setEntryModeFilter("all");
     setDateFrom(undefined);
     setDateTo(undefined);
   };
@@ -237,6 +247,25 @@ const WarehouseDocumentsPage = () => {
         <span className="font-medium">إصدار</span>
       </div>
     );
+  };
+
+  const getEntryModeBadge = (entryMode: string | undefined) => {
+    if (entryMode === "direct") {
+      return (
+        <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20 border-green-200">
+          <PlusCircle className="h-3 w-3 ml-1" />
+          مباشر
+        </Badge>
+      );
+    } else if (entryMode === "indirect") {
+      return (
+        <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 border-blue-200">
+          <Search className="h-3 w-3 ml-1" />
+          غير مباشر
+        </Badge>
+      );
+    }
+    return <span className="text-muted-foreground text-sm">-</span>;
   };
 
   const uniqueDepartments = useMemo(() => {
@@ -354,7 +383,7 @@ const WarehouseDocumentsPage = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="relative">
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -374,6 +403,16 @@ const WarehouseDocumentsPage = () => {
                         {type.label}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                <Select value={entryModeFilter} onValueChange={setEntryModeFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="طريقة الإدخال" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الطرق</SelectItem>
+                    <SelectItem value="direct">إدخال مباشر</SelectItem>
+                    <SelectItem value="indirect">إدخال غير مباشر</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -478,6 +517,7 @@ const WarehouseDocumentsPage = () => {
                     <TableRow>
                       <TableHead className="text-right">رقم المستند</TableHead>
                       <TableHead className="text-right">النوع</TableHead>
+                      <TableHead className="text-right">طريقة الإدخال</TableHead>
                       <TableHead className="text-right">التاريخ</TableHead>
                       <TableHead className="text-right">القسم</TableHead>
                       <TableHead className="text-right">اسم المورد</TableHead>
@@ -492,7 +532,7 @@ const WarehouseDocumentsPage = () => {
                     {filteredDocuments.length === 0 ? (
                       <TableRow>
                         <TableCell
-                          colSpan={10}
+                          colSpan={11}
                           className="text-center py-8 text-muted-foreground"
                         >
                           لا توجد مستندات مطابقة للفلاتر المحددة
@@ -506,6 +546,9 @@ const WarehouseDocumentsPage = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             {getTypeBadge(doc.type)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {getEntryModeBadge((doc as any).entryMode)}
                           </TableCell>
                           <TableCell className="text-right">
                             {format(new Date(doc.date), "dd/MM/yyyy", {

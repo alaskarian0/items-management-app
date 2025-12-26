@@ -6,6 +6,8 @@ import {
   Boxes,
   Building2,
   CalendarClock,
+  FileText,
+  FolderTree,
   Gift,
   History,
   Landmark,
@@ -15,6 +17,7 @@ import {
   PackagePlus,
   Ruler,
   ShieldAlert,
+  ShoppingCart,
   TrendingDown,
   Truck,
   Users,
@@ -57,10 +60,31 @@ export const navbarData: NavbarData = {
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
     },
     {
+      title: "إنشاء طلب شراء",
+      url: "/law-enforcement/purchase-requests",
+      icon: FileText,
+      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+    },
+    {
+      title: "طلبات الشراء",
+      url: "/law-enforcement/purchase-orders",
+      icon: ShoppingCart,
+      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+    },
+    {
       title: "عمليات المخازن",
       url: "/warehouse",
       icon: Warehouse,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
       items: [
         {
           title: "إدارة المخازن",
@@ -95,13 +119,63 @@ export const navbarData: NavbarData = {
           url: "/warehouse/stock-balance",
           icon: Boxes,
         },
+        {
+          title: "شجرة المواد",
+          url: "/tree-items",
+          icon: FolderTree,
+        },
       ],
     },
+
+    {
+      title: "المواد الثابتة",
+      url: "/fixed-assets",
+      icon: Landmark,
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
+      items: [
+        {
+          title: "ترميز",
+          url: "/fixed-assets/coding",
+          icon: Barcode,
+          warehouses: ["furniture", "carpet", "general", "construction"], // Durable goods warehouses
+        },
+        {
+          title: "الذمة",
+          url: "/fixed-assets/custody",
+          icon: Users,
+          warehouses: ["furniture", "carpet", "general"], // Items that can be assigned to people
+        },
+        {
+          title: "المستهلك",
+          url: "/fixed-assets/consumed",
+          icon: TrendingDown,
+          warehouses: ["general", "consumable"], // Consumable items warehouses + general
+        },
+      ],
+    },
+
     {
       title: "التنبيهات والإشعارات",
       url: "/alerts",
       icon: Bell,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
       items: [
         {
           title: "تنبيهات إعادة الطلب",
@@ -123,54 +197,19 @@ export const navbarData: NavbarData = {
       ],
     },
     {
-      title: "الإدخال المباشر",
-      url: "/direct-entry",
-      icon: Zap,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
-      items: [
-        {
-          title: "إدخال سريع",
-          url: "/direct-entry/new",
-          icon: PackagePlus,
-        },
-        {
-          title: "شجرة المواد",
-          url: "/direct-entry/items",
-          icon: Boxes,
-        },
-      ],
-    },
-    {
-      title: "الموجودات الثابتة",
-      url: "/fixed-assets",
-      icon: Landmark,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
-      items: [
-        {
-          title: "ترميز",
-          url: "/fixed-assets/coding",
-          icon: Barcode,
-          warehouses: ["furniture", "carpet", "general", "construction"], // Durable goods warehouses
-        },
-        {
-          title: "الذمة",
-          url: "/fixed-assets/custody",
-          icon: Users,
-          warehouses: ["furniture", "carpet", "general"], // Items that can be assigned to people
-        },
-        {
-          title: "المستهلك",
-          url: "/fixed-assets/consumed",
-          icon: TrendingDown,
-          warehouses: ["dry", "frozen", "fuel", "consumable"], // Consumable items warehouses
-        },
-      ],
-    },
-    {
       title: "مركز التقارير",
       url: "/reports",
       icon: BarChart3,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
     },
   ],
   projects: [
@@ -178,19 +217,46 @@ export const navbarData: NavbarData = {
       title: "الأقسام والشعب",
       url: "/settings/departments",
       icon: Building2,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
     },
     {
       title: "الموردين",
       url: "/settings/suppliers",
       icon: Truck,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
     },
     {
       title: "وحدات القياس",
       url: "/settings/units",
       icon: Ruler,
-      warehouses: ["furniture", "carpet", "general", "construction", "dry", "frozen", "fuel", "consumable"], // Hide from law_enforcement
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // Hide from law_enforcement
     },
     {
       title: "المستخدمين",
@@ -237,10 +303,17 @@ export function filterNavItemsByRole(
 }
 
 // Utility function to get filtered navbar data based on user role and warehouse
-export function getFilteredNavbarData(userRole?: string, userWarehouse?: string): NavbarData {
+export function getFilteredNavbarData(
+  userRole?: string,
+  userWarehouse?: string
+): NavbarData {
   return {
     navMain: filterNavItemsByRole(navbarData.navMain, userRole, userWarehouse),
-    projects: filterNavItemsByRole(navbarData.projects, userRole, userWarehouse),
+    projects: filterNavItemsByRole(
+      navbarData.projects,
+      userRole,
+      userWarehouse
+    ),
   };
 }
 

@@ -45,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavGroup items={filteredNavData.navMain} groupLabel="الرئيسية" />
-        {user?.warehouse !== "law_enforcement" && (
+        {user?.warehouse === "general" && (
           <NavGroup items={filteredNavData.projects} groupLabel="اعدادات النظام" />
         )}
       </SidebarContent>
