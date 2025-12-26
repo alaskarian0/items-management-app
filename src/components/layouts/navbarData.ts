@@ -6,12 +6,14 @@ import {
   Boxes,
   Building2,
   CalendarClock,
+  ClipboardList,
   FileText,
   FolderTree,
   Gift,
   History,
   Landmark,
   LayoutDashboard,
+  List,
   LucideIcon,
   PackageMinus,
   PackagePlus,
@@ -58,6 +60,24 @@ export const navbarData: NavbarData = {
       url: "/law-enforcement/employees",
       icon: Users,
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+    },
+    {
+      title: "الاستعلام عن المخزون",
+      url: "/law-enforcement/inventory-stock-requests",
+      icon: ClipboardList,
+      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+      items: [
+        {
+          title: "إنشاء طلب استعلام",
+          url: "/law-enforcement/inventory-stock-requests",
+          icon: ClipboardList,
+        },
+        {
+          title: "الطلبات المرسلة",
+          url: "/law-enforcement/stock-requests-list",
+          icon: List,
+        },
+      ],
     },
     {
       title: "طلبات الشراء",
