@@ -1,4 +1,5 @@
 import {
+  Archive,
   BarChart3,
   Barcode,
   Bell,
@@ -51,49 +52,76 @@ export const navbarData: NavbarData = {
     },
     {
       title: "إدارة توزيع المواد",
-      url: "/law-enforcement/item-assignments",
+      url: "/department/item-assignments",
       icon: PackagePlus,
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
     },
     {
       title: "إدارة الموظفين",
-      url: "/law-enforcement/employees",
+      url: "/department/employees",
       icon: Users,
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
     },
     {
       title: "الاستعلام عن المخزون",
-      url: "/law-enforcement/inventory-stock-requests",
+      url: "/department/inventory-stock-requests",
       icon: ClipboardList,
-      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+      warehouses: ["law_enforcement"], // Accessible to law enforcement and general warehouse
       items: [
         {
           title: "إنشاء طلب استعلام",
-          url: "/law-enforcement/inventory-stock-requests",
+          url: "/department/inventory-stock-requests",
           icon: ClipboardList,
         },
         {
           title: "الطلبات المرسلة",
-          url: "/law-enforcement/stock-requests-list",
+          url: "/department/stock-requests-list",
           icon: List,
         },
       ],
     },
     {
       title: "طلبات الشراء",
-      url: "/law-enforcement/purchase-orders",
+      url: "/department/purchase-orders",
       icon: ShoppingCart,
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
       items: [
         {
           title: "إنشاء طلب شراء",
-          url: "/law-enforcement/purchase-requests",
+          url: "/department/purchase-requests",
           icon: FileText,
         },
         {
           title: "مراجعة الطلبات",
-          url: "/law-enforcement/purchase-orders",
+          url: "/department/purchase-orders",
           icon: ShoppingCart,
+        },
+      ],
+    },
+    {
+      title: "إدارة المستندات",
+      url: "/documents/warehouse-documents",
+      icon: FileText,
+      warehouses: [
+        "furniture",
+        "carpet",
+        "general",
+        "construction",
+        "dry",
+        "frozen",
+        "fuel",
+        "consumable",
+      ], // All warehouse types
+      items: [
+        {
+          title: "مستندات المخازن",
+          url: "/documents/warehouse-documents",
+          icon: FileText,
+        },
+        {
+          title: "أرشيف المستندات",
+          url: "/documents/archive",
+          icon: Archive,
         },
       ],
     },
@@ -128,12 +156,6 @@ export const navbarData: NavbarData = {
           title: "إصدار المواد",
           url: "/warehouse/issuance",
           icon: PackageMinus,
-        },
-
-        {
-          title: "إدارة المستندات",
-          url: "/warehouse/documents",
-          icon: BarChart3,
         },
         {
           title: "حركة المواد",
