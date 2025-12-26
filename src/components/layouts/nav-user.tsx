@@ -95,31 +95,6 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles />
-                ترقية إلى برو
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                الحساب
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                الفواتير
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                الإشعارات
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <ThemeToggle />
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               تسجيل خروج

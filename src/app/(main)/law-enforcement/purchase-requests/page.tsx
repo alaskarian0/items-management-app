@@ -5,13 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,7 +47,13 @@ import {
   CheckCircle,
   Clock,
   ShoppingCart,
+  User,
+  Calendar,
+  Check,
+  ChevronsUpDown,
+  PlusCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Purchase Request Item interface
 interface PurchaseRequestItem {
@@ -55,21 +66,54 @@ interface PurchaseRequestItem {
   notes: string;
 }
 
-// Purchase Request interface
-interface PurchaseRequest {
+// Employee interface
+interface Employee {
   id: string;
-  orderNumber: string;
-  employeeName: string;
-  employeePosition: string;
+  name: string;
+  position: string;
+  divisionId: string;
   divisionName: string;
-  unit: string;
-  requiredDate: string;
-  priority: "عادي" | "عاجل" | "ضروري" | "";
-  items: PurchaseRequestItem[];
-  justification: string;
-  notes: string;
-  status: "draft" | "submitted";
+  unit?: string;
+  phone?: string;
 }
+
+// Mock employees data
+const MOCK_EMPLOYEES: Employee[] = [
+  {
+    id: "EMP001",
+    name: "أحمد محمد علي",
+    position: "مدير التخطيط",
+    divisionId: "div1",
+    divisionName: "شعبة التخطيط",
+    unit: "وحدة التخطيط الاستراتيجي",
+    phone: "07701234567",
+  },
+  {
+    id: "EMP002",
+    name: "سارة علي حسن",
+    position: "مسؤولة المتابعة",
+    divisionId: "div2",
+    divisionName: "شعبة المتابعة",
+    phone: "07709876543",
+  },
+  {
+    id: "EMP003",
+    name: "محمد حسن جاسم",
+    position: "محاسب",
+    divisionId: "div3",
+    divisionName: "شعبة الحسابات",
+    unit: "وحدة المحاسبة المالية",
+    phone: "07705551234",
+  },
+  {
+    id: "EMP004",
+    name: "فاطمة أحمد",
+    position: "موظفة موارد بشرية",
+    divisionId: "div4",
+    divisionName: "شعبة الموارد البشرية",
+    phone: "07708889999",
+  },
+];
 
 // Mock submitted requests for display
 const MOCK_SUBMITTED_REQUESTS = [
@@ -100,63 +144,54 @@ const MOCK_SUBMITTED_REQUESTS = [
 ];
 
 export default function PurchaseRequestsPage() {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [submittedRequests, setSubmittedRequests] = useState(MOCK_SUBMITTED_REQUESTS);
+  const [submittedRequests, setSubmittedRequests] = useState(
+    MOCK_SUBMITTED_REQUESTS
+  );
+  const [employeeComboboxOpen, setEmployeeComboboxOpen] = useState(false);
 
   // Form state
-  const [employeeName, setEmployeeName] = useState("");
-  const [employeePosition, setEmployeePosition] = useState("");
-  const [divisionName, setDivisionName] = useState("");
-  const [unit, setUnit] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [requiredDate, setRequiredDate] = useState("");
   const [priority, setPriority] = useState<"عادي" | "عاجل" | "ضروري" | "">("");
   const [justification, setJustification] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<PurchaseRequestItem[]>([]);
 
-  // Current item being added
-  const [currentItem, setCurrentItem] = useState<PurchaseRequestItem>({
-    id: "",
-    itemName: "",
-    itemType: "",
-    quantity: 0,
-    unit: "",
-    estimatedPrice: 0,
-    notes: "",
-  });
-
   const handleAddItem = () => {
-    if (!currentItem.itemName || !currentItem.itemType || currentItem.quantity <= 0) {
-      toast.error("الرجاء إدخال جميع البيانات المطلوبة للمادة");
-      return;
-    }
-
-    const newItem = {
-      ...currentItem,
-      id: Date.now().toString(),
-    };
-
-    setItems([...items, newItem]);
-    setCurrentItem({
-      id: "",
-      itemName: "",
-      itemType: "",
-      quantity: 0,
-      unit: "",
-      estimatedPrice: 0,
-      notes: "",
-    });
-    toast.success("تمت إضافة المادة بنجاح");
+    setItems([
+      ...items,
+      {
+        id: Date.now().toString(),
+        itemName: "",
+        itemType: "",
+        quantity: 1,
+        unit: "",
+        estimatedPrice: 0,
+        notes: "",
+      },
+    ]);
   };
 
-  const handleRemoveItem = (id: string) => {
-    setItems(items.filter((item) => item.id !== id));
+  const handleItemChange = <K extends keyof PurchaseRequestItem>(
+    index: number,
+    field: K,
+    value: PurchaseRequestItem[K]
+  ) => {
+    setItems((prevItems) => {
+      const newItems = [...prevItems];
+      newItems[index] = { ...newItems[index], [field]: value };
+      return newItems;
+    });
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setItems((prevItems) => prevItems.filter((_, i) => i !== index));
     toast.success("تم حذف المادة");
   };
 
   const handleSubmitRequest = () => {
     // Validation
-    if (!employeeName || !employeePosition || !divisionName || !requiredDate || !priority) {
+    if (!employeeId || !requiredDate || !priority) {
       toast.error("الرجاء إدخال جميع البيانات المطلوبة");
       return;
     }
@@ -166,18 +201,33 @@ export default function PurchaseRequestsPage() {
       return;
     }
 
+    // Validate items
+    const invalidItems = items.filter(
+      (item) => !item.itemName || !item.itemType || item.quantity <= 0
+    );
+    if (invalidItems.length > 0) {
+      toast.error("الرجاء إكمال بيانات جميع المواد");
+      return;
+    }
+
     if (!justification) {
       toast.error("الرجاء إدخال مبررات الطلب");
       return;
     }
 
     // Calculate total cost
-    const totalCost = items.reduce((sum, item) => sum + item.estimatedPrice * item.quantity, 0);
+    const totalCost = items.reduce(
+      (sum, item) => sum + item.estimatedPrice * item.quantity,
+      0
+    );
 
     // Create new request
     const newRequest = {
       id: Date.now().toString(),
-      orderNumber: `PR-2024-${String(submittedRequests.length + 1).padStart(3, "0")}`,
+      orderNumber: `PR-2024-${String(submittedRequests.length + 1).padStart(
+        3,
+        "0"
+      )}`,
       submittedDate: new Date().toISOString().split("T")[0],
       itemsCount: items.length,
       status: "pending" as const,
@@ -187,22 +237,21 @@ export default function PurchaseRequestsPage() {
     setSubmittedRequests([newRequest, ...submittedRequests]);
 
     // Reset form
-    setEmployeeName("");
-    setEmployeePosition("");
-    setDivisionName("");
-    setUnit("");
+    setEmployeeId("");
     setRequiredDate("");
     setPriority("");
     setJustification("");
     setNotes("");
     setItems([]);
-    setShowCreateDialog(false);
 
     toast.success("تم إرسال طلب الشراء بنجاح");
   };
 
   const calculateTotal = () => {
-    return items.reduce((sum, item) => sum + item.estimatedPrice * item.quantity, 0);
+    return items.reduce(
+      (sum, item) => sum + item.estimatedPrice * item.quantity,
+      0
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -233,450 +282,400 @@ export default function PurchaseRequestsPage() {
     }
   };
 
+  const selectedEmployee = MOCK_EMPLOYEES.find((emp) => emp.id === employeeId);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <ShoppingCart className="h-8 w-8" />
-            طلبات الشراء
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            إنشاء وإدارة طلبات الشراء الخاصة بك
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateDialog(true)} size="lg">
-          <Plus className="h-4 w-4 ml-2" />
-          طلب شراء جديد
-        </Button>
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <ShoppingCart className="h-8 w-8" />
+          إنشاء طلب شراء جديد
+        </h2>
+        <p className="text-muted-foreground mt-1">
+          قم بتعبئة جميع البيانات المطلوبة لإنشاء طلب شراء جديد
+        </p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Create Request Form */}
+      <div className="space-y-6">
+        {/* Employee Information */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الطلبات</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              معلومات الموظف
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{submittedRequests.length}</div>
-            <p className="text-xs text-muted-foreground">طلب</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">قيد المراجعة</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">
-              {submittedRequests.filter((r) => r.status === "pending").length}
-            </div>
-            <p className="text-xs text-muted-foreground">طلب</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">موافق عليه</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {submittedRequests.filter((r) => r.status === "approved").length}
-            </div>
-            <p className="text-xs text-muted-foreground">طلب</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">مرفوض</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {submittedRequests.filter((r) => r.status === "rejected").length}
-            </div>
-            <p className="text-xs text-muted-foreground">طلب</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Submitted Requests Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>طلباتي السابقة</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="border rounded-md overflow-x-auto">
-            <Table dir="rtl">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-right">رقم الطلب</TableHead>
-                  <TableHead className="text-right">تاريخ الإرسال</TableHead>
-                  <TableHead className="text-right">عدد المواد</TableHead>
-                  <TableHead className="text-right">التكلفة المقدرة</TableHead>
-                  <TableHead className="text-right">الحالة</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {submittedRequests.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
-                      لم تقم بإرسال أي طلبات بعد
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  submittedRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="text-right font-mono font-medium">
-                        {request.orderNumber}
-                      </TableCell>
-                      <TableCell className="text-right">{request.submittedDate}</TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant="outline">{request.itemsCount} مادة</Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {request.totalCost.toLocaleString()} IQD
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {getStatusBadge(request.status)}
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Create Request Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              طلب شراء جديد
-            </DialogTitle>
-            <DialogDescription>
-              قم بتعبئة جميع البيانات المطلوبة لإنشاء طلب شراء جديد
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
-            {/* Employee Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">معلومات الموظف</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employeeName">
-                      اسم الموظف <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="employeeName"
-                      placeholder="أدخل اسم الموظف الثلاثي"
-                      value={employeeName}
-                      onChange={(e) => setEmployeeName(e.target.value)}
+          <CardContent className="space-y-4">
+            {/* Employee Search and Selection (Combobox) */}
+            <div className="space-y-2">
+              <Label>
+                الموظف <span className="text-red-500">*</span>
+              </Label>
+              <Popover
+                open={employeeComboboxOpen}
+                onOpenChange={setEmployeeComboboxOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={employeeComboboxOpen}
+                    className="w-full justify-between"
+                  >
+                    {employeeId
+                      ? MOCK_EMPLOYEES.find((emp) => emp.id === employeeId)
+                          ?.name
+                      : "ابحث واختر الموظف..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="ابحث عن موظف..."
+                      className="h-9"
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="employeePosition">
-                      المنصب <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="employeePosition"
-                      placeholder="أدخل منصب الموظف"
-                      value={employeePosition}
-                      onChange={(e) => setEmployeePosition(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="divisionName">
-                      الشعبة <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="divisionName"
-                      placeholder="أدخل اسم الشعبة"
-                      value={divisionName}
-                      onChange={(e) => setDivisionName(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">الوحدة (اختياري)</Label>
-                    <Input
-                      id="unit"
-                      placeholder="أدخل اسم الوحدة"
-                      value={unit}
-                      onChange={(e) => setUnit(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Request Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">تفاصيل الطلب</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="requiredDate">
-                      التاريخ المطلوب <span className="text-red-500">*</span>
-                    </Label>
-                    <Input
-                      id="requiredDate"
-                      type="date"
-                      value={requiredDate}
-                      onChange={(e) => setRequiredDate(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="priority">
-                      الأولوية <span className="text-red-500">*</span>
-                    </Label>
-                    <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر الأولوية" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="عادي">عادي</SelectItem>
-                        <SelectItem value="عاجل">عاجل</SelectItem>
-                        <SelectItem value="ضروري">ضروري</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="justification">
-                      مبررات الطلب <span className="text-red-500">*</span>
-                    </Label>
-                    <Textarea
-                      id="justification"
-                      placeholder="أدخل مبررات وأسباب طلب الشراء..."
-                      value={justification}
-                      onChange={(e) => setJustification(e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="أي ملاحظات إضافية..."
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Add Items Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  إضافة المواد
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="itemName">اسم المادة</Label>
-                    <Input
-                      id="itemName"
-                      placeholder="أدخل اسم المادة"
-                      value={currentItem.itemName}
-                      onChange={(e) =>
-                        setCurrentItem({ ...currentItem, itemName: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="itemType">نوع المادة</Label>
-                    <Select
-                      value={currentItem.itemType}
-                      onValueChange={(value: any) =>
-                        setCurrentItem({ ...currentItem, itemType: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر النوع" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ثابت">ثابت</SelectItem>
-                        <SelectItem value="استهلاكي">استهلاكي</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">الكمية</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min="1"
-                      placeholder="0"
-                      value={currentItem.quantity || ""}
-                      onChange={(e) =>
-                        setCurrentItem({
-                          ...currentItem,
-                          quantity: parseInt(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="unit">وحدة القياس</Label>
-                    <Input
-                      id="unit"
-                      placeholder="قطعة، كرتون، حزمة..."
-                      value={currentItem.unit}
-                      onChange={(e) =>
-                        setCurrentItem({ ...currentItem, unit: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="estimatedPrice">السعر المقدر (للوحدة)</Label>
-                    <Input
-                      id="estimatedPrice"
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={currentItem.estimatedPrice || ""}
-                      onChange={(e) =>
-                        setCurrentItem({
-                          ...currentItem,
-                          estimatedPrice: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="itemNotes">ملاحظات</Label>
-                    <Input
-                      id="itemNotes"
-                      placeholder="ملاحظات عن المادة..."
-                      value={currentItem.notes}
-                      onChange={(e) =>
-                        setCurrentItem({ ...currentItem, notes: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={handleAddItem} className="w-full" variant="outline">
-                  <Plus className="h-4 w-4 ml-2" />
-                  إضافة المادة
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Items List */}
-            {items.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">المواد المضافة ({items.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="border rounded-md overflow-x-auto">
-                    <Table dir="rtl">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-right">اسم المادة</TableHead>
-                          <TableHead className="text-right">النوع</TableHead>
-                          <TableHead className="text-right">الكمية</TableHead>
-                          <TableHead className="text-right">السعر</TableHead>
-                          <TableHead className="text-right">الإجمالي</TableHead>
-                          <TableHead className="text-right">ملاحظات</TableHead>
-                          <TableHead className="text-right">إجراء</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {items.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="text-right font-medium">
-                              {item.itemName}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant="outline">{item.itemType}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.quantity} {item.unit}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.estimatedPrice.toLocaleString()} IQD
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {(item.quantity * item.estimatedPrice).toLocaleString()} IQD
-                            </TableCell>
-                            <TableCell className="text-right text-sm">
-                              {item.notes || "-"}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveItem(item.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                    <CommandList>
+                      <CommandEmpty>لا يوجد موظفين مطابقين للبحث</CommandEmpty>
+                      <CommandGroup>
+                        {MOCK_EMPLOYEES.map((emp) => (
+                          <CommandItem
+                            key={emp.id}
+                            value={`${emp.name} ${emp.position} ${emp.divisionName} ${emp.id}`}
+                            onSelect={() => {
+                              setEmployeeId(emp.id);
+                              setEmployeeComboboxOpen(false);
+                            }}
+                          >
+                            <div className="flex flex-col items-start flex-1">
+                              <span className="font-medium">{emp.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {emp.position} - {emp.divisionName}
+                              </span>
+                            </div>
+                            <Check
+                              className={cn(
+                                "ml-2 h-4 w-4",
+                                employeeId === emp.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
 
-                  {/* Total */}
-                  <div className="mt-4 flex justify-end">
-                    <div className="bg-muted p-4 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">التكلفة الإجمالية:</span>
-                        <span className="text-xl font-bold">
-                          {calculateTotal().toLocaleString()} IQD
-                        </span>
-                      </div>
+            {/* Display selected employee details */}
+            {selectedEmployee && (
+              <Card className="bg-muted/50">
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        الاسم
+                      </Label>
+                      <p className="font-medium">{selectedEmployee.name}</p>
                     </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        المنصب
+                      </Label>
+                      <p className="font-medium">{selectedEmployee.position}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        الشعبة
+                      </Label>
+                      <p className="font-medium">
+                        {selectedEmployee.divisionName}
+                      </p>
+                    </div>
+                    {selectedEmployee.unit && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">
+                          الوحدة
+                        </Label>
+                        <p className="font-medium">{selectedEmployee.unit}</p>
+                      </div>
+                    )}
+                    {selectedEmployee.phone && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">
+                          رقم الهاتف
+                        </Label>
+                        <p className="font-medium font-mono">
+                          {selectedEmployee.phone}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             )}
-          </div>
+          </CardContent>
+        </Card>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              إلغاء
-            </Button>
-            <Button onClick={handleSubmitRequest}>
-              <Send className="h-4 w-4 ml-2" />
-              إرسال الطلب
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        {/* Request Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              تفاصيل الطلب
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="requiredDate">
+                  التاريخ المطلوب <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="requiredDate"
+                  type="date"
+                  value={requiredDate}
+                  onChange={(e) => setRequiredDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="priority">
+                  الأولوية <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={priority}
+                  onValueChange={(value: any) => setPriority(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر الأولوية" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="عادي">عادي</SelectItem>
+                    <SelectItem value="عاجل">عاجل</SelectItem>
+                    <SelectItem value="ضروري">ضروري</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="justification">
+                  مبررات الطلب <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="justification"
+                  placeholder="أدخل مبررات وأسباب طلب الشراء..."
+                  value={justification}
+                  onChange={(e) => setJustification(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                <Textarea
+                  id="notes"
+                  placeholder="أي ملاحظات إضافية..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Items Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              المواد المطلوبة
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="border rounded-md overflow-x-auto">
+              <Table dir="rtl">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-right min-w-[200px]">
+                      اسم المادة
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      النوع
+                    </TableHead>
+                    <TableHead className="text-right min-w-[100px]">
+                      الكمية
+                    </TableHead>
+                    <TableHead className="text-right min-w-[100px]">
+                      الوحدة
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      السعر المقدر
+                    </TableHead>
+                    <TableHead className="text-right min-w-[120px]">
+                      الإجمالي
+                    </TableHead>
+                    <TableHead className="text-right min-w-[150px]">
+                      ملاحظات
+                    </TableHead>
+                    <TableHead className="text-right min-w-[80px]">
+                      إجراء
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center text-muted-foreground h-24"
+                      >
+                        لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    items.map((item, index) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="text-right min-w-[200px]">
+                          <Input
+                            value={item.itemName}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "itemName",
+                                e.target.value
+                              )
+                            }
+                            placeholder="أدخل اسم المادة"
+                            className="text-right"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right min-w-[120px]">
+                          <Select
+                            value={item.itemType}
+                            onValueChange={(value: any) =>
+                              handleItemChange(index, "itemType", value)
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="اختر النوع" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="ثابت">ثابت</SelectItem>
+                              <SelectItem value="استهلاكي">استهلاكي</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-right min-w-[100px]">
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "quantity",
+                                Number(e.target.value)
+                              )
+                            }
+                            placeholder="الكمية"
+                            className="w-full text-right"
+                            min="1"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right min-w-[100px]">
+                          <Input
+                            value={item.unit}
+                            onChange={(e) =>
+                              handleItemChange(index, "unit", e.target.value)
+                            }
+                            placeholder="الوحدة"
+                            className="w-full text-right"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right min-w-[120px]">
+                          <Input
+                            type="number"
+                            value={item.estimatedPrice}
+                            onChange={(e) =>
+                              handleItemChange(
+                                index,
+                                "estimatedPrice",
+                                Number(e.target.value)
+                              )
+                            }
+                            placeholder="السعر"
+                            className="w-full text-right"
+                            min="0"
+                            step="0.01"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right min-w-[120px]">
+                          <div className="font-semibold text-primary">
+                            {(
+                              item.quantity * item.estimatedPrice
+                            ).toLocaleString()}{" "}
+                            IQD
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right min-w-[150px]">
+                          <Input
+                            value={item.notes}
+                            onChange={(e) =>
+                              handleItemChange(index, "notes", e.target.value)
+                            }
+                            placeholder="ملاحظات..."
+                            className="w-full text-right"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right min-w-[80px]">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveItem(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              <div className="p-2 flex justify-start">
+                <Button variant="outline" size="sm" onClick={handleAddItem}>
+                  <PlusCircle className="ml-2 h-4 w-4" /> إضافة سطر
+                </Button>
+              </div>
+            </div>
+
+            {/* Total */}
+            {items.length > 0 && (
+              <div className="space-y-3 p-4 bg-muted rounded-md">
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className="text-lg font-bold">التكلفة الإجمالية:</span>
+                  <span className="text-2xl font-bold text-primary">
+                    {calculateTotal().toLocaleString()} IQD
+                  </span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Submit Button */}
+        <div className="flex justify-end gap-3">
+          <Button onClick={handleSubmitRequest} size="lg">
+            <Send className="h-4 w-4 ml-2" />
+            إرسال الطلب
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

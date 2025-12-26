@@ -60,16 +60,22 @@ export const navbarData: NavbarData = {
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
     },
     {
-      title: "إنشاء طلب شراء",
-      url: "/law-enforcement/purchase-requests",
-      icon: FileText,
-      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
-    },
-    {
       title: "طلبات الشراء",
       url: "/law-enforcement/purchase-orders",
       icon: ShoppingCart,
       warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
+      items: [
+        {
+          title: "إنشاء طلب شراء",
+          url: "/law-enforcement/purchase-requests",
+          icon: FileText,
+        },
+        {
+          title: "مراجعة الطلبات",
+          url: "/law-enforcement/purchase-orders",
+          icon: ShoppingCart,
+        },
+      ],
     },
     {
       title: "عمليات المخازن",
@@ -136,8 +142,6 @@ export const navbarData: NavbarData = {
         "carpet",
         "general",
         "construction",
-        "frozen",
-        "fuel",
         "consumable",
       ], // Hide from law_enforcement
       items: [

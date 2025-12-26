@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,9 +41,6 @@ import {
   XCircle,
   Clock,
   FileText,
-  User,
-  Calendar,
-  Package,
 } from "lucide-react";
 
 // Purchase Order interface
@@ -76,36 +74,6 @@ interface PurchaseOrder {
   reviewedDate?: string;
   reviewNotes?: string;
 }
-
-// Mock employees data
-const MOCK_EMPLOYEES = [
-  {
-    id: "EMP001",
-    name: "أحمد محمد علي",
-    position: "مدير التخطيط",
-    divisionName: "شعبة التخطيط",
-    unit: "وحدة التخطيط الاستراتيجي",
-  },
-  {
-    id: "EMP002",
-    name: "سارة علي حسن",
-    position: "مسؤولة المتابعة",
-    divisionName: "شعبة المتابعة",
-  },
-  {
-    id: "EMP003",
-    name: "محمد حسن جاسم",
-    position: "محاسب",
-    divisionName: "شعبة الحسابات",
-    unit: "وحدة المحاسبة المالية",
-  },
-  {
-    id: "EMP004",
-    name: "فاطمة أحمد",
-    position: "موظفة موارد بشرية",
-    divisionName: "شعبة الموارد البشرية",
-  },
-];
 
 // Mock purchase orders data
 const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
@@ -209,12 +177,12 @@ const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
 ];
 
 export default function PurchaseOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<PurchaseOrder[]>(MOCK_PURCHASE_ORDERS);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [selectedOrder, setSelectedOrder] = useState<PurchaseOrder | null>(null);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -257,15 +225,13 @@ export default function PurchaseOrdersPage() {
   }, [orders]);
 
   const handleViewDetails = (order: PurchaseOrder) => {
-    setSelectedOrder(order);
-    setDetailsDialogOpen(true);
+    router.push(`/law-enforcement/purchase-orders/${order.id}`);
   };
 
   const handleReview = (order: PurchaseOrder, action: "approve" | "reject") => {
     setSelectedOrder(order);
     setReviewAction(action);
     setReviewNotes("");
-    setDetailsDialogOpen(false);
     setReviewDialogOpen(true);
   };
 
@@ -293,7 +259,6 @@ export default function PurchaseOrdersPage() {
     );
 
     setReviewDialogOpen(false);
-    setSelectedOrder(null);
     setReviewAction(null);
     setReviewNotes("");
   };
@@ -508,7 +473,10 @@ export default function PurchaseOrdersPage() {
                   </TableRow>
                 ) : (
                   filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
+                    <TableRow
+                      key={order.id}
+                      className={selectedOrder?.id === order.id ? "bg-muted/50" : ""}
+                    >
                       <TableCell className="text-right font-mono font-medium">
                         {order.orderNumber}
                       </TableCell>
@@ -583,186 +551,6 @@ export default function PurchaseOrdersPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Details Dialog */}
-      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              تفاصيل طلب الشراء
-            </DialogTitle>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-4">
-              {/* Order Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">معلومات الطلب</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Label className="text-muted-foreground">رقم الطلب</Label>
-                    <p className="font-medium font-mono">{selectedOrder.orderNumber}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">الحالة</Label>
-                    <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">تاريخ التقديم</Label>
-                    <p className="font-medium">{selectedOrder.submittedDate}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">التاريخ المطلوب</Label>
-                    <p className="font-medium">{selectedOrder.requiredDate}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">الأولوية</Label>
-                    <div className="mt-1">{getPriorityBadge(selectedOrder.priority)}</div>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">التكلفة المقدرة</Label>
-                    <p className="font-medium">
-                      {selectedOrder.totalEstimatedCost.toLocaleString()} IQD
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Employee Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">معلومات الموظف</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Label className="text-muted-foreground">الاسم</Label>
-                    <p className="font-medium">{selectedOrder.employeeName}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">المنصب</Label>
-                    <p className="font-medium">{selectedOrder.employeePosition}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">الشعبة</Label>
-                    <p className="font-medium">{selectedOrder.divisionName}</p>
-                  </div>
-                  {selectedOrder.unit && (
-                    <div>
-                      <Label className="text-muted-foreground">الوحدة</Label>
-                      <p className="font-medium">{selectedOrder.unit}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Items */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">المواد المطلوبة</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="text-right">اسم المادة</TableHead>
-                        <TableHead className="text-right">النوع</TableHead>
-                        <TableHead className="text-right">الكمية</TableHead>
-                        <TableHead className="text-right">السعر المقدر</TableHead>
-                        <TableHead className="text-right">ملاحظات</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedOrder.items.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell className="text-right font-medium">
-                            {item.itemName}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Badge variant="outline">{item.itemType}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.quantity} {item.unit}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.estimatedPrice
-                              ? `${item.estimatedPrice.toLocaleString()} IQD`
-                              : "-"}
-                          </TableCell>
-                          <TableCell className="text-right text-sm">
-                            {item.notes || "-"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-
-              {/* Justification */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">مبررات الطلب</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{selectedOrder.justification}</p>
-                </CardContent>
-              </Card>
-
-              {/* Review Info */}
-              {selectedOrder.reviewedBy && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">معلومات المراجعة</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div>
-                      <Label className="text-muted-foreground">تمت المراجعة بواسطة</Label>
-                      <p className="font-medium">{selectedOrder.reviewedBy}</p>
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground">تاريخ المراجعة</Label>
-                      <p className="font-medium">{selectedOrder.reviewedDate}</p>
-                    </div>
-                    {selectedOrder.reviewNotes && (
-                      <div>
-                        <Label className="text-muted-foreground">ملاحظات المراجعة</Label>
-                        <p className="font-medium">{selectedOrder.reviewNotes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>
-              إغلاق
-            </Button>
-            {selectedOrder && selectedOrder.status === "pending" && (
-              <>
-                <Button
-                  variant="outline"
-                  className="text-green-600 hover:text-green-700"
-                  onClick={() => handleReview(selectedOrder, "approve")}
-                >
-                  <CheckCircle className="h-4 w-4 ml-2" />
-                  الموافقة
-                </Button>
-                <Button
-                  variant="outline"
-                  className="text-red-600 hover:text-red-700"
-                  onClick={() => handleReview(selectedOrder, "reject")}
-                >
-                  <XCircle className="h-4 w-4 ml-2" />
-                  الرفض
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Review Dialog */}
       <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
