@@ -145,7 +145,7 @@ export const navbarData: NavbarData = {
           title: "إدارة المخازن",
           url: "/warehouse/stores",
           icon: Warehouse,
-          roles: ["admin"], // Only admin can manage warehouses
+          roles: ["general"], // Only admin can manage warehouses
         },
 
         {
