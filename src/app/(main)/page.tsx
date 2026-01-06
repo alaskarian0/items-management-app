@@ -1,114 +1,119 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuthStore } from "@/store/auth/authStore";
 import {
-  AlertCircle,
-  Barcode,
-  Building2,
-  Package,
-  PackageMinus,
-  PackagePlus,
-  TrendingDown,
-  TrendingUp,
+  PackageCheck,
   Users,
-  Warehouse,
+  FileText,
+  ArrowRight,
+  Clock,
+  CheckCircle,
+  Package,
+  Building2,
+  TrendingUp,
+  AlertCircle,
 } from "lucide-react";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-// Warehouse names mapping
-const WAREHOUSE_NAMES: Record<string, string> = {
-  furniture: "مخزن الأثاث والممتلكات العامة",
-  carpet: "مخزن السجاد والمفروشات",
-  general: "مخزن المواد العامة",
-  construction: "مخزن المواد الإنشائية",
-  dry: "مخزن المواد الجافة",
-  frozen: "مخزن المواد المجمّدة",
-  fuel: "مخزن الوقود والزيوت",
-  consumable: "مخزن المواد المستهلكة",
-  law_enforcement: "مخزن قسم حفظ النظام",
+// Mock department items data
+const departmentItemsStats = {
+  totalItems: 47,
+  pendingDistribution: 23,
+  assigned: 24,
+  employees: 12,
+  divisions: 4,
 };
 
-// Warehouse stock data
-const warehouseStockData = [
-  { name: "المخزن الرئيسي", items: 4234 },
-  { name: "مخزن المواد الثابتة", items: 2341 },
-  { name: "مخزن المواد الاستهلاكية", items: 3567 },
-  { name: "مخزن الأثاث", items: 1892 },
-  { name: "مخزن المفروشات", items: 1123 },
-];
-
-// Material movement data (last 7 days)
-const movementData = [
-  { day: "السبت", incoming: 45, outgoing: 32 },
-  { day: "الأحد", incoming: 52, outgoing: 28 },
-  { day: "الإثنين", incoming: 38, outgoing: 45 },
-  { day: "الثلاثاء", incoming: 65, outgoing: 38 },
-  { day: "الأربعاء", incoming: 48, outgoing: 52 },
-  { day: "الخميس", incoming: 70, outgoing: 45 },
-  { day: "الجمعة", incoming: 35, outgoing: 25 },
-];
-
-// Fixed assets distribution
-const fixedAssetsData = [
-  { name: "مرمزة", value: 856, color: "#22c55e" },
-  { name: "قيد الذمة", value: 432, color: "#3b82f6" },
-  { name: "مستهلكة", value: 178, color: "#ef4444" },
-  { name: "ممنوحة", value: 124, color: "#a855f7" },
-];
-
-// Recent activities
-const recentActivities = [
+// Recent assignments data
+const recentAssignments = [
   {
     id: 1,
-    type: "entry",
-    title: "إدخال مواد جديدة",
-    description: "45 صنف - مخزن المواد الثابتة",
-    time: "منذ ساعتين",
-    icon: PackagePlus,
-    color: "text-green-600",
+    itemCode: "FUR-CHR-2024-003",
+    itemName: "كرسي مكتبي دوار",
+    assignedTo: "أحمد محمد",
+    division: "شعبة التخطيط",
+    date: "2024-01-20",
+    status: "assigned" as const,
   },
   {
     id: 2,
-    type: "issuance",
-    title: "إصدار مواد",
-    description: "قسم الصيانة - 12 صنف",
-    time: "منذ 4 ساعات",
-    icon: PackageMinus,
-    color: "text-blue-600",
+    itemCode: "FUR-TBL-2024-001",
+    itemName: "طاولة اجتماعات خشبية",
+    assignedTo: "سارة علي",
+    division: "شعبة المتابعة",
+    date: "2024-01-19",
+    status: "assigned" as const,
   },
   {
     id: 3,
-    type: "alert",
-    title: "تنبيه: مواد قاربت على النفاد",
-    description: "8 أصناف تحتاج إعادة طلب",
-    time: "منذ 5 ساعات",
-    icon: AlertCircle,
-    color: "text-orange-600",
+    itemCode: "CAR-PRS-2024-004",
+    itemName: "سجاد فارسي",
+    assignedTo: "محمد حسن",
+    division: "شعبة الحسابات",
+    date: "2024-01-18",
+    status: "assigned" as const,
   },
   {
     id: 4,
-    type: "custody",
-    title: "تسليم موجودات",
-    description: "تم تسليم 3 أجهزة حاسوب لقسم IT",
-    time: "منذ يوم واحد",
-    icon: Users,
-    color: "text-purple-600",
+    itemCode: "FUR-DSK-2024-002",
+    itemName: "مكتب خشبي",
+    assignedTo: "فاطمة أحمد",
+    division: "شعبة الموارد البشرية",
+    date: "2024-01-17",
+    status: "assigned" as const,
+  },
+];
+
+// Items by division data
+const itemsByDivision = [
+  { name: "شعبة التخطيط", items: 12 },
+  { name: "شعبة المتابعة", items: 8 },
+  { name: "شعبة الحسابات", items: 15 },
+  { name: "شعبة الموارد البشرية", items: 12 },
+];
+
+// Pending items for quick action
+const pendingItems = [
+  {
+    id: 1,
+    code: "FUR-CHR-2024-001",
+    name: "كرسي مكتبي دوار",
+    warehouse: "مخزن الأثاث",
+    receivedDate: "2024-01-15",
+  },
+  {
+    id: 2,
+    code: "FUR-CHR-2024-002",
+    name: "كرسي مكتبي دوار",
+    warehouse: "مخزن الأثاث",
+    receivedDate: "2024-01-15",
+  },
+  {
+    id: 3,
+    code: "CAR-PRS-2024-001",
+    name: "سجاد فارسي",
+    warehouse: "مخزن السجاد",
+    receivedDate: "2024-01-17",
   },
 ];
 
@@ -117,132 +122,135 @@ const StatCard = ({
   value,
   icon: Icon,
   description,
-  trend,
-  trendValue,
   color = "text-muted-foreground",
+  href,
 }: {
   title: string;
-  value: string;
+  value: string | number;
   icon: React.ElementType;
   description: string;
-  trend?: "up" | "down";
-  trendValue?: string;
   color?: string;
-}) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className={`h-5 w-5 ${color}`} />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="flex items-center justify-between mt-1">
-        <p className="text-xs text-muted-foreground">{description}</p>
-        {trend && trendValue && (
-          <div className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-            {trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            <span>{trendValue}</span>
-          </div>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
+  href?: string;
+}) => {
+  const CardWrapper = href ? Link : "div";
+
+  return (
+    <CardWrapper href={href || ""}>
+      <Card className={href ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Icon className={`h-5 w-5 ${color}`} />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{value}</div>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </CardContent>
+      </Card>
+    </CardWrapper>
+  );
+};
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
-  const totalItems = warehouseStockData.reduce((sum, w) => sum + w.items, 0);
-  const totalFixedAssets = fixedAssetsData.reduce((sum, a) => sum + a.value, 0);
-
-  // Get warehouse name
-  const warehouseName = user?.warehouse
-    ? WAREHOUSE_NAMES[user.warehouse] || user.warehouse
-    : "المخزن الرئيسي";
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <h2 className="text-3xl font-bold tracking-tight">لوحة التحكم الرئيسية</h2>
-          {user?.warehouse && (
-            <Badge variant="outline" className="text-base px-3 py-1">
-              <Warehouse className="h-4 w-4 ml-2" />
-              {warehouseName}
-            </Badge>
-          )}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <Building2 className="h-8 w-8" />
+              لوحة تحكم إدارة الأقسام
+            </h2>
+            <p className="text-muted-foreground mt-1">
+              إدارة وتوزيع المواد على الشعب والموظفين
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/department/employees">
+                <Users className="h-4 w-4 ml-2" />
+                إدارة الموظفين
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/department/item-assignments">
+                <PackageCheck className="h-4 w-4 ml-2" />
+                توزيع المواد
+              </Link>
+            </Button>
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          {user?.warehouse === "law_enforcement"
-            ? "مرحباً في لوحة التحكم - قسم حفظ النظام"
-            : "نظرة شاملة على حالة المخزون والموجودات الثابتة"
-          }
-        </p>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <StatCard
           title="إجمالي المواد"
-          value={totalItems.toLocaleString()}
+          value={departmentItemsStats.totalItems}
           icon={Package}
-          description="في جميع المخازن"
-          trend="up"
-          trendValue="+12%"
+          description="مواد القسم المستلمة"
           color="text-blue-600"
+          href="/department/item-assignments"
         />
         <StatCard
-          title="المخازن النشطة"
-          value="5"
-          icon={Warehouse}
-          description="مخازن قيد التشغيل"
+          title="بانتظار التوزيع"
+          value={departmentItemsStats.pendingDistribution}
+          icon={Clock}
+          description="مواد تحتاج تعيين"
+          color="text-yellow-600"
+          href="/department/item-assignments"
+        />
+        <StatCard
+          title="تم التوزيع"
+          value={departmentItemsStats.assigned}
+          icon={CheckCircle}
+          description="مواد معينة للموظفين"
           color="text-green-600"
         />
         <StatCard
-          title="الموجودات الثابتة"
-          value={totalFixedAssets.toLocaleString()}
-          icon={Barcode}
-          description="موجودات مسجلة"
-          trend="up"
-          trendValue="+8%"
+          title="عدد الموظفين"
+          value={departmentItemsStats.employees}
+          icon={Users}
+          description="موظف نشط"
           color="text-purple-600"
+          href="/department/employees"
         />
         <StatCard
-          title="الأقسام المستفيدة"
-          value="24"
+          title="عدد الشعب"
+          value={departmentItemsStats.divisions}
           icon={Building2}
-          description="قسم نشط"
+          description="شعبة نشطة"
           color="text-orange-600"
         />
       </div>
 
-      {/* Main Charts */}
+      {/* Main Content Grid */}
       <div className="grid gap-4 md:grid-cols-7">
-        {/* Warehouse Stock Chart */}
-        <Card className="col-span-4">
+        {/* Items by Division Chart */}
+        <Card className="col-span-3">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Warehouse className="h-5 w-5" />
-              توزيع المواد على المخازن
+              <TrendingUp className="h-5 w-5" />
+              توزيع المواد حسب الشعب
             </CardTitle>
+            <CardDescription>
+              عدد المواد المخصصة لكل شعبة
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={warehouseStockData}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={itemsByDivision} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
+                <XAxis type="number" className="text-muted-foreground" stroke="currentColor" fontSize={12} />
+                <YAxis
+                  type="category"
                   dataKey="name"
                   className="text-muted-foreground"
                   stroke="currentColor"
                   fontSize={12}
-                  tickLine={false}
-                />
-                <YAxis
-                  className="text-muted-foreground"
-                  stroke="currentColor"
-                  fontSize={12}
-                  tickLine={false}
-                  tickFormatter={(value) => `${value}`}
+                  width={150}
                 />
                 <Tooltip
                   contentStyle={{
@@ -255,7 +263,7 @@ export default function DashboardPage() {
                 <Bar
                   dataKey="items"
                   fill="currentColor"
-                  radius={[8, 8, 0, 0]}
+                  radius={[0, 8, 8, 0]}
                   className="fill-primary"
                 />
               </BarChart>
@@ -263,192 +271,172 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Material Movement Chart */}
-        <Card className="col-span-3">
+        {/* Pending Items - Quick Action */}
+        <Card className="col-span-4">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              حركة المواد (آخر 7 أيام)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={movementData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="day"
-                  className="text-muted-foreground"
-                  stroke="currentColor"
-                  fontSize={12}
-                />
-                <YAxis
-                  className="text-muted-foreground"
-                  stroke="currentColor"
-                  fontSize={12}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--popover))",
-                    borderColor: "hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                  labelStyle={{ color: "hsl(var(--popover-foreground))" }}
-                />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="incoming"
-                  stroke="#22c55e"
-                  strokeWidth={2}
-                  name="مواد داخلة"
-                  dot={{ fill: "#22c55e" }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="outgoing"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  name="مواد خارجة"
-                  dot={{ fill: "#ef4444" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid gap-4 md:grid-cols-7">
-        {/* Fixed Assets Distribution */}
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Barcode className="h-5 w-5" />
-              توزيع الموجودات الثابتة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-center">
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={fixedAssetsData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {fixedAssetsData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                    labelStyle={{ color: "hsl(var(--popover-foreground))" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5" />
+                  مواد بانتظار التوزيع
+                </CardTitle>
+                <CardDescription>
+                  مواد تحتاج إلى تعيين للموظفين
+                </CardDescription>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/department/item-assignments">
+                  عرض الكل
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                </Link>
+              </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              {fixedAssetsData.map((item, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.value} موجود
-                    </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="p-2 rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900/20">
+                      <Package className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{item.name}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-xs text-muted-foreground font-mono">
+                          {item.code}
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {item.warehouse}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
+                  <Button asChild size="sm">
+                    <Link href="/department/item-assignments">
+                      تعيين
+                    </Link>
+                  </Button>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
-
-        {/* Recent Activities */}
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              النشاطات الأخيرة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => {
-                const Icon = activity.icon;
-                return (
-                  <div
-                    key={activity.id}
-                    className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className={`p-2 rounded-lg bg-muted ${activity.color}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {activity.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {activity.description}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {activity.time}
-                    </Badge>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Quick Stats */}
+      {/* Recent Assignments */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                آخر عمليات التوزيع
+              </CardTitle>
+              <CardDescription>
+                سجل توزيع المواد على الموظفين
+              </CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/department/item-assignments">
+                عرض السجل الكامل
+                <ArrowRight className="h-4 w-4 mr-2" />
+              </Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">الكود</TableHead>
+                  <TableHead className="text-right">اسم المادة</TableHead>
+                  <TableHead className="text-right">المستلم</TableHead>
+                  <TableHead className="text-right">الشعبة</TableHead>
+                  <TableHead className="text-right">التاريخ</TableHead>
+                  <TableHead className="text-right">الحالة</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentAssignments.map((assignment) => (
+                  <TableRow key={assignment.id}>
+                    <TableCell className="font-mono text-sm">
+                      {assignment.itemCode}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {assignment.itemName}
+                    </TableCell>
+                    <TableCell>{assignment.assignedTo}</TableCell>
+                    <TableCell>{assignment.division}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(assignment.date).toLocaleDateString('ar-IQ')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="default" className="gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        تم التوزيع
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">المواد الداخلة اليوم</CardTitle>
-            <PackagePlus className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">127</div>
-            <p className="text-xs text-muted-foreground">صنف تم إدخاله</p>
-          </CardContent>
+        <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+          <Link href="/department/item-assignments">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <PackageCheck className="h-5 w-5 text-blue-600" />
+                توزيع المواد
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                تعيين المواد المستلمة للموظفين والشعب
+              </p>
+            </CardContent>
+          </Link>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">المواد الخارجة اليوم</CardTitle>
-            <PackageMinus className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">89</div>
-            <p className="text-xs text-muted-foreground">صنف تم إصداره</p>
-          </CardContent>
+        <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+          <Link href="/department/employees">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-5 w-5 text-green-600" />
+                إدارة الموظفين
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                عرض وإدارة بيانات الموظفين والشعب
+              </p>
+            </CardContent>
+          </Link>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">المواد القريبة من النفاد</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">8</div>
-            <p className="text-xs text-muted-foreground">صنف يحتاج إعادة طلب</p>
-          </CardContent>
+        <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+          <Link href="/department/inventory-stock-requests">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <FileText className="h-5 w-5 text-purple-600" />
+                طلبات الاستعلام
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                إنشاء طلبات استعلام عن المخزون
+              </p>
+            </CardContent>
+          </Link>
         </Card>
       </div>
     </div>

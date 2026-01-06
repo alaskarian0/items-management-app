@@ -15,13 +15,19 @@ export const tokenManager = {
     if (typeof window !== 'undefined') {
       // Set in localStorage for axios
       localStorage.setItem('accessToken', token);
-      
+
       // Set in cookie for middleware using js-cookie
       Cookies.set('accessToken', token, {
         expires: 1, // 1 day
         path: '/',
-        sameSite: 'strict',
-        // secure: process.env.NODE_ENV === 'production'
+        sameSite: 'lax', // Changed from 'strict' to 'lax' for better compatibility
+        secure: false, // Allow non-HTTPS in development
+      });
+
+      // Log for debugging
+      console.log('[TokenManager] Token set:', {
+        localStorage: !!localStorage.getItem('accessToken'),
+        cookie: !!Cookies.get('accessToken')
       });
     }
   },
@@ -31,9 +37,12 @@ export const tokenManager = {
     if (typeof window !== 'undefined') {
       // Remove from localStorage
       localStorage.removeItem('accessToken');
-      
+
       // Remove cookie using js-cookie
       Cookies.remove('accessToken', { path: '/' });
+
+      // Log for debugging
+      console.log('[TokenManager] Token removed');
     }
   },
 

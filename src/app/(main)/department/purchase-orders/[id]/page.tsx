@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -170,10 +170,11 @@ const MOCK_PURCHASE_ORDERS: PurchaseOrder[] = [
   },
 ];
 
-export default function PurchaseOrderDetailPage({ params }: { params: { id: string } }) {
+export default function PurchaseOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const { id } = use(params);
   const [order, setOrder] = useState<PurchaseOrder | undefined>(
-    MOCK_PURCHASE_ORDERS.find((o) => o.id === params.id)
+    MOCK_PURCHASE_ORDERS.find((o) => o.id === id)
   );
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [reviewAction, setReviewAction] = useState<"approve" | "reject" | null>(null);

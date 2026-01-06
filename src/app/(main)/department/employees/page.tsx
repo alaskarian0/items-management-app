@@ -279,6 +279,7 @@ export default function EmployeesPage() {
         unit: formData.unit,
         phone: formData.phone,
         createdAt: new Date().toISOString().split("T")[0],
+        items: [],
       };
       setEmployees([...employees, newEmployee]);
       toast.success(`تم إضافة الموظف ${formData.name} بنجاح`);

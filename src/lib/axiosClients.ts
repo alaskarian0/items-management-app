@@ -2,7 +2,8 @@ import axios from "axios";
 import { tokenManager } from "./tokenManager";
 
 // API configuration
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+// For Next.js API routes, use relative path (no base URL needed)
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 
@@ -58,6 +59,20 @@ const apiAuth = axios.create({
   },
   withCredentials: true,
 });
+
+// Response interceptor for auth client to handle errors
+apiAuth.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Log auth errors for debugging
+    console.error('[Auth API Error]', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    return Promise.reject(error);
+  }
+);
 
 export default apiClient;
 export { apiAuth };

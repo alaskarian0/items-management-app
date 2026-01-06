@@ -10,6 +10,9 @@ import {
   Moon,
   Sparkles,
   Sun,
+  User,
+  Warehouse,
+  Shield,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -35,6 +38,28 @@ import {
 } from "@/components/ui/sidebar"
 import { useTheme } from "@/context/theme-context"
 import { useAuthStore } from "@/store/auth/authStore"
+import { Badge } from "@/components/ui/badge"
+
+// Warehouse names mapping
+const WAREHOUSE_NAMES: Record<string, string> = {
+  furniture: "مخزن الأثاث",
+  carpet: "مخزن السجاد",
+  general: "مخزن المواد العامة",
+  construction: "مخزن المواد الإنشائية",
+  dry: "مخزن المواد الجافة",
+  frozen: "مخزن المواد المجمّدة",
+  fuel: "مخزن الوقود",
+  consumable: "مخزن المواد المستهلكة",
+  law_enforcement: "قسم حفظ النظام",
+};
+
+// Role names mapping
+const ROLE_NAMES: Record<string, string> = {
+  admin: "مدير النظام",
+  warehouse_manager: "مدير مخزن",
+  department_manager: "مدير قسم",
+  employee: "موظف",
+};
 
 export function NavUser() {
   const { isMobile } = useSidebar()
@@ -50,6 +75,9 @@ export function NavUser() {
   if (!user) {
     return null
   }
+
+  const warehouseName = user.warehouse ? WAREHOUSE_NAMES[user.warehouse] || user.warehouse : null;
+  const roleName = ROLE_NAMES[user.role] || user.role;
 
   return (
     <SidebarMenu>
@@ -68,15 +96,13 @@ export function NavUser() {
               </Avatar>
               <div className="grid flex-1 text-right text-sm leading-tight">
                 <span className="truncate font-medium">{user.fullName}</span>
-                <span className="truncate text-xs">{user.userName}</span>
+                <span className="truncate text-xs text-muted-foreground">{user.userName}</span>
               </div>
-
-        
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-[280px] rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
@@ -90,14 +116,48 @@ export function NavUser() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-right text-sm leading-tight">
-                  <span className="truncate font-medium">{user.fullName}</span>
-                  <span className="truncate text-xs">{user.userName}</span>
+                  <span className="truncate font-semibold">{user.fullName}</span>
+                  <span className="truncate text-xs text-muted-foreground">{user.userName}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
-              تسجيل خروج
+
+            <DropdownMenuSeparator />
+
+            {/* User Info Section */}
+            <div className="px-2 py-2 space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">الدور:</span>
+                <Badge variant="secondary" className="text-xs">
+                  {roleName}
+                </Badge>
+              </div>
+
+              {warehouseName && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Warehouse className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">المخزن:</span>
+                  <span className="text-xs font-medium">{warehouseName}</span>
+                </div>
+              )}
+            </div>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuGroup>
+              <ThemeToggle />
+            </DropdownMenuGroup>
+
+            <DropdownMenuSeparator />
+
+            {/* Logout Button */}
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50 cursor-pointer"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="font-medium">تسجيل الخروج</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

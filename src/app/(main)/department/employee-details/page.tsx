@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -149,7 +150,7 @@ const MOCK_EMPLOYEES_WITH_ITEMS: EmployeeWithItems[] = [
   },
 ];
 
-export default function EmployeeDetailsPage() {
+function EmployeeDetailsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const employeeId = searchParams.get("id");
@@ -404,5 +405,23 @@ export default function EmployeeDetailsPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function EmployeeDetailsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <p className="text-lg text-muted-foreground">جاري التحميل...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <EmployeeDetailsContent />
+    </Suspense>
   );
 }
