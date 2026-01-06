@@ -76,12 +76,9 @@ import {
   units
 } from "@/lib/data/warehouse-data";
 import { DocumentItem } from "@/lib/types/warehouse";
-import { useAuthStore } from "@/store/auth/authStore";
 
 const ItemIssuancePage = () => {
   const { selectedWarehouse } = useWarehouse();
-  const { user } = useAuthStore();
-  const isFuelAdmin = user?.warehouse === "fuel";
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [docNumber, setDocNumber] = useState("2305");
   const [refDocNumber, setRefDocNumber] = useState("");
@@ -115,13 +112,6 @@ const ItemIssuancePage = () => {
         stock: 0,
         vendorName: "",
         vendorId: undefined,
-        // Initialize fuel-specific fields for fuel_admin
-        approvalAuthority: "",
-        vehicleOwnership: "",
-        vehicleType: "",
-        vehicleNumber: "",
-        itemRecipientName: "",
-        signature: "",
       });
     });
   };
@@ -402,16 +392,6 @@ const ItemIssuancePage = () => {
                     <TableHead className="text-right">
                       الكمية المطلوبة
                     </TableHead>
-                    {isFuelAdmin && (
-                      <>
-                        <TableHead className="text-right">جهة الموافقة</TableHead>
-                        <TableHead className="text-right">عائدية العجلة</TableHead>
-                        <TableHead className="text-right">نوع العجلة</TableHead>
-                        <TableHead className="text-right">رقم العجلة</TableHead>
-                        <TableHead className="text-right">اسم المستلم</TableHead>
-                        <TableHead className="text-right">التوقيع</TableHead>
-                      </>
-                    )}
                     <TableHead className="text-right">ملاحظات</TableHead>
                     <TableHead className="text-right">إجراء</TableHead>
                   </TableRow>
@@ -420,7 +400,7 @@ const ItemIssuancePage = () => {
                   {itemsList.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={isFuelAdmin ? 13 : 7}
+                        colSpan={7}
                         className="text-center text-muted-foreground h-24"
                       >
                         لا توجد مواد مضافة. انقر على &quot;إضافة سطر&quot; للبدء
@@ -623,70 +603,6 @@ const ItemIssuancePage = () => {
                             min="1"
                           />
                         </TableCell>
-                        {isFuelAdmin && (
-                          <>
-                            <TableCell className="text-right">
-                              <Input
-                                value={item.approvalAuthority || ""}
-                                onChange={(e) =>
-                                  handleItemChange(index, "approvalAuthority", e.target.value)
-                                }
-                                placeholder="جهة الموافقة..."
-                                className="text-right"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Input
-                                value={item.vehicleOwnership || ""}
-                                onChange={(e) =>
-                                  handleItemChange(index, "vehicleOwnership", e.target.value)
-                                }
-                                placeholder="عائدية العجلة..."
-                                className="text-right"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Input
-                                value={item.vehicleType || ""}
-                                onChange={(e) =>
-                                  handleItemChange(index, "vehicleType", e.target.value)
-                                }
-                                placeholder="نوع العجلة..."
-                                className="text-right"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Input
-                                value={item.vehicleNumber || ""}
-                                onChange={(e) =>
-                                  handleItemChange(index, "vehicleNumber", e.target.value)
-                                }
-                                placeholder="رقم العجلة..."
-                                className="text-right"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Input
-                                value={item.itemRecipientName || ""}
-                                onChange={(e) =>
-                                  handleItemChange(index, "itemRecipientName", e.target.value)
-                                }
-                                placeholder="اسم المستلم..."
-                                className="text-right"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Input
-                                value={item.signature || ""}
-                                onChange={(e) =>
-                                  handleItemChange(index, "signature", e.target.value)
-                                }
-                                placeholder="التوقيع..."
-                                className="text-right"
-                              />
-                            </TableCell>
-                          </>
-                        )}
                         <TableCell className="text-right">
                           <Input
                             value={item.notes || ""}
@@ -872,68 +788,6 @@ const ItemIssuancePage = () => {
                     {itemsList[viewItemIndex].notes}
                   </div>
                 </div>
-              )}
-
-              {isFuelAdmin && (
-                <>
-                  {itemsList[viewItemIndex].approvalAuthority && (
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">جهة الموافقة</Label>
-                      <div className="font-medium">
-                        {itemsList[viewItemIndex].approvalAuthority}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {itemsList[viewItemIndex].vehicleOwnership && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">عائدية العجلة</Label>
-                        <div className="font-medium">
-                          {itemsList[viewItemIndex].vehicleOwnership}
-                        </div>
-                      </div>
-                    )}
-
-                    {itemsList[viewItemIndex].vehicleType && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">نوع العجلة</Label>
-                        <div className="font-medium">
-                          {itemsList[viewItemIndex].vehicleType}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {itemsList[viewItemIndex].vehicleNumber && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">رقم العجلة</Label>
-                        <div className="font-medium">
-                          {itemsList[viewItemIndex].vehicleNumber}
-                        </div>
-                      </div>
-                    )}
-
-                    {itemsList[viewItemIndex].itemRecipientName && (
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">اسم المستلم</Label>
-                        <div className="font-medium">
-                          {itemsList[viewItemIndex].itemRecipientName}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {itemsList[viewItemIndex].signature && (
-                    <div className="space-y-2">
-                      <Label className="text-muted-foreground">التوقيع</Label>
-                      <div className="font-medium">
-                        {itemsList[viewItemIndex].signature}
-                      </div>
-                    </div>
-                  )}
-                </>
               )}
 
               <div className="pt-4 border-t">

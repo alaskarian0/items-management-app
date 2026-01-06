@@ -57,7 +57,6 @@ import {
   FileText,
   Filter,
   MoreVertical,
-  PlusCircle,
   Search,
   Trash2
 } from "lucide-react";
