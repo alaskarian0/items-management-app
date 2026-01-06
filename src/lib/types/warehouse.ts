@@ -74,6 +74,13 @@ export interface DocumentItem {
   vendorName?: string;
   vendorId?: number;
   invoiceNumber?: string;
+  // Fuel-specific fields (for fuel_admin users)
+  approvalAuthority?: string; // جهة الموافقة
+  vehicleOwnership?: string; // عائدية العجلة
+  vehicleType?: string; // نوع العجلة
+  vehicleNumber?: string; // رقم العجلة
+  itemRecipientName?: string; // اسم المستلم (per-item recipient)
+  signature?: string; // التوقيع
 }
 
 export interface StockItem extends Item {

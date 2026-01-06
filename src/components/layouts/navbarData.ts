@@ -10,6 +10,7 @@ import {
   ClipboardList,
   FileText,
   FolderTree,
+  Fuel,
   Gift,
   History,
   Landmark,
@@ -144,7 +145,7 @@ export const navbarData: NavbarData = {
           title: "إدارة المخازن",
           url: "/warehouse/stores",
           icon: Warehouse,
-          roles: ["admin"], // Only admin can manage warehouses
+          roles: ["general"], // Only admin can manage warehouses
         },
 
         {
@@ -227,6 +228,15 @@ export const navbarData: NavbarData = {
           title: "تنبيهات إعادة الطلب",
           url: "/alerts/reorder-alerts",
           icon: BellRing,
+          warehouses: [
+            "furniture",
+            "carpet",
+            "general",
+            "construction",
+            "dry",
+            "frozen",
+            "consumable",
+          ], // Hi
         },
         {
           title: "تنبيهات انتهاء الصلاحية",
@@ -239,6 +249,12 @@ export const navbarData: NavbarData = {
           url: "/alerts/warranty-alerts",
           icon: ShieldAlert,
           warehouses: ["furniture", "carpet", "general", "construction"], // Only warehouses with warranty items
+        },
+        {
+          title: "تنبيهات الوقود",
+          url: "/alerts/fuel-alerts",
+          icon: Fuel,
+          warehouses: ["fuel"], // Only accessible to fuel warehouse
         },
       ],
     },
