@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { useWarehouse } from "@/context/warehouse-context";
 import { cn } from "@/lib/utils";
-import { Check, ChevronsUpDown, Search, Warehouse as WarehouseIcon } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Search, Warehouse as WarehouseIcon } from "lucide-react";
 import { useState } from "react";
 
 interface WarehouseSelectorProps {
@@ -31,7 +31,7 @@ export function WarehouseSelector({
   showIcon = true,
   className = ""
 }: WarehouseSelectorProps) {
-  const { selectedWarehouse, setSelectedWarehouse, allWarehouses } = useWarehouse();
+  const { selectedWarehouse, setSelectedWarehouse, allWarehouses, loading, error } = useWarehouse();
   const [open, setOpen] = useState(false);
 
   return (
@@ -49,8 +49,16 @@ export function WarehouseSelector({
             role="combobox"
             aria-expanded={open}
             className="w-full justify-between"
+            disabled={loading}
           >
-            {selectedWarehouse ? (
+            {loading ? (
+              <>
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                <span className="text-muted-foreground">جاري التحميل...</span>
+              </>
+            ) : error ? (
+              <span className="text-destructive">خطأ في تحميل المخازن</span>
+            ) : selectedWarehouse ? (
               <span className="truncate">{selectedWarehouse.name}</span>
             ) : (
               <span className="text-muted-foreground">اختر المخزن...</span>

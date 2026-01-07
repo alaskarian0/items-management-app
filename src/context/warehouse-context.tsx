@@ -1,13 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-
-// --- TYPE DEFINITIONS ---
-import { db } from "@/lib/db";
-import { useLiveQuery } from "dexie-react-hooks";
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Warehouse } from "@/lib/types/warehouse";
+import { useWarehouses } from "@/hooks/use-warehouses";
 
-// --- TYPE DEFINITIONS ---
 // Export Warehouse for consumers of this context
 export type { Warehouse };
 
@@ -16,35 +12,42 @@ type WarehouseContextType = {
   setSelectedWarehouse: (warehouse: Warehouse | null) => void;
   warehouses: Warehouse[];
   allWarehouses: Warehouse[]; // Flattened list for easy selection
+  loading: boolean;
+  error: any;
 };
 
 // --- CONTEXT ---
 const WarehouseContext = createContext<WarehouseContextType | undefined>(undefined);
 
-// --- MOCK DATA (replace with API call later) ---
 // --- HELPER: Flatten warehouse tree ---
 const flattenWarehouses = (warehouses: Warehouse[]): Warehouse[] => {
   const result: Warehouse[] = [];
 
   const flatten = (wh: Warehouse) => {
     result.push(wh);
-    if (wh.children) wh.children.forEach(child => flatten(child));
+    if (wh.children && Array.isArray(wh.children)) {
+      wh.children.forEach(child => flatten(child));
+    }
   };
 
   warehouses.forEach(wh => flatten(wh));
   return result;
 };
 
-// --- HELPER: Flatten warehouse tree ---
-
-
 // --- PROVIDER COMPONENT ---
 export function WarehouseProvider({ children }: { children: React.ReactNode }) {
   const [selectedWarehouse, setSelectedWarehouseState] = useState<Warehouse | null>(null);
 
-  // Use LiveQuery to allow reactivity
-  const warehouses = useLiveQuery(() => db.warehouses.toArray()) || [];
-  const allWarehouses = flattenWarehouses(warehouses);
+  // Fetch warehouses from API
+  const { warehouses: warehousesData, loading, error } = useWarehouses();
+
+  // Extract warehouses data from API response
+  const warehouses = useMemo(() => {
+    const data = warehousesData?.data;
+    return Array.isArray(data) ? data : [];
+  }, [warehousesData]);
+
+  const allWarehouses = useMemo(() => flattenWarehouses(warehouses), [warehouses]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -73,7 +76,9 @@ export function WarehouseProvider({ children }: { children: React.ReactNode }) {
         selectedWarehouse,
         setSelectedWarehouse,
         warehouses,
-        allWarehouses
+        allWarehouses,
+        loading,
+        error
       }}
     >
       {children}

@@ -62,6 +62,7 @@ import {
   Save,
   Search,
   Trash2,
+  X,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
@@ -135,6 +136,7 @@ const ItemEntryPage = () => {
   const [vendorSearchOpen, setVendorSearchOpen] = useState<number | false>(false);
   const [vendorSearchValue, setVendorSearchValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Filter items based on search
   const filteredItems = searchValue
@@ -237,6 +239,9 @@ const ItemEntryPage = () => {
 
   const handleSave = async () => {
     try {
+      // Clear previous validation errors
+      setValidationErrors([]);
+
       if (!selectedWarehouse) {
         toast.error("الرجاء اختيار المخزن");
         return;
@@ -259,9 +264,13 @@ const ItemEntryPage = () => {
         'returns': 3,
       };
 
+      // Format date as ISO 8601 datetime string
+      const selectedDate = date || new Date();
+      const isoDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()).toISOString();
+
       const documentData = {
         documentNumber: docNumber,
-        date: date || new Date(),
+        date: isoDate,
         warehouseId: selectedWarehouse.id,
         departmentId: department ? Number(department) : undefined,
         divisionId: division ? Number(division) : undefined,
@@ -269,7 +278,7 @@ const ItemEntryPage = () => {
         documentType: 1, // 1 = New Entry
         entryMethod: entryMode === 'direct' ? 1 : 2, // 1 = direct, 2 = indirect
         entryType: entryTypeMap[entryType] || 1,
-        recipientName: recipientName || '',
+        recipientName: recipientName.trim() || undefined, // Don't send empty string
         notes: notes || undefined,
       };
 
@@ -318,9 +327,28 @@ const ItemEntryPage = () => {
       setNotes("");
       setSearchValue("");
       setRecipientName("");
-    } catch (error) {
+      setValidationErrors([]);
+    } catch (error: any) {
       console.error("Error saving document:", error);
-      toast.error("حدث خطأ أثناء حفظ المستند");
+
+      // Extract validation errors from API response
+      if (error?.response?.data?.message) {
+        const messages = error.response.data.message;
+        if (Array.isArray(messages)) {
+          setValidationErrors(messages);
+          // Also show first error as toast
+          toast.error(messages[0] || "حدث خطأ في التحقق من البيانات");
+        } else if (typeof messages === 'string') {
+          setValidationErrors([messages]);
+          toast.error(messages);
+        } else {
+          setValidationErrors(["حدث خطأ أثناء حفظ المستند"]);
+          toast.error("حدث خطأ أثناء حفظ المستند");
+        }
+      } else {
+        setValidationErrors(["حدث خطأ أثناء حفظ المستند"]);
+        toast.error("حدث خطأ أثناء حفظ المستند");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -338,6 +366,30 @@ const ItemEntryPage = () => {
           إنشاء مستند إدخال مواد جديدة إلى المخزن
         </p>
       </div>
+
+      {/* Validation Errors Alert */}
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive" className="relative">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-2 top-2 h-6 w-6"
+            onClick={() => setValidationErrors([])}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">إغلاق</span>
+          </Button>
+        </Alert>
+      )}
 
       {/* Warehouse & Entry Mode Selection */}
       <Card>
@@ -536,7 +588,10 @@ const ItemEntryPage = () => {
                     <Calendar
                       mode="single"
                       selected={date}
-                      onSelect={setDate}
+                      onSelect={(newDate) => {
+                        setDate(newDate);
+                        if (validationErrors.length > 0) setValidationErrors([]);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -553,7 +608,10 @@ const ItemEntryPage = () => {
                 <Label>اسم المستلم</Label>
                 <Input
                   value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
+                  onChange={(e) => {
+                    setRecipientName(e.target.value);
+                    if (validationErrors.length > 0) setValidationErrors([]);
+                  }}
                   placeholder="أدخل اسم المستلم"
                 />
               </div>
