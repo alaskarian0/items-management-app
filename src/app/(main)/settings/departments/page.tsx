@@ -30,27 +30,77 @@ import {
   Plus,
   Search,
   Trash2,
-  Users
+  Users,
+  Loader2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 
-// Import shared data and types
-import {
-  departments,
-  divisions,
-  units
-} from "@/lib/data/settings-data";
-import {
-  type Department,
-  type Division,
-  type Unit
-} from "@/lib/types/settings";
-
+// Import API hooks
+import { useDepartments, type Department } from "@/hooks/use-departments";
+import { useDivisions, type Division } from "@/hooks/use-divisions";
+import { useUnits, type Unit } from "@/hooks/use-units";
 
 const DepartmentsPage = () => {
-  const [departmentsList, setDepartmentsList] = useState<Department[]>(departments);
-  const [divisionsList, setDivisionsList] = useState<Division[]>(divisions);
-  const [unitsList, setUnitsList] = useState<Unit[]>(units);
+  // API hooks
+  const {
+    departments: departmentsData,
+    loading: departmentsLoading,
+    error: departmentsError,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment: removeDepartment,
+  } = useDepartments();
+
+  const {
+    divisions: divisionsData,
+    loading: divisionsLoading,
+    createDivision,
+    updateDivision,
+    deleteDivision: removeDivision,
+  } = useDivisions();
+
+  const {
+    units: unitsData,
+    loading: unitsLoading,
+    createUnit,
+    updateUnit,
+    deleteUnit: removeUnit,
+  } = useUnits();
+
+  // Local state for data
+  const [departmentsList, setDepartmentsList] = useState<Department[]>([]);
+  const [divisionsList, setDivisionsList] = useState<Division[]>([]);
+  const [unitsList, setUnitsList] = useState<Unit[]>([]);
+
+  // Sync API data to local state
+  useEffect(() => {
+    if (departmentsData && 'items' in departmentsData.data) {
+      setDepartmentsList(departmentsData.data.items);
+    }
+  }, [departmentsData]);
+
+  useEffect(() => {
+    if (divisionsData && 'items' in divisionsData.data) {
+      // Map divisions to include departmentName
+      const mappedDivisions = divisionsData.data.items.map((div: any) => ({
+        ...div,
+        departmentName: div.department?.name || '',
+      }));
+      setDivisionsList(mappedDivisions);
+    }
+  }, [divisionsData]);
+
+  useEffect(() => {
+    if (unitsData && 'items' in unitsData.data) {
+      // Map units to include departmentName and divisionName
+      const mappedUnits = unitsData.data.items.map((unit: any) => ({
+        ...unit,
+        departmentName: unit.department?.name || '',
+        divisionName: unit.division?.name || '',
+      }));
+      setUnitsList(mappedUnits);
+    }
+  }, [unitsData]);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentSearch, setDepartmentSearch] = useState("");
   const [divisionSearch, setDivisionSearch] = useState("");
@@ -95,11 +145,11 @@ const DepartmentsPage = () => {
     isActive: true
   });
 
-  const stats = {
-    departments: departments.length,
-    divisions: divisions.length,
-    units: units.length,
-  };
+  const stats = useMemo(() => ({
+    departments: departmentsList.length,
+    divisions: divisionsList.length,
+    units: unitsList.length,
+  }), [departmentsList.length, divisionsList.length, unitsList.length]);
 
   // Department handlers
   const handleAddDepartment = () => {
@@ -126,37 +176,27 @@ const DepartmentsPage = () => {
     setIsDepartmentDialogOpen(true);
   };
 
-  const handleSaveDepartment = () => {
+  const handleSaveDepartment = async () => {
     if (!departmentForm.name.trim()) {
       alert("الرجاء إدخال اسم القسم");
       return;
     }
 
-    if (editingDepartment) {
-      // Edit existing department
-      setDepartmentsList(departmentsList.map(dept =>
-        dept.id === editingDepartment.id
-          ? {
-            ...dept,
-            ...departmentForm,
-            updatedAt: new Date().toISOString()
-          }
-          : dept
-      ));
-    } else {
-      // Add new department
-      const newId = Math.max(...departmentsList.map(d => d.id), 0) + 1;
-      const newDepartment: Department = {
-        id: newId,
-        ...departmentForm,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setDepartmentsList([...departmentsList, newDepartment]);
-    }
+    try {
+      if (editingDepartment) {
+        // Edit existing department
+        await updateDepartment(editingDepartment.id, departmentForm);
+      } else {
+        // Add new department
+        await createDepartment(departmentForm);
+      }
 
-    setIsDepartmentDialogOpen(false);
-    setEditingDepartment(null);
+      setIsDepartmentDialogOpen(false);
+      setEditingDepartment(null);
+    } catch (error) {
+      console.error('Error saving department:', error);
+      alert('حدث خطأ أثناء حفظ القسم');
+    }
   };
 
   // Division handlers
@@ -188,37 +228,46 @@ const DepartmentsPage = () => {
     setIsDivisionDialogOpen(true);
   };
 
-  const handleSaveDivision = () => {
+  const handleSaveDivision = async () => {
     if (!divisionForm.name.trim()) {
       alert("الرجاء إدخال اسم الشعبة");
       return;
     }
 
-    if (editingDivision) {
-      // Edit existing division
-      setDivisionsList(divisionsList.map(div =>
-        div.id === editingDivision.id
-          ? {
-            ...div,
-            ...divisionForm,
-            updatedAt: new Date().toISOString()
-          }
-          : div
-      ));
-    } else {
-      // Add new division
-      const newId = Math.max(...divisionsList.map(d => d.id), 0) + 1;
-      const newDivision: Division = {
-        id: newId,
-        ...divisionForm,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setDivisionsList([...divisionsList, newDivision]);
+    if (!divisionForm.departmentId) {
+      alert("الرجاء اختيار القسم");
+      return;
     }
 
-    setIsDivisionDialogOpen(false);
-    setEditingDivision(null);
+    try {
+      if (editingDivision) {
+        // Edit existing division
+        await updateDivision(editingDivision.id, {
+          name: divisionForm.name,
+          description: divisionForm.description,
+          headOfDivision: divisionForm.headOfDivision,
+          employeeCount: divisionForm.employeeCount,
+          departmentId: divisionForm.departmentId,
+          isActive: divisionForm.isActive,
+        });
+      } else {
+        // Add new division
+        await createDivision({
+          name: divisionForm.name,
+          description: divisionForm.description,
+          headOfDivision: divisionForm.headOfDivision,
+          employeeCount: divisionForm.employeeCount,
+          departmentId: divisionForm.departmentId,
+          isActive: divisionForm.isActive,
+        });
+      }
+
+      setIsDivisionDialogOpen(false);
+      setEditingDivision(null);
+    } catch (error) {
+      console.error('Error saving division:', error);
+      alert('حدث خطأ أثناء حفظ الشعبة');
+    }
   };
 
   // Unit handlers
@@ -254,37 +303,48 @@ const DepartmentsPage = () => {
     setIsUnitDialogOpen(true);
   };
 
-  const handleSaveUnit = () => {
+  const handleSaveUnit = async () => {
     if (!unitForm.name.trim()) {
       alert("الرجاء إدخال اسم الوحدة");
       return;
     }
 
-    if (editingUnit) {
-      // Edit existing unit
-      setUnitsList(unitsList.map(unit =>
-        unit.id === editingUnit.id
-          ? {
-            ...unit,
-            ...unitForm,
-            updatedAt: new Date().toISOString()
-          }
-          : unit
-      ));
-    } else {
-      // Add new unit
-      const newId = Math.max(...unitsList.map(u => u.id), 0) + 1;
-      const newUnit: Unit = {
-        id: newId,
-        ...unitForm,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setUnitsList([...unitsList, newUnit]);
+    if (!unitForm.divisionId || !unitForm.departmentId) {
+      alert("الرجاء اختيار الشعبة والقسم");
+      return;
     }
 
-    setIsUnitDialogOpen(false);
-    setEditingUnit(null);
+    try {
+      if (editingUnit) {
+        // Edit existing unit
+        await updateUnit(editingUnit.id, {
+          name: unitForm.name,
+          description: unitForm.description,
+          unitHead: unitForm.unitHead,
+          employeeCount: unitForm.employeeCount,
+          divisionId: unitForm.divisionId,
+          departmentId: unitForm.departmentId,
+          isActive: unitForm.isActive,
+        });
+      } else {
+        // Add new unit
+        await createUnit({
+          name: unitForm.name,
+          description: unitForm.description,
+          unitHead: unitForm.unitHead,
+          employeeCount: unitForm.employeeCount,
+          divisionId: unitForm.divisionId,
+          departmentId: unitForm.departmentId,
+          isActive: unitForm.isActive,
+        });
+      }
+
+      setIsUnitDialogOpen(false);
+      setEditingUnit(null);
+    } catch (error) {
+      console.error('Error saving unit:', error);
+      alert('حدث خطأ أثناء حفظ الوحدة');
+    }
   };
 
   // Filter functions
@@ -314,6 +374,18 @@ const DepartmentsPage = () => {
       unit.divisionName?.toLowerCase().includes(unitSearch.toLowerCase()) ||
       unit.departmentName?.toLowerCase().includes(unitSearch.toLowerCase())
   );
+
+  // Show loading state
+  if (departmentsLoading && departmentsList.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -463,8 +535,21 @@ const DepartmentsPage = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
-                                <Trash2 className="h-4 w-4" />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async () => {
+                                  if (confirm('هل أنت متأكد من حذف هذا القسم؟ سيتم حذف جميع الشعب والوحدات التابعة له.')) {
+                                    try {
+                                      await removeDepartment(department.id);
+                                    } catch (error) {
+                                      console.error('Error deleting department:', error);
+                                      alert('حدث خطأ أثناء حذف القسم');
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>
                             </div>
                           </TableCell>
@@ -553,8 +638,21 @@ const DepartmentsPage = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
-                                <Trash2 className="h-4 w-4" />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async () => {
+                                  if (confirm('هل أنت متأكد من حذف هذه الشعبة؟ سيتم حذف جميع الوحدات التابعة لها.')) {
+                                    try {
+                                      await removeDivision(division.id);
+                                    } catch (error) {
+                                      console.error('Error deleting division:', error);
+                                      alert('حدث خطأ أثناء حذف الشعبة');
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>
                             </div>
                           </TableCell>
@@ -634,8 +732,21 @@ const DepartmentsPage = () => {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button size="sm" variant="ghost">
-                                <Trash2 className="h-4 w-4" />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={async () => {
+                                  if (confirm('هل أنت متأكد من حذف هذه الوحدة؟')) {
+                                    try {
+                                      await removeUnit(unit.id);
+                                    } catch (error) {
+                                      console.error('Error deleting unit:', error);
+                                      alert('حدث خطأ أثناء حذف الوحدة');
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>
                             </div>
                           </TableCell>

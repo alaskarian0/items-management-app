@@ -40,20 +40,23 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
-// Import shared data and types
-import {
-  getActiveSuppliers,
-  suppliers
-} from "@/lib/data/settings-data";
-import {
-  type Supplier,
-  SUPPLIER_CATEGORIES
-} from "@/lib/types/settings";
+// Import hooks and types
+import { useVendors, type Vendor } from "@/hooks/use-vendors";
+import { useEffect } from "react";
+
+// Supplier categories for dropdowns
+const SUPPLIER_CATEGORIES = [
+  "الأثاث والمعدات المكتبي",
+  "تكنولوجيا المعلومات",
+  "الخدمات",
+  "المواد الخام"
+];
 
 const SuppliersPage = () => {
-  const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
+  const { vendors, loading, error, createVendor, updateVendor, deleteVendor: removeVendor } = useVendors();
+  const [vendorsList, setVendorsList] = useState<Vendor[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentSupplier, setCurrentSupplier] = useState<Supplier | null>(null);
+  const [currentVendor, setCurrentVendor] = useState<Vendor | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
   const [formData, setFormData] = useState({
@@ -64,26 +67,30 @@ const SuppliersPage = () => {
     address: "",
     website: "",
     category: "",
-    taxNumber: "",
-    commercialNumber: "",
-    bankAccount: "",
-    bankName: "",
+    rating: 5,
     notes: ""
   });
 
-  // Filter suppliers
-  const filteredSuppliers = useMemo(() => {
-    return suppliersList.filter((supplier) => {
+  // Sync API data with local state
+  useEffect(() => {
+    if (vendors && 'items' in vendors.data) {
+      setVendorsList(vendors.data.items);
+    }
+  }, [vendors]);
+
+  // Filter vendors
+  const filteredVendors = useMemo(() => {
+    return vendorsList.filter((vendor) => {
       const matchesSearch =
-        supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        supplier.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = filterCategory === "all" || supplier.category === filterCategory;
+        vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vendor.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = filterCategory === "all" || vendor.categoryName === filterCategory;
       return matchesSearch && matchesCategory;
     });
-  }, [suppliersList, searchTerm, filterCategory]);
+  }, [vendorsList, searchTerm, filterCategory]);
 
   const handleAddNew = () => {
-    setCurrentSupplier(null);
+    setCurrentVendor(null);
     setFormData({
       name: "",
       description: "",
@@ -92,107 +99,116 @@ const SuppliersPage = () => {
       address: "",
       website: "",
       category: "",
-      taxNumber: "",
-      commercialNumber: "",
-      bankAccount: "",
-      bankName: "",
+      rating: 5,
       notes: ""
     });
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (supplier: Supplier) => {
-    setCurrentSupplier(supplier);
+  const handleEdit = (vendor: Vendor) => {
+    setCurrentVendor(vendor);
     setFormData({
-      name: supplier.name,
-      description: supplier.description || "",
-      contactPerson: supplier.contactPerson || "",
-      phone: supplier.phone,
-      address: supplier.address || "",
-      website: supplier.website || "",
-      category: supplier.category,
-      taxNumber: supplier.taxNumber || "",
-      commercialNumber: supplier.commercialNumber || "",
-      bankAccount: supplier.bankAccount || "",
-      bankName: supplier.bankName || "",
-      notes: supplier.notes || ""
+      name: vendor.name,
+      description: vendor.description || "",
+      contactPerson: vendor.contactPerson || "",
+      phone: vendor.phone,
+      address: vendor.address || "",
+      website: vendor.website || "",
+      category: vendor.categoryName || "",
+      rating: vendor.rating || 5,
+      notes: vendor.notes || ""
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا المورد؟")) {
-      setSuppliersList(suppliersList.filter((supplier) => supplier.id !== id));
+      try {
+        await removeVendor(id);
+      } catch (error) {
+        alert("حدث خطأ أثناء حذف المورد");
+      }
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       alert("الرجاء إدخال اسم المورد");
       return;
     }
 
-    if (currentSupplier) {
-      // Edit
-      setSuppliersList(
-        suppliersList.map((supplier) =>
-          supplier.id === currentSupplier.id
-            ? {
-              ...supplier,
-              ...formData,
-            }
-            : supplier
-        )
-      );
-    } else {
-      // Add
-      const newId =
-        suppliersList.length > 0
-          ? Math.max(...suppliersList.map((s) => s.id)) + 1
-          : 1;
-      setSuppliersList([
-        ...suppliersList,
-        {
-          id: newId,
-          code: `SUP${newId.toString().padStart(3, '0')}`,
-          rating: 5,
-          ...formData,
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]);
+    if (!formData.contactPerson.trim()) {
+      alert("الرجاء إدخال اسم الشخص المسؤول");
+      return;
     }
-    setIsDialogOpen(false);
-    setFormData({
-      name: "",
-      description: "",
-      contactPerson: "",
-      phone: "",
-      address: "",
-      website: "",
-      category: "",
-      taxNumber: "",
-      commercialNumber: "",
-      bankAccount: "",
-      bankName: "",
-      notes: ""
-    });
-    setCurrentSupplier(null);
+
+    if (!formData.phone.trim()) {
+      alert("الرجاء إدخال رقم الهاتف");
+      return;
+    }
+
+    if (!formData.address.trim()) {
+      alert("الرجاء إدخال العنوان");
+      return;
+    }
+
+    try {
+      // Find categoryId based on category name
+      const categoryIndex = SUPPLIER_CATEGORIES.indexOf(formData.category);
+      const categoryId = categoryIndex >= 0 ? categoryIndex + 1 : undefined;
+
+      const vendorData = {
+        name: formData.name,
+        description: formData.description || undefined,
+        contactPerson: formData.contactPerson,
+        phone: formData.phone,
+        address: formData.address,
+        website: formData.website || undefined,
+        categoryId,
+        rating: formData.rating,
+        notes: formData.notes || undefined,
+        isActive: true
+      };
+
+      if (currentVendor) {
+        // Edit
+        await updateVendor(currentVendor.id, vendorData);
+      } else {
+        // Add
+        await createVendor(vendorData);
+      }
+
+      setIsDialogOpen(false);
+      setFormData({
+        name: "",
+        description: "",
+        contactPerson: "",
+        phone: "",
+        address: "",
+        website: "",
+        category: "",
+        rating: 5,
+        notes: ""
+      });
+      setCurrentVendor(null);
+    } catch (error) {
+      alert("حدث خطأ أثناء حفظ المورد");
+    }
   };
 
-  const activeSuppliersCount = getActiveSuppliers().length;
-  const totalSuppliersCount = suppliersList.length;
-  const inactiveSuppliersCount = totalSuppliersCount - activeSuppliersCount;
+  const activeVendorsCount = vendorsList.filter(v => v.isActive).length;
+  const totalVendorsCount = vendorsList.length;
+  const inactiveVendorsCount = totalVendorsCount - activeVendorsCount;
 
   // Calculate category breakdown
   const categoriesBreakdown = useMemo(() => {
     const breakdown: Record<string, number> = {};
-    suppliersList.forEach(supplier => {
-      breakdown[supplier.category] = (breakdown[supplier.category] || 0) + 1;
+    vendorsList.forEach(vendor => {
+      const categoryName = vendor.categoryName || "غير مصنف";
+      breakdown[categoryName] = (breakdown[categoryName] || 0) + 1;
     });
     return breakdown;
-  }, [suppliersList]);
+  }, [vendorsList]);
 
   const topCategory = useMemo(() => {
     const entries = Object.entries(categoriesBreakdown);
@@ -224,7 +240,7 @@ const SuppliersPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {totalSuppliersCount}
+              {loading ? "..." : totalVendorsCount}
             </div>
             <p className="text-xs text-muted-foreground">مورد مسجل</p>
           </CardContent>
@@ -239,7 +255,7 @@ const SuppliersPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {activeSuppliersCount}
+              {loading ? "..." : activeVendorsCount}
             </div>
             <p className="text-xs text-muted-foreground">مورد نشط</p>
           </CardContent>
@@ -254,7 +270,7 @@ const SuppliersPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {inactiveSuppliersCount}
+              {loading ? "..." : inactiveVendorsCount}
             </div>
             <p className="text-xs text-muted-foreground">مورد متوقف</p>
           </CardContent>
@@ -323,44 +339,50 @@ const SuppliersPage = () => {
             <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">رمز المورد</TableHead>
                   <TableHead className="text-right">اسم المورد</TableHead>
                   <TableHead className="text-right">الفئة</TableHead>
                   <TableHead className="text-right">الشخص المسؤول</TableHead>
                   <TableHead className="text-right">رقم الهاتف</TableHead>
+                  <TableHead className="text-right">التقييم</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-center">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSuppliers.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      جاري التحميل...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredVendors.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       لا توجد موردين مطابقة للبحث
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredSuppliers.map((supplier) => (
-                    <TableRow key={supplier.id}>
+                  filteredVendors.map((vendor) => (
+                    <TableRow key={vendor.id}>
+                      <TableCell className="font-medium">{vendor.name}</TableCell>
                       <TableCell>
-                        <code className="px-2 py-1 bg-muted rounded text-sm">
-                          {supplier.code}
-                        </code>
+                        <Badge variant="outline">{vendor.categoryName || "غير مصنف"}</Badge>
                       </TableCell>
-                      <TableCell className="font-medium">{supplier.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{supplier.category}</Badge>
-                      </TableCell>
-                      <TableCell>{supplier.contactPerson || "-"}</TableCell>
+                      <TableCell>{vendor.contactPerson || "-"}</TableCell>
                       <TableCell className="font-mono text-sm">
                         <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-muted-foreground" />
-                          {supplier.phone}
+                          {vendor.phone}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={supplier.isActive ? "default" : "secondary"}>
-                          {supplier.isActive ? "نشط" : "متوقف"}
+                        <div className="flex items-center gap-1">
+                          {"⭐".repeat(vendor.rating || 0)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={vendor.isActive ? "default" : "secondary"}>
+                          {vendor.isActive ? "نشط" : "متوقف"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -368,7 +390,7 @@ const SuppliersPage = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleEdit(supplier)}
+                            onClick={() => handleEdit(vendor)}
                             title="تعديل"
                           >
                             <Edit className="h-4 w-4" />
@@ -376,7 +398,7 @@ const SuppliersPage = () => {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleDelete(supplier.id)}
+                            onClick={() => handleDelete(vendor.id)}
                             title="حذف"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
@@ -398,7 +420,7 @@ const SuppliersPage = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-blue-600" />
-              {currentSupplier ? "تعديل مورد" : "إضافة مورد جديد"}
+              {currentVendor ? "تعديل مورد" : "إضافة مورد جديد"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -479,7 +501,7 @@ const SuppliersPage = () => {
               إلغاء
             </Button>
             <Button onClick={handleSave}>
-              {currentSupplier ? "حفظ التعديلات" : "إضافة"}
+              {currentVendor ? "حفظ التعديلات" : "إضافة"}
             </Button>
           </DialogFooter>
         </DialogContent>

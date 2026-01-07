@@ -16,15 +16,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/store/auth/authStore";
-import { getFilteredNavbarData } from "./navbarData";
+import { navbarData } from "./navbarData";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuthStore();
-
-  // Get filtered navigation data based on user role and warehouse
-  const filteredNavData = React.useMemo(() => {
-    return getFilteredNavbarData(user?.role, user?.warehouse);
-  }, [user?.role, user?.warehouse]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -44,10 +39,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenuButton>
       </SidebarHeader>
       <SidebarContent>
-        <NavGroup items={filteredNavData.navMain} groupLabel="الرئيسية" />
-        {user?.role === "admin" && (
-          <NavGroup items={filteredNavData.projects} groupLabel="اعدادات النظام" />
-        )}
+        <NavGroup items={navbarData.navMain} groupLabel="الرئيسية" />
+        <NavGroup items={navbarData.projects} groupLabel="اعدادات النظام" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

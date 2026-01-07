@@ -22,13 +22,13 @@ export default function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // If user doesn't have token and tries to access protected routes, redirect to login
-  if (!isPublicRoute && !token) {
-    console.log('[Middleware] Redirecting unauthenticated user from', pathname, 'to /login')
-    const loginUrl = new URL('/login', request.url)
-    loginUrl.searchParams.set('from', pathname)
-    return NextResponse.redirect(loginUrl)
-  }
+  // // If user doesn't have token and tries to access protected routes, redirect to login
+  // if (!isPublicRoute && !token) {
+  //   console.log('[Middleware] Redirecting unauthenticated user from', pathname, 'to /login')
+  //   const loginUrl = new URL('/login', request.url)
+  //   loginUrl.searchParams.set('from', pathname)
+  //   return NextResponse.redirect(loginUrl)
+  // }
 
   return NextResponse.next()
 }

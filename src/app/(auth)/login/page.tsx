@@ -30,6 +30,54 @@ type WarehouseUser = {
 
 const WAREHOUSE_USERS: WarehouseUser[] = [
   {
+    id: "furniture",
+    name: "مخزن الأثاث",
+    userName: "furniture_admin",
+    password: "furniture123"
+  },
+  {
+    id: "carpet",
+    name: "مخزن السجاد",
+    userName: "carpet_admin",
+    password: "carpet123"
+  },
+  {
+    id: "general",
+    name: "مخزن المواد العامة",
+    userName: "general_admin",
+    password: "general123"
+  },
+  {
+    id: "construction",
+    name: "مخزن المواد الإنشائية",
+    userName: "construction_admin",
+    password: "construction123"
+  },
+  {
+    id: "dry",
+    name: "مخزن المواد الجافة",
+    userName: "dry_admin",
+    password: "dry123"
+  },
+  {
+    id: "frozen",
+    name: "مخزن المواد المجمّدة",
+    userName: "frozen_admin",
+    password: "frozen123"
+  },
+  {
+    id: "fuel",
+    name: "مخزن الوقود",
+    userName: "fuel_admin",
+    password: "fuel123"
+  },
+  {
+    id: "consumable",
+    name: "مخزن المواد المستهلكة",
+    userName: "consumable_admin",
+    password: "consumable123"
+  },
+  {
     id: "law_enforcement",
     name: "قسم حفظ النظام",
     userName: "law_enforcement_admin",
@@ -40,10 +88,10 @@ const WAREHOUSE_USERS: WarehouseUser[] = [
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
-  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("law_enforcement");
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("furniture");
   const [formData, setFormData] = useState<LoginFormData>({
-    userName: "law_enforcement_admin",
-    password: "law123"
+    userName: "furniture_admin",
+    password: "furniture123"
   });
   const [changePasswordData, setChangePasswordData] = useState<ChangePasswordData>({
     currentPassword: "",

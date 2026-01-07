@@ -52,54 +52,6 @@ export const navbarData: NavbarData = {
       icon: LayoutDashboard,
     },
     {
-      title: "إدارة توزيع المواد",
-      url: "/department/item-assignments",
-      icon: PackagePlus,
-      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
-    },
-    {
-      title: "إدارة الموظفين",
-      url: "/department/employees",
-      icon: Users,
-      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
-    },
-    {
-      title: "الاستعلام عن المخزون",
-      url: "/department/inventory-stock-requests",
-      icon: ClipboardList,
-      warehouses: ["law_enforcement"], // Accessible to law enforcement and general warehouse
-      items: [
-        {
-          title: "إنشاء طلب استعلام",
-          url: "/department/inventory-stock-requests",
-          icon: ClipboardList,
-        },
-        {
-          title: "الطلبات المرسلة",
-          url: "/department/stock-requests-list",
-          icon: List,
-        },
-      ],
-    },
-    {
-      title: "طلبات الشراء",
-      url: "/department/purchase-orders",
-      icon: ShoppingCart,
-      warehouses: ["law_enforcement"], // Only accessible to law enforcement warehouse
-      items: [
-        {
-          title: "إنشاء طلب شراء",
-          url: "/department/purchase-requests",
-          icon: FileText,
-        },
-        {
-          title: "مراجعة الطلبات",
-          url: "/department/purchase-orders",
-          icon: ShoppingCart,
-        },
-      ],
-    },
-    {
       title: "إدارة المستندات",
       url: "/documents/warehouse-documents",
       icon: FileText,

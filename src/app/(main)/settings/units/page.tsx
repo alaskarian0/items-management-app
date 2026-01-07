@@ -37,15 +37,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Import shared data and types
-import {
-  measurementUnits,
-  getMeasurementUnitsByType
-} from "@/lib/data/settings-data";
-import { UNIT_TYPES, type MeasurementUnit } from "@/lib/types/settings";
+// Import hooks and types
+import { useMeasurementUnits, type MeasurementUnit, type UnitType, UNIT_TYPE_MAP } from "@/hooks/use-measurement-units";
+import { useEffect } from "react";
+
+// Unit types for dropdowns
+const UNIT_TYPES = [
+  { value: "weight", label: "وزن" },
+  { value: "length", label: "طول" },
+  { value: "volume", label: "حجم" },
+  { value: "area", label: "مساحة" },
+  { value: "count", label: "عدد" },
+  { value: "time", label: "وقت" },
+  { value: "temperature", label: "درجة حرارة" }
+];
 
 const UnitsPage = () => {
-  const [unitsList, setUnitsList] = useState<MeasurementUnit[]>(measurementUnits);
+  const { measurementUnits, loading, error, createMeasurementUnit, updateMeasurementUnit, deleteMeasurementUnit } = useMeasurementUnits();
+  const [unitsList, setUnitsList] = useState<MeasurementUnit[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentUnit, setCurrentUnit] = useState<MeasurementUnit | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,8 +64,8 @@ const UnitsPage = () => {
     nameEnglish: string;
     abbreviation: string;
     abbreviationEnglish: string;
-    type: 'weight' | 'length' | 'volume' | 'area' | 'count' | 'time' | 'temperature';
-    baseUnit: string;
+    type: UnitType;
+    baseUnitId?: number;
     conversionFactor: number;
     description: string;
   }>({
@@ -65,10 +74,17 @@ const UnitsPage = () => {
     abbreviation: "",
     abbreviationEnglish: "",
     type: "count",
-    baseUnit: "",
+    baseUnitId: undefined,
     conversionFactor: 0,
     description: ""
   });
+
+  // Sync API data with local state
+  useEffect(() => {
+    if (measurementUnits && 'items' in measurementUnits.data) {
+      setUnitsList(measurementUnits.data.items);
+    }
+  }, [measurementUnits]);
 
   // Filter units
   const filteredUnits = useMemo(() => {
@@ -101,7 +117,7 @@ const UnitsPage = () => {
       abbreviation: "",
       abbreviationEnglish: "",
       type: "count",
-      baseUnit: "",
+      baseUnitId: undefined,
       conversionFactor: 0,
       description: ""
     });
@@ -116,82 +132,70 @@ const UnitsPage = () => {
       abbreviation: unit.abbreviation,
       abbreviationEnglish: unit.abbreviationEnglish || "",
       type: unit.type,
-      baseUnit: unit.baseUnit || "",
-      conversionFactor: unit.conversionFactor || 0,
+      baseUnitId: unit.baseUnitId || undefined,
+      conversionFactor: Number(unit.conversionFactor) || 0,
       description: unit.description || ""
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الوحدة؟")) {
-      setUnitsList(unitsList.filter((u) => u.id !== id));
+      try {
+        await deleteMeasurementUnit(id);
+      } catch (error) {
+        alert("حدث خطأ أثناء حذف الوحدة");
+      }
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.name.trim()) {
       alert("الرجاء إدخال اسم الوحدة");
       return;
     }
 
-    if (currentUnit) {
-      // Edit
-      setUnitsList(
-        unitsList.map((u) =>
-          u.id === currentUnit.id
-            ? {
-                ...u,
-                name: formData.name,
-                nameEnglish: formData.nameEnglish,
-                abbreviation: formData.abbreviation,
-                abbreviationEnglish: formData.abbreviationEnglish,
-                type: formData.type,
-                baseUnit: formData.baseUnit || undefined,
-                conversionFactor: formData.conversionFactor || undefined,
-                description: formData.description
-              }
-            : u
-        )
-      );
-    } else {
-      // Add
-      const newId =
-        unitsList.length > 0
-          ? Math.max(...unitsList.map((u) => u.id)) + 1
-          : 1;
-      const newCode = formData.abbreviation.toUpperCase();
-      setUnitsList([
-        ...unitsList,
-        {
-          id: newId,
-          code: newCode,
-          name: formData.name,
-          nameEnglish: formData.nameEnglish,
-          abbreviation: formData.abbreviation,
-          abbreviationEnglish: formData.abbreviationEnglish,
-          type: formData.type,
-          baseUnit: formData.baseUnit || undefined,
-          conversionFactor: formData.conversionFactor || undefined,
-          isActive: true,
-          description: formData.description,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ]);
+    if (!formData.abbreviation.trim()) {
+      alert("الرجاء إدخال اختصار الوحدة");
+      return;
     }
-    setIsDialogOpen(false);
-    setFormData({
-      name: "",
-      nameEnglish: "",
-      abbreviation: "",
-      abbreviationEnglish: "",
-      type: "count",
-      baseUnit: "",
-      conversionFactor: 0,
-      description: ""
-    });
-    setCurrentUnit(null);
+
+    try {
+      const unitData = {
+        name: formData.name,
+        nameEnglish: formData.nameEnglish || undefined,
+        abbreviation: formData.abbreviation,
+        abbreviationEnglish: formData.abbreviationEnglish || undefined,
+        type: formData.type,
+        baseUnitId: formData.baseUnitId || undefined,
+        conversionFactor: formData.conversionFactor || undefined,
+        description: formData.description || undefined,
+        isActive: true
+      };
+
+      if (currentUnit) {
+        // Edit
+        await updateMeasurementUnit(currentUnit.id, unitData);
+      } else {
+        // Add
+        await createMeasurementUnit(unitData);
+      }
+
+      setIsDialogOpen(false);
+      setFormData({
+        name: "",
+        nameEnglish: "",
+        abbreviation: "",
+        abbreviationEnglish: "",
+        type: "count",
+        baseUnitId: undefined,
+        conversionFactor: 0,
+        description: ""
+      });
+      setCurrentUnit(null);
+    } catch (error) {
+      alert("حدث خطأ أثناء حفظ الوحدة");
+    }
   };
 
   return (
@@ -218,7 +222,7 @@ const UnitsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              {stats.totalUnits}
+              {loading ? "..." : stats.totalUnits}
             </div>
             <p className="text-xs text-muted-foreground">وحدة قياس</p>
           </CardContent>
@@ -231,7 +235,7 @@ const UnitsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {stats.activeUnits}
+              {loading ? "..." : stats.activeUnits}
             </div>
             <p className="text-xs text-muted-foreground">وحدة نشطة</p>
           </CardContent>
@@ -244,7 +248,7 @@ const UnitsPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {stats.typesCount}
+              {loading ? "..." : stats.typesCount}
             </div>
             <p className="text-xs text-muted-foreground">نوع مختلف</p>
           </CardContent>
@@ -296,7 +300,6 @@ const UnitsPage = () => {
             <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">الكود</TableHead>
                   <TableHead className="text-right">اسم الوحدة</TableHead>
                   <TableHead className="text-right">الاسم بالإنجليزية</TableHead>
                   <TableHead className="text-right">الاختصار</TableHead>
@@ -306,10 +309,19 @@ const UnitsPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUnits.length === 0 ? (
+                {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={6}
+                      className="text-center text-muted-foreground h-24"
+                    >
+                      جاري التحميل...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUnits.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
                       className="text-center text-muted-foreground h-24"
                     >
                       لا توجد وحدات تطابق معايير البحث
@@ -318,9 +330,6 @@ const UnitsPage = () => {
                 ) : (
                   filteredUnits.map((unit) => (
                     <TableRow key={unit.id}>
-                      <TableCell>
-                        <Badge variant="outline">{unit.code}</Badge>
-                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <Ruler className="h-4 w-4 text-orange-600" />
@@ -442,33 +451,19 @@ const UnitsPage = () => {
                 </SelectContent>
               </Select>
             </div>
-            {(formData.type === 'count' || formData.type === 'length' || formData.type === 'weight' || formData.type === 'volume') && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="baseUnit">الوحدة الأساسية</Label>
-                  <Input
-                    id="baseUnit"
-                    value={formData.baseUnit}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, baseUnit: e.target.value }))
-                    }
-                    placeholder="مثال: غرام للكيلوغرام"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="conversionFactor">معامل التحويل</Label>
-                  <Input
-                    id="conversionFactor"
-                    type="number"
-                    value={formData.conversionFactor}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, conversionFactor: parseFloat(e.target.value) || 0 }))
-                    }
-                    placeholder="مثال: 1000"
-                  />
-                </div>
-              </>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="conversionFactor">معامل التحويل</Label>
+              <Input
+                id="conversionFactor"
+                type="number"
+                step="0.01"
+                value={formData.conversionFactor}
+                onChange={(e) =>
+                  setFormData((f) => ({ ...f, conversionFactor: parseFloat(e.target.value) || 0 }))
+                }
+                placeholder="مثال: 1000 (للتحويل من الوحدة الأساسية)"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="description">الوصف</Label>
               <Input
