@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import {
   Search,
   Package,
   Filter,
+  Loader2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -28,16 +29,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { produce } from 'immer';
-
 // Import shared data and types
-import { warehouses } from "@/lib/data/warehouse-data";
 import { type Warehouse } from "@/lib/types/warehouse";
 import { departments, divisions, units, getDivisionsByDepartment, getUnitsByDivision } from "@/lib/data/settings-data";
 import { usePageTitle } from "@/context/breadcrumb-context";
-
-// Use hierarchical warehouse data for display
-const initialWarehouseData: Warehouse[] = warehouses;
+import { useWarehouses } from "@/hooks/use-warehouses";
 
 // --- MODAL STATE TYPE ---
 type ModalState = {
@@ -217,11 +213,22 @@ const WarehouseNode = ({
 const ManageWarehousesPage = () => {
   usePageTitle("إدارة المخازن");
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(initialWarehouseData);
+  const {
+    warehouses: warehousesData,
+    loading,
+    error,
+    createWarehouse,
+    updateWarehouse,
+    deleteWarehouse: removeWarehouse
+  } = useWarehouses();
+
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'add' });
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
+    address: '',
     departmentId: 0,
     departmentName: '',
     divisionId: 0,
@@ -234,6 +241,17 @@ const ManageWarehousesPage = () => {
   const [filterDepartment, setFilterDepartment] = useState<string>('all');
   const [filterDivision, setFilterDivision] = useState<string>('all');
   const [filterUnit, setFilterUnit] = useState<string>('all');
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Update local warehouses state when API data changes
+  useEffect(() => {
+    if (warehousesData && 'items' in warehousesData.data) {
+      setWarehouses(warehousesData.data.items);
+    } else if (warehousesData && !('items' in warehousesData.data)) {
+      // Single warehouse response
+      setWarehouses([warehousesData.data as Warehouse]);
+    }
+  }, [warehousesData]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -342,6 +360,8 @@ const ManageWarehousesPage = () => {
     setModal({ isOpen: true, mode, data });
     setFormData({
       name: data?.name || '',
+      code: data?.code || '',
+      address: data?.address || '',
       departmentId: data?.departmentId || 0,
       departmentName: data?.departmentName || '',
       divisionId: data?.divisionId || 0,
@@ -355,6 +375,8 @@ const ManageWarehousesPage = () => {
     setModal({ isOpen: false, mode: 'add' });
     setFormData({
       name: '',
+      code: '',
+      address: '',
       departmentId: 0,
       departmentName: '',
       divisionId: 0,
@@ -381,77 +403,99 @@ const ManageWarehousesPage = () => {
     return false;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const { mode, data } = modal;
-    if (!data) return;
 
     if (!formData.name.trim()) {
       alert('الرجاء إدخال اسم المخزن');
       return;
     }
 
-    setWarehouses(
-      produce((draft) => {
-        if (mode === 'add') {
-          const newWarehouse: Warehouse = {
-            id: Date.now(),
-            name: formData.name,
-            code: `WH-${Date.now()}`,
-            departmentId: formData.departmentId || undefined,
-            departmentName: formData.departmentName || undefined,
-            divisionId: formData.divisionId || undefined,
-            divisionName: formData.divisionName || undefined,
-            unitId: formData.unitId || undefined,
-            unitName: formData.unitName || undefined,
-            isActive: true,
-            itemCount: 0,
-            children: [],
-          };
-          if (data.parentId) {
-            // Adding a child
-            findAndModify(draft, data.parentId, (node) => {
-              if (!node.children) {
-                node.children = [];
-              }
-              node.children.push(newWarehouse);
-            });
-          } else {
-            // Adding a root
-            draft.push(newWarehouse);
-          }
-        } else if (mode === 'edit') {
-          findAndModify(draft, data.id, (node) => {
-            node.name = formData.name;
-            node.departmentId = formData.departmentId || undefined;
-            node.departmentName = formData.departmentName || undefined;
-            node.divisionId = formData.divisionId || undefined;
-            node.divisionName = formData.divisionName || undefined;
-            node.unitId = formData.unitId || undefined;
-            node.unitName = formData.unitName || undefined;
-          });
-        }
-      })
-    );
+    setIsSaving(true);
+    try {
+      if (mode === 'add') {
+        const newWarehouseData = {
+          name: formData.name,
+          code: formData.code || `WH-${Date.now()}`,
+          address: formData.address || undefined,
+          departmentId: formData.departmentId || undefined,
+          divisionId: formData.divisionId || undefined,
+          unitId: formData.unitId || undefined,
+          isActive: true,
+          children: data?.parentId ? undefined : 0,
+          level: data?.parentId ? undefined : 0,
+          itemCount: 0,
+        };
 
-    closeModal();
+        await createWarehouse(newWarehouseData);
+        console.log('Warehouse created successfully');
+      } else if (mode === 'edit' && data?.id) {
+        const updateData = {
+          name: formData.name,
+          code: formData.code,
+          address: formData.address || undefined,
+          departmentId: formData.departmentId || undefined,
+          divisionId: formData.divisionId || undefined,
+          unitId: formData.unitId || undefined,
+        };
+
+        await updateWarehouse(data.id, updateData);
+        console.log('Warehouse updated successfully');
+      }
+
+      closeModal();
+    } catch (error) {
+      console.error('Error saving warehouse:', error);
+      alert('حدث خطأ أثناء حفظ المخزن');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('هل أنت متأكد من حذف هذا المخزن وجميع المخازن الفرعية التابعة له؟')) return;
 
-    setWarehouses(
-      produce((draft) => {
-        findAndModify(draft, id, (node, parent, index) => {
-          if (parent && parent.children) {
-            parent.children.splice(index, 1);
-          } else {
-            // root node
-            draft.splice(index, 1);
-          }
-        });
-      })
-    );
+    try {
+      await removeWarehouse(id);
+      console.log('Warehouse deleted successfully');
+
+      // Clear selection if deleted warehouse was selected
+      if (selectedWarehouse?.id === id) {
+        setSelectedWarehouse(null);
+      }
+    } catch (error) {
+      console.error('Error deleting warehouse:', error);
+      alert('حدث خطأ أثناء حذف المخزن');
+    }
   };
+
+  // Show loading state
+  if (loading && warehouses.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary mb-4" />
+          <p className="text-muted-foreground">جاري تحميل المخازن...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && warehouses.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <WarehouseIcon className="h-12 w-12 mx-auto text-red-500 mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-red-600">خطأ في تحميل البيانات</h3>
+          <p className="text-sm text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            إعادة المحاولة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -873,10 +917,11 @@ const ManageWarehousesPage = () => {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeModal}>
+            <Button variant="outline" onClick={closeModal} disabled={isSaving}>
               إلغاء
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
               {modal.mode === 'add' ? 'إضافة' : 'حفظ'}
             </Button>
           </DialogFooter>

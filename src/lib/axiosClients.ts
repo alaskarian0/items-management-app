@@ -2,8 +2,8 @@ import axios from "axios";
 import { tokenManager } from "./tokenManager";
 
 // API configuration
-// For Next.js API routes, use relative path (no base URL needed)
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+// Backend API base URL (port 5000)
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 
 
