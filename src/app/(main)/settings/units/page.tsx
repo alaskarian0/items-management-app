@@ -52,6 +52,25 @@ const UNIT_TYPES = [
   { value: "temperature", label: "درجة حرارة" }
 ];
 
+// Mapping from numeric type to Arabic label
+const UNIT_TYPE_LABELS: Record<number, string> = {
+  1: "وزن",
+  2: "طول",
+  3: "حجم",
+  4: "مساحة",
+  5: "عدد",
+  6: "وقت",
+  7: "درجة حرارة"
+};
+
+// Helper function to get type label
+const getTypeLabel = (type: any): string => {
+  if (typeof type === 'number') {
+    return UNIT_TYPE_LABELS[type] || String(type);
+  }
+  return UNIT_TYPES.find(t => t.value === type)?.label || String(type);
+};
+
 const UnitsPage = () => {
   const { measurementUnits, loading, error, createMeasurementUnit, updateMeasurementUnit, deleteMeasurementUnit } = useMeasurementUnits();
   const [unitsList, setUnitsList] = useState<MeasurementUnit[]>([]);
@@ -81,8 +100,15 @@ const UnitsPage = () => {
 
   // Sync API data with local state
   useEffect(() => {
-    if (measurementUnits && 'items' in measurementUnits.data) {
-      setUnitsList(measurementUnits.data.items);
+    if (measurementUnits?.data) {
+      // Handle different response formats
+      if (Array.isArray(measurementUnits.data)) {
+        setUnitsList(measurementUnits.data);
+      } else if ('items' in measurementUnits.data) {
+        setUnitsList(measurementUnits.data.items);
+      } else {
+        setUnitsList([measurementUnits.data]);
+      }
     }
   }, [measurementUnits]);
 
@@ -345,7 +371,7 @@ const UnitsPage = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {UNIT_TYPES.find(t => t.value === unit.type)?.label || unit.type}
+                        <Badge variant="outline">{getTypeLabel(unit.type)}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={unit.isActive ? "default" : "secondary"}>

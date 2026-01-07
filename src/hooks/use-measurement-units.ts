@@ -1,7 +1,7 @@
 'use client';
 
 import { useApiData } from './useApi';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 export type UnitType = 'weight' | 'length' | 'volume' | 'area' | 'count' | 'time' | 'temperature';
 
@@ -131,18 +131,24 @@ export const useMeasurementUnits = (typeFilter?: UnitType) => {
   }, [deleteMeasurementUnit, refetch]);
 
   // Convert backend data (type as number) to frontend format (type as string)
-  const processedData = data && 'items' in data.data
-    ? {
-        ...data,
-        data: {
-          ...data.data,
-          items: data.data.items.map((unit: any) => ({
+  const processedData = useMemo(() => {
+    if (!data?.data) return data;
+
+    return {
+      ...data,
+      data: Array.isArray(data.data)
+        ? data.data.map((unit: any) => ({
             ...unit,
             type: UNIT_TYPE_REVERSE_MAP[unit.type as keyof typeof UNIT_TYPE_REVERSE_MAP] || 'count'
           })).filter((unit: any) => !typeFilter || unit.type === typeFilter)
-        }
-      }
-    : data;
+        : 'items' in data.data
+        ? data.data.items.map((unit: any) => ({
+            ...unit,
+            type: UNIT_TYPE_REVERSE_MAP[unit.type as keyof typeof UNIT_TYPE_REVERSE_MAP] || 'count'
+          })).filter((unit: any) => !typeFilter || unit.type === typeFilter)
+        : data.data
+    };
+  }, [data, typeFilter]);
 
   return {
     measurementUnits: processedData,

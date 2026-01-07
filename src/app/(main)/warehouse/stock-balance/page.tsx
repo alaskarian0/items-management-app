@@ -65,11 +65,8 @@ import {
   stockStatusOptions,
 } from "@/lib/data/warehouse-data";
 import { useInventoryStock } from "@/hooks/use-inventory";
+import { useVendors } from "@/hooks/use-vendors";
 // removed mock items
-
-
-const itemGroups = ["كراسي", "طاولات", "سجاد صناعي", "مكاتب", "خزائن", "إلكترونيات"];
-const vendors = ["شركة النبلاء", "موردون متحدون", "منظمة الهلال الأحمر", "شركة السجاد الفاخر", "مورّد الأثاث الحديث", "شركة التقنية المتقدمة"];
 
 const StockBalancePage = () => {
   const { selectedWarehouse } = useWarehouse();
@@ -91,6 +88,24 @@ const StockBalancePage = () => {
   const [minOrderLevelOverrides, setMinOrderLevelOverrides] = useState<Record<string, number>>({});
 
   const fetchedItems = useInventoryStock(selectedWarehouse ? selectedWarehouse.id : 0) || [];
+
+  // Fetch vendors from API
+  const { vendors: vendorsData } = useVendors();
+
+  // Extract vendors and item groups from fetched data
+  const vendors = useMemo(() => {
+    const data = vendorsData?.data;
+    if (Array.isArray(data)) {
+      return data.map((v: any) => v.name);
+    }
+    return [];
+  }, [vendorsData]);
+
+  const itemGroups = useMemo(() => {
+    // Extract unique categories/groups from fetched items
+    const groups = fetchedItems.map((item: any) => item.category || item.group || 'أخرى');
+    return Array.from(new Set(groups)).filter(Boolean);
+  }, [fetchedItems]);
 
   // Merge fetched items with local overrides
   const itemsWithOverrides = useMemo(() => {
