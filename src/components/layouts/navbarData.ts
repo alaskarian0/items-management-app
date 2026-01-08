@@ -210,21 +210,21 @@ export const navbarData: NavbarData = {
         },
       ],
     },
-    {
-      title: "مركز التقارير",
-      url: "/reports",
-      icon: BarChart3,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // Hide from law_enforcement
-    },
+    // {
+    //   title: "مركز التقارير",
+    //   url: "/reports",
+    //   icon: BarChart3,
+    //   warehouses: [
+    //     "furniture",
+    //     "carpet",
+    //     "general",
+    //     "construction",
+    //     "dry",
+    //     "frozen",
+    //     "fuel",
+    //     "consumable",
+    //   ], // Hide from law_enforcement
+    // },
   ],
   projects: [
     {
