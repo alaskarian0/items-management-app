@@ -44,8 +44,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { WarehouseSelector } from "@/components/warehouse/warehouse-selector";
 import { useWarehouse } from "@/context/warehouse-context";
-import { saveDocument, useItems } from "@/hooks/use-inventory";
-import { db } from "@/lib/db";
+import { useItemMasters } from "@/hooks/use-item-masters";
+import { useItemInstances } from "@/hooks/use-item-instances";
+import { useEntryDocuments } from "@/hooks/use-entry-documents";
+import { useDepartments } from "@/hooks/use-departments";
+import { useDivisions } from "@/hooks/use-divisions";
+import { useUnits } from "@/hooks/use-units";
+import { useVendors } from "@/hooks/use-vendors";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import {
@@ -57,19 +62,21 @@ import {
   Save,
   Search,
   Trash2,
+  X,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useImmer } from "use-immer";
 
-// Import API hooks
-import { useDepartments } from "@/hooks/use-departments";
-import { useDivisions } from "@/hooks/use-divisions";
-import { useUnits } from "@/hooks/use-units";
-import { useVendors } from "@/hooks/use-vendors";
-
-// Import shared types
-import { type DocumentItem } from "@/lib/data/warehouse-data";
+// Import shared data and types
+import {
+  departments,
+  divisions,
+  entryTypes,
+  suppliers,
+  units,
+  type DocumentItem
+} from "@/lib/data/warehouse-data";
 import { type Item } from "@/lib/types/warehouse";
 
 // Entry types constant
@@ -82,41 +89,6 @@ const entryTypes = [
 const ItemEntryPage = () => {
   const { selectedWarehouse } = useWarehouse();
   const allItems = useItems() || []; // Load items from DB
-
-  // API hooks for dropdowns
-  const { departments: departmentsData } = useDepartments();
-  const { divisions: divisionsData } = useDivisions();
-  const { units: unitsData } = useUnits();
-  const { vendors: vendorsData } = useVendors();
-
-  // Extract data from API responses and memoize
-  const departments = useMemo(() => {
-    const data = departmentsData?.data;
-    return Array.isArray(data) ? data : [];
-  }, [departmentsData]);
-
-  const divisions = useMemo(() => {
-    const data = divisionsData?.data;
-    return Array.isArray(data) ? data : [];
-  }, [divisionsData]);
-
-  const units = useMemo(() => {
-    const data = unitsData?.data;
-    return Array.isArray(data) ? data : [];
-  }, [unitsData]);
-
-  const suppliers = useMemo(() => {
-    const data = vendorsData?.data;
-    if (Array.isArray(data)) {
-      return data.map((v: any) => ({
-        id: v.id,
-        name: v.name,
-        code: v.code || '',
-      }));
-    }
-    return [];
-  }, [vendorsData]);
-
   const [entryMode, setEntryMode] = useState<"indirect" | "direct">("indirect");
   const [entryType, setEntryType] = useState<string>();
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -133,6 +105,7 @@ const ItemEntryPage = () => {
   const [vendorSearchOpen, setVendorSearchOpen] = useState<number | false>(false);
   const [vendorSearchValue, setVendorSearchValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // Filter items based on search
   const filteredItems = searchValue
@@ -235,6 +208,9 @@ const ItemEntryPage = () => {
 
   const handleSave = async () => {
     try {
+      // Clear previous validation errors
+      setValidationErrors([]);
+
       if (!selectedWarehouse) {
         toast.error("الرجاء اختيار المخزن");
         return;
@@ -250,45 +226,67 @@ const ItemEntryPage = () => {
 
       setIsSaving(true);
 
-      // 1. Handle New Items (items with no ID)
-      const processedItems = [...itemsList];
-      for (let i = 0; i < processedItems.length; i++) {
-        const item = processedItems[i];
-        if (!item.itemId && item.itemName) {
-          // Creating new item
-          const newCode = item.itemCode || `AUTO-${Date.now()}-${i}`;
-          // Dexie handles ID generation
-          const newItemId = await db.items.add({
-            name: item.itemName,
-            code: newCode,
-            unit: item.unit || "قطعة",
-            stock: 0,
-            price: item.price || 0,
-            category: "أخرى", // Default category
-          } as Item);
-          processedItems[i] = { ...item, itemId: newItemId, itemCode: newCode };
+      // 1. Create Entry Document
+      const entryTypeMap: { [key: string]: number } = {
+        'purchases': 1,
+        'gifts': 2,
+        'returns': 3,
+      };
+
+      // Format date as ISO 8601 datetime string
+      const selectedDate = date || new Date();
+      const isoDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate()).toISOString();
+
+      const documentData = {
+        documentNumber: docNumber,
+        date: isoDate,
+        warehouseId: selectedWarehouse.id,
+        departmentId: department ? Number(department) : undefined,
+        divisionId: division ? Number(division) : undefined,
+        unitId: unit ? Number(unit) : undefined,
+        documentType: 1, // 1 = New Entry
+        entryMethod: entryMode === 'direct' ? 1 : 2, // 1 = direct, 2 = indirect
+        entryType: entryTypeMap[entryType] || 1,
+        recipientName: recipientName.trim() || undefined, // Don't send empty string
+        notes: notes || undefined,
+      };
+
+      const createdDocument = await createEntryDocument(documentData);
+
+      if (!createdDocument) {
+        throw new Error("Failed to create entry document");
+      }
+
+      // 2. Create ItemInstances for each item (with quantities)
+      const itemInstances = [];
+      for (const item of itemsList) {
+        if (!item.itemId) continue; // Skip items without itemMasterId
+
+        // Create instances based on quantity
+        for (let i = 0; i < item.quantity; i++) {
+          const serialNumber = `${item.itemCode}-${docNumber}-${Date.now()}-${i + 1}`;
+
+          itemInstances.push({
+            serialNumber,
+            itemMasterId: item.itemId,
+            warehouseId: selectedWarehouse.id,
+            departmentId: department ? Number(department) : undefined,
+            divisionId: division ? Number(division) : undefined,
+            unitId: unit ? Number(unit) : undefined,
+            status: 'available', // New items are available
+            vendorName: item.vendorName || undefined,
+            invoiceNumber: item.invoiceNumber || undefined,
+            warrantyExpiry: item.expiryDate || undefined,
+            expiryDate: item.expiryDate || undefined,
+            notes: item.notes || undefined,
+          });
         }
       }
 
-      // 2. Save Document
-      await saveDocument(
-        {
-          docNumber,
-          type: "entry",
-          date: date || new Date(),
-          warehouseId: selectedWarehouse.id,
-          departmentId: department ? Number(department) : undefined,
-          divisionId: division ? Number(division) : undefined,
-          unitId: unit ? Number(unit) : undefined,
-          supplierId: supplier ? Number(supplier) : undefined,
-          entryType,
-          notes,
-          itemCount: processedItems.length,
-          totalValue: Number(calculateTotal()),
-          status: "approved",
-        },
-        processedItems
-      );
+      // Create instances in bulk
+      if (itemInstances.length > 0) {
+        await createBulkItemInstances({ instances: itemInstances });
+      }
 
       toast.success("تم حفظ مستند الإدخال بنجاح");
 
@@ -297,9 +295,29 @@ const ItemEntryPage = () => {
       updateItemsList(() => []);
       setNotes("");
       setSearchValue("");
-    } catch (error) {
+      setRecipientName("");
+      setValidationErrors([]);
+    } catch (error: any) {
       console.error("Error saving document:", error);
-      toast.error("حدث خطأ أثناء حفظ المستند");
+
+      // Extract validation errors from API response
+      if (error?.response?.data?.message) {
+        const messages = error.response.data.message;
+        if (Array.isArray(messages)) {
+          setValidationErrors(messages);
+          // Also show first error as toast
+          toast.error(messages[0] || "حدث خطأ في التحقق من البيانات");
+        } else if (typeof messages === 'string') {
+          setValidationErrors([messages]);
+          toast.error(messages);
+        } else {
+          setValidationErrors(["حدث خطأ أثناء حفظ المستند"]);
+          toast.error("حدث خطأ أثناء حفظ المستند");
+        }
+      } else {
+        setValidationErrors(["حدث خطأ أثناء حفظ المستند"]);
+        toast.error("حدث خطأ أثناء حفظ المستند");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -317,6 +335,30 @@ const ItemEntryPage = () => {
           إنشاء مستند إدخال مواد جديدة إلى المخزن
         </p>
       </div>
+
+      {/* Validation Errors Alert */}
+      {validationErrors.length > 0 && (
+        <Alert variant="destructive" className="relative">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="font-semibold mb-2">يرجى تصحيح الأخطاء التالية:</div>
+            <ul className="list-disc list-inside space-y-1">
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute left-2 top-2 h-6 w-6"
+            onClick={() => setValidationErrors([])}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">إغلاق</span>
+          </Button>
+        </Alert>
+      )}
 
       {/* Warehouse & Entry Mode Selection */}
       <Card>
@@ -515,7 +557,10 @@ const ItemEntryPage = () => {
                     <Calendar
                       mode="single"
                       selected={date}
-                      onSelect={setDate}
+                      onSelect={(newDate) => {
+                        setDate(newDate);
+                        if (validationErrors.length > 0) setValidationErrors([]);
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -532,7 +577,10 @@ const ItemEntryPage = () => {
                 <Label>اسم المستلم</Label>
                 <Input
                   value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
+                  onChange={(e) => {
+                    setRecipientName(e.target.value);
+                    if (validationErrors.length > 0) setValidationErrors([]);
+                  }}
                   placeholder="أدخل اسم المستلم"
                 />
               </div>

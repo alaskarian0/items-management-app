@@ -44,7 +44,6 @@ import { useMemo, useState } from "react";
 // Import shared data and types
 import {
   movementTypes,
-  warehouses,
   itemMovements as fallbackMovements
 } from "@/lib/data/warehouse-data";
 import { useMovements } from "@/hooks/use-inventory";

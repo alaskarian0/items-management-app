@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { useBreadcrumb } from "@/context/breadcrumb-context";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { generateRouteLabels, navbarData } from "./navbarData";
 
 // Generate route labels from navbar data
@@ -46,7 +47,7 @@ export function DynamicBreadcrumb() {
         }
 
         breadcrumbs.push({
-          href: currentPath,
+          href: currentPath || '/', // Ensure href is never empty
           label,
           isLast,
         })
@@ -71,8 +72,10 @@ export function DynamicBreadcrumb() {
               {breadcrumb.isLast ? (
                 <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
               ) : (
-                <BreadcrumbLink href={breadcrumb.href}>
-                  {breadcrumb.label}
+                <BreadcrumbLink asChild>
+                  <Link href={breadcrumb.href}>
+                    {breadcrumb.label}
+                  </Link>
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>

@@ -31,9 +31,11 @@ import {
 } from "@/components/ui/select";
 // Import shared data and types
 import { type Warehouse } from "@/lib/types/warehouse";
-import { departments, divisions, units, getDivisionsByDepartment, getUnitsByDivision } from "@/lib/data/settings-data";
 import { usePageTitle } from "@/context/breadcrumb-context";
 import { useWarehouses } from "@/hooks/use-warehouses";
+import { useDepartments } from "@/hooks/use-departments";
+import { useDivisions } from "@/hooks/use-divisions";
+import { useUnits } from "@/hooks/use-units";
 
 // --- MODAL STATE TYPE ---
 type ModalState = {
@@ -222,7 +224,16 @@ const ManageWarehousesPage = () => {
     deleteWarehouse: removeWarehouse
   } = useWarehouses();
 
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  // Fetch departments, divisions, and units from API
+  const { departments: departmentsData } = useDepartments();
+  const { divisions: divisionsData } = useDivisions();
+  const { units: unitsData } = useUnits();
+
+  // Memoize API data arrays to prevent re-creating on every render
+  const apiDepartments = useMemo(() => departmentsData?.data || [], [departmentsData?.data]);
+  const apiDivisions = useMemo(() => divisionsData?.data || [], [divisionsData?.data]);
+  const apiUnits = useMemo(() => unitsData?.data || [], [unitsData?.data]);
+
   const [selectedWarehouse, setSelectedWarehouse] = useState<Warehouse | null>(null);
   const [modal, setModal] = useState<ModalState>({ isOpen: false, mode: 'add' });
   const [formData, setFormData] = useState({
@@ -243,15 +254,43 @@ const ManageWarehousesPage = () => {
   const [filterUnit, setFilterUnit] = useState<string>('all');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Update local warehouses state when API data changes
-  useEffect(() => {
-    if (warehousesData && 'items' in warehousesData.data) {
-      setWarehouses(warehousesData.data.items);
-    } else if (warehousesData && !('items' in warehousesData.data)) {
-      // Single warehouse response
-      setWarehouses([warehousesData.data as Warehouse]);
+  // Memoize enriched warehouses to prevent infinite loops
+  const warehouses = useMemo(() => {
+    if (!warehousesData?.data) return [];
+
+    let warehousesList: Warehouse[] = [];
+
+    // Handle different response formats
+    if (Array.isArray(warehousesData.data)) {
+      warehousesList = warehousesData.data;
+    } else if ('items' in warehousesData.data) {
+      warehousesList = warehousesData.data.items;
+    } else {
+      warehousesList = [warehousesData.data as Warehouse];
     }
-  }, [warehousesData]);
+
+    // Enrich warehouses with department/division/unit names
+    const enrichWarehouses = (warehouses: Warehouse[]): Warehouse[] => {
+      return warehouses.map((wh: any) => {
+        const dept = apiDepartments.find((d: any) => d.id === wh.departmentId);
+        const div = apiDivisions.find((d: any) => d.id === wh.divisionId);
+        const unit = apiUnits.find((u: any) => u.id === wh.unitId);
+
+        // Map subWarehouses from API to children for UI
+        const children = wh.subWarehouses || wh.children;
+
+        return {
+          ...wh,
+          departmentName: dept?.name,
+          divisionName: div?.name,
+          unitName: unit?.name,
+          children: children && children.length > 0 ? enrichWarehouses(children) : undefined,
+        };
+      });
+    };
+
+    return enrichWarehouses(warehousesList);
+  }, [warehousesData, apiDepartments, apiDivisions, apiUnits]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -414,7 +453,7 @@ const ManageWarehousesPage = () => {
     setIsSaving(true);
     try {
       if (mode === 'add') {
-        const newWarehouseData = {
+        const newWarehouseData: any = {
           name: formData.name,
           code: formData.code || `WH-${Date.now()}`,
           address: formData.address || undefined,
@@ -422,10 +461,13 @@ const ManageWarehousesPage = () => {
           divisionId: formData.divisionId || undefined,
           unitId: formData.unitId || undefined,
           isActive: true,
-          children: data?.parentId ? undefined : 0,
-          level: data?.parentId ? undefined : 0,
-          itemCount: 0,
         };
+
+        // If this is a sub-warehouse, add parentId
+        if (data?.parentId) {
+          newWarehouseData.parentId = data.parentId;
+          // The backend will calculate level and children
+        }
 
         await createWarehouse(newWarehouseData);
         console.log('Warehouse created successfully');
@@ -602,7 +644,7 @@ const ManageWarehousesPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الأقسام</SelectItem>
-                  {departments.filter(d => d.isActive).map(dept => (
+                  {apiDepartments.filter((d: any) => d.isActive).map((dept: any) => (
                     <SelectItem key={dept.id} value={dept.id.toString()}>
                       {dept.name}
                     </SelectItem>
@@ -616,7 +658,7 @@ const ManageWarehousesPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الشعب</SelectItem>
-                  {divisions.filter(d => d.isActive).map(div => (
+                  {apiDivisions.filter((d: any) => d.isActive).map((div: any) => (
                     <SelectItem key={div.id} value={div.id.toString()}>
                       {div.name}
                     </SelectItem>
@@ -630,7 +672,7 @@ const ManageWarehousesPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الوحدات</SelectItem>
-                  {units.filter(u => u.isActive).map(unit => (
+                  {apiUnits.filter((u: any) => u.isActive).map((unit: any) => (
                     <SelectItem key={unit.id} value={unit.id.toString()}>
                       {unit.name}
                     </SelectItem>
@@ -823,7 +865,7 @@ const ManageWarehousesPage = () => {
                 value={formData.departmentId ? formData.departmentId.toString() : ''}
                 onValueChange={(value) => {
                   const deptId = parseInt(value);
-                  const dept = departments.find(d => d.id === deptId);
+                  const dept = apiDepartments.find((d: any) => d.id === deptId);
                   setFormData(prev => ({
                     ...prev,
                     departmentId: deptId || 0,
@@ -839,7 +881,7 @@ const ManageWarehousesPage = () => {
                   <SelectValue placeholder="اختر القسم" />
                 </SelectTrigger>
                 <SelectContent>
-                  {departments.filter(d => d.isActive).map(dept => (
+                  {apiDepartments.filter((d: any) => d.isActive).map((dept: any) => (
                     <SelectItem key={dept.id} value={dept.id.toString()}>
                       {dept.name}
                     </SelectItem>
@@ -855,7 +897,7 @@ const ManageWarehousesPage = () => {
                   value={formData.divisionId ? formData.divisionId.toString() : ''}
                   onValueChange={(value) => {
                     const divId = parseInt(value);
-                    const div = divisions.find(d => d.id === divId);
+                    const div = apiDivisions.find((d: any) => d.id === divId);
                     setFormData(prev => ({
                       ...prev,
                       divisionId: divId || 0,
@@ -869,7 +911,7 @@ const ManageWarehousesPage = () => {
                     <SelectValue placeholder="اختر الشعبة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getDivisionsByDepartment(formData.departmentId).filter(d => d.isActive).map(div => (
+                    {apiDivisions.filter((d: any) => d.isActive && d.departmentId === formData.departmentId).map((div: any) => (
                       <SelectItem key={div.id} value={div.id.toString()}>
                         {div.name}
                       </SelectItem>
@@ -886,7 +928,7 @@ const ManageWarehousesPage = () => {
                   value={formData.unitId ? formData.unitId.toString() : ''}
                   onValueChange={(value) => {
                     const unitId = parseInt(value);
-                    const unit = units.find(u => u.id === unitId);
+                    const unit = apiUnits.find((u: any) => u.id === unitId);
                     setFormData(prev => ({
                       ...prev,
                       unitId: unitId || 0,
@@ -898,7 +940,7 @@ const ManageWarehousesPage = () => {
                     <SelectValue placeholder="اختر الوحدة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {getUnitsByDivision(formData.divisionId).filter(u => u.isActive).map(unit => (
+                    {apiUnits.filter((u: any) => u.isActive && u.divisionId === formData.divisionId).map((unit: any) => (
                       <SelectItem key={unit.id} value={unit.id.toString()}>
                         {unit.name}
                       </SelectItem>

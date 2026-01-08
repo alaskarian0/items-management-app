@@ -74,15 +74,36 @@ const DepartmentsPage = () => {
 
   // Sync API data to local state
   useEffect(() => {
-    if (departmentsData && 'items' in departmentsData.data) {
-      setDepartmentsList(departmentsData.data.items);
+    if (departmentsData?.data) {
+      // Handle different response formats
+      if (Array.isArray(departmentsData.data)) {
+        // Direct array response
+        setDepartmentsList(departmentsData.data);
+      } else if ('items' in departmentsData.data) {
+        // Paginated response with items
+        setDepartmentsList(departmentsData.data.items);
+      } else {
+        // Single object response
+        setDepartmentsList([departmentsData.data as Department]);
+      }
     }
   }, [departmentsData]);
 
   useEffect(() => {
-    if (divisionsData && 'items' in divisionsData.data) {
+    if (divisionsData?.data) {
+      let divisionList: any[] = [];
+
+      // Handle different response formats
+      if (Array.isArray(divisionsData.data)) {
+        divisionList = divisionsData.data;
+      } else if ('items' in divisionsData.data) {
+        divisionList = divisionsData.data.items;
+      } else {
+        divisionList = [divisionsData.data];
+      }
+
       // Map divisions to include departmentName
-      const mappedDivisions = divisionsData.data.items.map((div: any) => ({
+      const mappedDivisions = divisionList.map((div: any) => ({
         ...div,
         departmentName: div.department?.name || '',
       }));
@@ -91,9 +112,20 @@ const DepartmentsPage = () => {
   }, [divisionsData]);
 
   useEffect(() => {
-    if (unitsData && 'items' in unitsData.data) {
+    if (unitsData?.data) {
+      let unitList: any[] = [];
+
+      // Handle different response formats
+      if (Array.isArray(unitsData.data)) {
+        unitList = unitsData.data;
+      } else if ('items' in unitsData.data) {
+        unitList = unitsData.data.items;
+      } else {
+        unitList = [unitsData.data];
+      }
+
       // Map units to include departmentName and divisionName
-      const mappedUnits = unitsData.data.items.map((unit: any) => ({
+      const mappedUnits = unitList.map((unit: any) => ({
         ...unit,
         departmentName: unit.department?.name || '',
         divisionName: unit.division?.name || '',

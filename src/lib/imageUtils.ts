@@ -9,7 +9,7 @@
 export const getImageUrl = (path: string, baseUrl?: string): string => {
   if (!path) return '';
   
-  const apiBaseUrl = baseUrl || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+  const apiBaseUrl = baseUrl || process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
   
   // Convert Windows-style backslashes to forward slashes
   const normalizedPath = path.replace(/\\/g, '/');

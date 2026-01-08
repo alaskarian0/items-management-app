@@ -42,18 +42,12 @@ import { useMemo, useState } from "react";
 
 // Import hooks and types
 import { useVendors, type Vendor } from "@/hooks/use-vendors";
+import { useVendorCategories } from "@/hooks/use-vendor-categories";
 import { useEffect } from "react";
-
-// Supplier categories for dropdowns
-const SUPPLIER_CATEGORIES = [
-  "الأثاث والمعدات المكتبي",
-  "تكنولوجيا المعلومات",
-  "الخدمات",
-  "المواد الخام"
-];
 
 const SuppliersPage = () => {
   const { vendors, loading, error, createVendor, updateVendor, deleteVendor: removeVendor } = useVendors();
+  const { categories: categoriesData } = useVendorCategories();
   const [vendorsList, setVendorsList] = useState<Vendor[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentVendor, setCurrentVendor] = useState<Vendor | null>(null);
@@ -71,10 +65,33 @@ const SuppliersPage = () => {
     notes: ""
   });
 
+  // Extract categories from API response
+  const apiCategories = categoriesData?.data || [];
+
   // Sync API data with local state
   useEffect(() => {
-    if (vendors && 'items' in vendors.data) {
-      setVendorsList(vendors.data.items);
+    if (vendors?.data) {
+      // Handle different response formats
+      if (Array.isArray(vendors.data)) {
+        // Map vendors to include categoryName from the category relation
+        const mappedVendors = vendors.data.map((vendor: any) => ({
+          ...vendor,
+          categoryName: vendor.category?.name || '',
+        }));
+        setVendorsList(mappedVendors);
+      } else if ('items' in vendors.data) {
+        const mappedVendors = vendors.data.items.map((vendor: any) => ({
+          ...vendor,
+          categoryName: vendor.category?.name || '',
+        }));
+        setVendorsList(mappedVendors);
+      } else {
+        const vendor = vendors.data as any;
+        setVendorsList([{
+          ...vendor,
+          categoryName: vendor.category?.name || '',
+        }]);
+      }
     }
   }, [vendors]);
 
@@ -153,9 +170,9 @@ const SuppliersPage = () => {
     }
 
     try {
-      // Find categoryId based on category name
-      const categoryIndex = SUPPLIER_CATEGORIES.indexOf(formData.category);
-      const categoryId = categoryIndex >= 0 ? categoryIndex + 1 : undefined;
+      // Find categoryId based on category name from API categories
+      const category = apiCategories.find((cat: any) => cat.name === formData.category);
+      const categoryId = category?.id;
 
       const vendorData = {
         name: formData.name,
@@ -324,9 +341,9 @@ const SuppliersPage = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الفئات</SelectItem>
-                  {SUPPLIER_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {apiCategories.map((category: any) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -441,9 +458,9 @@ const SuppliersPage = () => {
                   <SelectValue placeholder="اختر الفئة" />
                 </SelectTrigger>
                 <SelectContent>
-                  {SUPPLIER_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {apiCategories.map((category: any) => (
+                    <SelectItem key={category.id} value={category.name}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
