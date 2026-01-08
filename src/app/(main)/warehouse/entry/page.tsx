@@ -65,19 +65,26 @@ import {
   X,
 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useImmer } from "use-immer";
 
-// Import shared data and types
-import {
-  departments,
-  divisions,
-  entryTypes,
-  suppliers,
-  units,
-  type DocumentItem
-} from "@/lib/data/warehouse-data";
+// Import API hooks
+import { useDepartments } from "@/hooks/use-departments";
+import { useDivisions } from "@/hooks/use-divisions";
+import { useUnits } from "@/hooks/use-units";
+import { useVendors } from "@/hooks/use-vendors";
+
+// Import shared types
+import { type DocumentItem } from "@/lib/data/warehouse-data";
 import { type Item } from "@/lib/types/warehouse";
+
+// Entry types constant
+const entryTypes = [
+  { value: "purchases", label: "مشتريات" },
+  { value: "gifts", label: "هدايا" },
+  { value: "returns", label: "مرتجعات" },
+];
 
 // Entry types constant
 const entryTypes = [
@@ -89,6 +96,41 @@ const entryTypes = [
 const ItemEntryPage = () => {
   const { selectedWarehouse } = useWarehouse();
   const allItems = useItems() || []; // Load items from DB
+
+  // API hooks for dropdowns
+  const { departments: departmentsData } = useDepartments();
+  const { divisions: divisionsData } = useDivisions();
+  const { units: unitsData } = useUnits();
+  const { vendors: vendorsData } = useVendors();
+
+  // Extract data from API responses and memoize
+  const departments = useMemo(() => {
+    const data = departmentsData?.data;
+    return Array.isArray(data) ? data : [];
+  }, [departmentsData]);
+
+  const divisions = useMemo(() => {
+    const data = divisionsData?.data;
+    return Array.isArray(data) ? data : [];
+  }, [divisionsData]);
+
+  const units = useMemo(() => {
+    const data = unitsData?.data;
+    return Array.isArray(data) ? data : [];
+  }, [unitsData]);
+
+  const suppliers = useMemo(() => {
+    const data = vendorsData?.data;
+    if (Array.isArray(data)) {
+      return data.map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        code: v.code || '',
+      }));
+    }
+    return [];
+  }, [vendorsData]);
+
   const [entryMode, setEntryMode] = useState<"indirect" | "direct">("indirect");
   const [entryType, setEntryType] = useState<string>();
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -119,6 +161,7 @@ const ItemEntryPage = () => {
   // Filter suppliers based on search
   const filteredSuppliers = vendorSearchValue
     ? suppliers.filter(
+      (s: any) =>
       (s: any) =>
         s.name.toLowerCase().includes(vendorSearchValue.toLowerCase())
     )
