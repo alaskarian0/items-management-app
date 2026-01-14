@@ -53,14 +53,46 @@ export const navbarData: NavbarData = {
       icon: LayoutDashboard,
     },
     {
-      title: "إدارة الموظفين",
-      url: "/department/employees",
-      icon: Users,
-    },
-    {
-      title: "تفاصيل الموظف",
-      url: "/department/employee-details",
-      icon: UserCircle,
+      title: "إدارة الأقسام",
+      url: "/department",
+      icon: Building2,
+      items: [
+        {
+          title: "الموظفين",
+          url: "/department/employees",
+          icon: Users,
+        },
+        {
+          title: "تفاصيل الموظف",
+          url: "/department/employee-details",
+          icon: UserCircle,
+        },
+        {
+          title: "طلبات الشراء",
+          url: "/department/purchase-requests",
+          icon: List,
+        },
+        {
+          title: "أوامر الشراء",
+          url: "/department/purchase-orders",
+          icon: ShoppingCart,
+        },
+        {
+          title: "طلبات الإصدار",
+          url: "/department/stock-requests-list",
+          icon: ClipboardList,
+        },
+        {
+          title: "طلبات المخزون",
+          url: "/department/inventory-stock-requests",
+          icon: Boxes,
+        },
+        {
+          title: "عهدة المواد",
+          url: "/department/item-assignments",
+          icon: Gift,
+        },
+      ],
     },
   ],
   projects: [],
