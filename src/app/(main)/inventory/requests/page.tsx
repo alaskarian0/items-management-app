@@ -290,7 +290,7 @@ export default function StockRequestsListPage() {
                             size="sm"
                             onClick={() =>
                               router.push(
-                                `/law-enforcement/stock-requests-list/${request.id}`
+                                `/inventory/requests/${request.id}`
                               )
                             }
                           >

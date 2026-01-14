@@ -165,7 +165,7 @@ export default function EmployeeDetailsPage() {
             <div className="text-center space-y-4">
               <p className="text-lg text-muted-foreground">الموظف غير موجود</p>
               <Button
-                onClick={() => router.push("/law-enforcement/employees")}
+                onClick={() => router.push("/employees")}
               >
                 <ArrowLeft className="h-4 w-4 ml-2" />
                 العودة إلى قائمة الموظفين
@@ -192,7 +192,7 @@ export default function EmployeeDetailsPage() {
         </div>
         <Button
           variant="outline"
-          onClick={() => router.push("/law-enforcement/employees")}
+          onClick={() => router.push("/employees")}
         >
           <ArrowLeft className="h-4 w-4 ml-2" />
           العودة

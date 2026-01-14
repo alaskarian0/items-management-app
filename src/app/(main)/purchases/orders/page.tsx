@@ -225,7 +225,7 @@ export default function PurchaseOrdersPage() {
   }, [orders]);
 
   const handleViewDetails = (order: PurchaseOrder) => {
-    router.push(`/law-enforcement/purchase-orders/${order.id}`);
+    router.push(`/purchases/orders/${order.id}`);
   };
 
   const handleReview = (order: PurchaseOrder, action: "approve" | "reject") => {

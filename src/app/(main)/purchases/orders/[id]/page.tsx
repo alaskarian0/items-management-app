@@ -185,7 +185,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: { id: stri
         <AlertCircle className="h-16 w-16 text-muted-foreground" />
         <h2 className="text-2xl font-bold">طلب الشراء غير موجود</h2>
         <p className="text-muted-foreground">لم يتم العثور على طلب الشراء المطلوب</p>
-        <Button onClick={() => router.push("/law-enforcement/purchase-orders")}>
+        <Button onClick={() => router.push("/purchases/orders")}>
           <ArrowLeft className="h-4 w-4 ml-2" />
           العودة إلى قائمة الطلبات
         </Button>
@@ -278,7 +278,7 @@ export default function PurchaseOrderDetailPage({ params }: { params: { id: stri
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.push("/law-enforcement/purchase-orders")}
+              onClick={() => router.push("/purchases/orders")}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>

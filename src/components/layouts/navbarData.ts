@@ -54,57 +54,45 @@ export const navbarData: NavbarData = {
     },
     {
       title: "إدارة الموظفين",
-      url: "/department/employees",
+      url: "/employees",
       icon: Users,
-      items: [
-        {
-          title: "الموظفين",
-          url: "/department/employees",
-          icon: Users,
-        },
-        {
-          title: "تفاصيل الموظف",
-          url: "/department/employee-details",
-          icon: UserCircle,
-        },
-      ],
     },
     {
-      title: "طلبات الشراء",
-      url: "/department/purchase-orders",
+      title: "إدارة المشتريات",
+      url: "/purchases/orders",
       icon: ShoppingCart,
       items: [
         {
-          title: "طلبات الشراء",
-          url: "/department/purchase-requests",
-          icon: List,
+          title: "إنشاء طلب شراء",
+          url: "/purchases/requests",
+          icon: FileText,
         },
         {
-          title: "أوامر الشراء",
-          url: "/department/purchase-orders",
+          title: "متابعة أوامر الشراء",
+          url: "/purchases/orders",
           icon: ShoppingCart,
         },
       ],
     },
     {
-      title: "المخزون والرصيد",
-      url: "/department/stock-requests-list",
+      title: "إدارة المخزون",
+      url: "/inventory/requests",
       icon: Boxes,
       items: [
         {
-          title: "طلبات الإصدار",
-          url: "/department/stock-requests-list",
+          title: "إنشاء طلب استعلام",
+          url: "/inventory/requests/new",
+          icon: FileText,
+        },
+        {
+          title: "متابعة الطلبات",
+          url: "/inventory/requests",
           icon: ClipboardList,
         },
         {
-          title: "طلبات المخزون",
-          url: "/department/inventory-stock-requests",
-          icon: Boxes,
-        },
-        {
-          title: "عهدة المواد",
-          url: "/department/item-assignments",
-          icon: Gift,
+          title: "إدارة عهدة المواد",
+          url: "/inventory/custody",
+          icon: Archive,
         },
       ],
     },

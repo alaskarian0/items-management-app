@@ -301,7 +301,7 @@ export default function EmployeesPage() {
 
   // Navigate to employee details
   const handleViewDetails = (employee: Employee) => {
-    router.push(`/law-enforcement/employee-details?id=${employee.id}`);
+    router.push(`/employees/details?id=${employee.id}`);
   };
 
   // Statistics
