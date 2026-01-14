@@ -31,6 +31,10 @@ export const useWarehouses = () => {
     refetch
   } = useApiData<Warehouse>('/warehouses', {
     enableFetch: true,
+    pagination: true,
+    initialParams: {
+      limit: 50,
+    },
   });
 
   const createWarehouse = useCallback(async (warehouseData: CreateWarehouseDto) => {
