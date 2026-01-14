@@ -25,6 +25,7 @@ import {
   TrendingDown,
   Truck,
   Users,
+  UserCircle,
   Warehouse,
   Zap,
 } from "lucide-react";
@@ -52,233 +53,17 @@ export const navbarData: NavbarData = {
       icon: LayoutDashboard,
     },
     {
-      title: "إدارة المستندات",
-      url: "/documents/warehouse-documents",
-      icon: FileText,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // All warehouse types
-      items: [
-        {
-          title: "مستندات المخازن",
-          url: "/documents/warehouse-documents",
-          icon: FileText,
-        },
-        {
-          title: "أرشيف المستندات",
-          url: "/documents/archive",
-          icon: Archive,
-        },
-      ],
-    },
-    {
-      title: "عمليات المخازن",
-      url: "/warehouse",
-      icon: Warehouse,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // Hide from law_enforcement
-      items: [
-        {
-          title: "إدارة المخازن",
-          url: "/warehouse/stores",
-          icon: Warehouse,
-          roles: ["general"], // Only admin can manage warehouses
-        },
-
-        {
-          title: "إدخال المواد",
-          url: "/warehouse/entry",
-          icon: PackagePlus,
-        },
-        {
-          title: "إصدار المواد",
-          url: "/warehouse/issuance",
-          icon: PackageMinus,
-        },
-        {
-          title: "حركة المواد",
-          url: "/warehouse/item-movement",
-          icon: History,
-        },
-        {
-          title: "الرصيد المخزني",
-          url: "/warehouse/stock-balance",
-          icon: Boxes,
-        },
-        {
-          title: "شجرة المواد",
-          url: "/tree-items",
-          icon: FolderTree,
-        },
-      ],
-    },
-
-    {
-      title: "المواد الثابتة",
-      url: "/fixed-assets",
-      icon: Landmark,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "consumable",
-      ], // Hide from law_enforcement
-      items: [
-        {
-          title: "ترميز",
-          url: "/fixed-assets/coding",
-          icon: Barcode,
-          warehouses: ["furniture", "carpet", "general", "construction"], // Durable goods warehouses
-        },
-        {
-          title: "الذمة",
-          url: "/fixed-assets/custody",
-          icon: Users,
-          warehouses: ["furniture", "carpet", "general"], // Items that can be assigned to people
-        },
-        {
-          title: "المستهلك",
-          url: "/fixed-assets/consumed",
-          icon: TrendingDown,
-          warehouses: ["general", "consumable"], // Consumable items warehouses + general
-        },
-      ],
-    },
-
-    {
-      title: "التنبيهات والإشعارات",
-      url: "/alerts",
-      icon: Bell,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // Hide from law_enforcement
-      items: [
-        {
-          title: "تنبيهات إعادة الطلب",
-          url: "/alerts/reorder-alerts",
-          icon: BellRing,
-          warehouses: [
-            "furniture",
-            "carpet",
-            "general",
-            "construction",
-            "dry",
-            "frozen",
-            "consumable",
-          ], // Hi
-        },
-        {
-          title: "تنبيهات انتهاء الصلاحية",
-          url: "/alerts/expiry-alerts",
-          icon: CalendarClock,
-          warehouses: ["dry", "frozen"], // Only warehouses with perishable items
-        },
-        {
-          title: "تنبيهات انتهاء الضمان",
-          url: "/alerts/warranty-alerts",
-          icon: ShieldAlert,
-          warehouses: ["furniture", "carpet", "general", "construction"], // Only warehouses with warranty items
-        },
-        {
-          title: "تنبيهات الوقود",
-          url: "/alerts/fuel-alerts",
-          icon: Fuel,
-          warehouses: ["fuel"], // Only accessible to fuel warehouse
-        },
-      ],
-    },
-    // {
-    //   title: "مركز التقارير",
-    //   url: "/reports",
-    //   icon: BarChart3,
-    //   warehouses: [
-    //     "furniture",
-    //     "carpet",
-    //     "general",
-    //     "construction",
-    //     "dry",
-    //     "frozen",
-    //     "fuel",
-    //     "consumable",
-    //   ], // Hide from law_enforcement
-    // },
-  ],
-  projects: [
-    {
-      title: "الأقسام والشعب",
-      url: "/settings/departments",
-      icon: Building2,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // Hide from law_enforcement
-    },
-    {
-      title: "الموردين",
-      url: "/settings/suppliers",
-      icon: Truck,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // Hide from law_enforcement
-    },
-    {
-      title: "وحدات القياس",
-      url: "/settings/units",
-      icon: Ruler,
-      warehouses: [
-        "furniture",
-        "carpet",
-        "general",
-        "construction",
-        "dry",
-        "frozen",
-        "fuel",
-        "consumable",
-      ], // Hide from law_enforcement
-    },
-    {
-      title: "المستخدمين",
-      url: "/settings/users",
+      title: "إدارة الموظفين",
+      url: "/department/employees",
       icon: Users,
-      roles: ["admin"],
+    },
+    {
+      title: "تفاصيل الموظف",
+      url: "/department/employee-details",
+      icon: UserCircle,
     },
   ],
+  projects: [],
 };
 
 // Utility function to filter navigation items based on user role and warehouse
