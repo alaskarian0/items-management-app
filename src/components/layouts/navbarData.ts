@@ -53,9 +53,9 @@ export const navbarData: NavbarData = {
       icon: LayoutDashboard,
     },
     {
-      title: "إدارة الأقسام",
-      url: "/department",
-      icon: Building2,
+      title: "إدارة الموظفين",
+      url: "/department/employees",
+      icon: Users,
       items: [
         {
           title: "الموظفين",
@@ -67,6 +67,13 @@ export const navbarData: NavbarData = {
           url: "/department/employee-details",
           icon: UserCircle,
         },
+      ],
+    },
+    {
+      title: "طلبات الشراء",
+      url: "/department/purchase-orders",
+      icon: ShoppingCart,
+      items: [
         {
           title: "طلبات الشراء",
           url: "/department/purchase-requests",
@@ -77,6 +84,13 @@ export const navbarData: NavbarData = {
           url: "/department/purchase-orders",
           icon: ShoppingCart,
         },
+      ],
+    },
+    {
+      title: "المخزون والرصيد",
+      url: "/department/stock-requests-list",
+      icon: Boxes,
+      items: [
         {
           title: "طلبات الإصدار",
           url: "/department/stock-requests-list",
