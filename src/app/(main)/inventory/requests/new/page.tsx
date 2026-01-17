@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import {
@@ -42,13 +42,16 @@ import {
   PlusCircle,
   Search,
   ClipboardList,
+  Loader2,
 } from "lucide-react";
-import { useItems } from "@/hooks/use-inventory";
+import { useWarehouses } from "@/hooks/use-warehouses";
+import { useItemMasters } from "@/hooks/use-item-masters";
+import { useStockQuery } from "@/hooks/use-stock-query";
 
 // Stock Request Item interface
 interface StockRequestItem {
   id: string;
-  itemId: number | null;
+  itemMasterId: number | null;
   itemCode: string;
   itemName: string;
   unit: string;
@@ -56,26 +59,29 @@ interface StockRequestItem {
   notes: string;
 }
 
-// Warehouse interface
-interface Warehouse {
-  id: string;
-  name: string;
-}
-
-// Warehouses list (from login page)
-const WAREHOUSES: Warehouse[] = [
-  { id: "furniture", name: "مخزن الأثاث والممتلكات العامة" },
-  { id: "carpet", name: "مخزن السجاد والمفروشات" },
-  { id: "general", name: "مخزن المواد العامة" },
-  { id: "construction", name: "مخزن المواد الإنشائية" },
-  { id: "dry", name: "مخزن المواد الجافة" },
-  { id: "frozen", name: "مخزن المواد المجمّدة" },
-  { id: "fuel", name: "مخزن الوقود والزيوت" },
-  { id: "consumable", name: "مخزن المواد المستهلكة" },
-];
-
 export default function InventoryStockRequestsPage() {
-  const allItems = useItems() || [];
+  // Fetch warehouses and items from API
+  const { warehouses, loading: warehousesLoading } = useWarehouses();
+  const { itemMasters, loading: itemsLoading } = useItemMasters();
+  const { createRequest, loading: submitting } = useStockQuery();
+
+  // Extract items array from API response
+  const allItems = useMemo(() => {
+    if (!itemMasters) return [];
+    const response = itemMasters as any;
+    if (Array.isArray(response)) return response;
+    if (response?.data && Array.isArray(response.data)) return response.data;
+    return [];
+  }, [itemMasters]);
+
+  // Extract warehouses array from API response
+  const warehouseList = useMemo(() => {
+    if (!warehouses) return [];
+    const response = warehouses as any;
+    if (Array.isArray(response)) return response;
+    if (response?.data && Array.isArray(response.data)) return response.data;
+    return [];
+  }, [warehouses]);
 
   // Form state
   const [warehouseId, setWarehouseId] = useState("");
@@ -88,9 +94,9 @@ export default function InventoryStockRequestsPage() {
   // Filter items based on search
   const filteredItems = searchValue
     ? allItems.filter(
-        (i) =>
-          i.name.toLowerCase().includes(searchValue.toLowerCase()) ||
-          i.code.toLowerCase().includes(searchValue.toLowerCase())
+        (i: any) =>
+          i.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+          i.code?.toLowerCase().includes(searchValue.toLowerCase())
       )
     : allItems.slice(0, 50);
 
@@ -99,7 +105,7 @@ export default function InventoryStockRequestsPage() {
       ...items,
       {
         id: Date.now().toString(),
-        itemId: null,
+        itemMasterId: null,
         itemCode: "",
         itemName: "",
         unit: "",
@@ -126,7 +132,7 @@ export default function InventoryStockRequestsPage() {
     toast.success("تم حذف المادة");
   };
 
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
     // Validation
     if (!warehouseId) {
       toast.error("الرجاء اختيار المخزن");
@@ -139,9 +145,9 @@ export default function InventoryStockRequestsPage() {
     }
 
     // Validate items
-    const invalidItems = items.filter((item) => !item.itemName);
+    const invalidItems = items.filter((item) => !item.itemMasterId);
     if (invalidItems.length > 0) {
-      toast.error("الرجاء إكمال بيانات جميع المواد");
+      toast.error("الرجاء اختيار جميع المواد من القائمة");
       return;
     }
 
@@ -150,19 +156,33 @@ export default function InventoryStockRequestsPage() {
       return;
     }
 
-    // TODO: Save to database or API
-    // For now, just show success message
+    try {
+      // Create request via API
+      await createRequest({
+        warehouseId: parseInt(warehouseId),
+        requestDate: requestDate,
+        purpose: purpose,
+        items: items.map((item) => ({
+          itemMasterId: item.itemMasterId!,
+          requestedQuantity: item.requestedQuantity,
+          notes: item.notes || undefined,
+        })),
+      });
 
-    // Reset form
-    setWarehouseId("");
-    setRequestDate(new Date().toISOString().split("T")[0]);
-    setPurpose("");
-    setItems([]);
+      // Reset form
+      setWarehouseId("");
+      setRequestDate(new Date().toISOString().split("T")[0]);
+      setPurpose("");
+      setItems([]);
 
-    toast.success("تم إرسال طلب الاستعلام عن المخزون بنجاح");
+      toast.success("تم إرسال طلب الاستعلام عن المخزون بنجاح");
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      toast.error("حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.");
+    }
   };
 
-  const selectedWarehouse = WAREHOUSES.find((w) => w.id === warehouseId);
+  const selectedWarehouse = warehouseList.find((w: any) => w.id?.toString() === warehouseId);
 
   return (
     <div className="space-y-6">
@@ -193,13 +213,13 @@ export default function InventoryStockRequestsPage() {
               <Label>
                 المخزن <span className="text-red-500">*</span>
               </Label>
-              <Select value={warehouseId} onValueChange={setWarehouseId}>
+              <Select value={warehouseId} onValueChange={setWarehouseId} disabled={warehousesLoading}>
                 <SelectTrigger>
-                  <SelectValue placeholder="اختر المخزن المطلوب الاستعلام عنه..." />
+                  <SelectValue placeholder={warehousesLoading ? "جاري التحميل..." : "اختر المخزن المطلوب الاستعلام عنه..."} />
                 </SelectTrigger>
                 <SelectContent>
-                  {WAREHOUSES.map((warehouse) => (
-                    <SelectItem key={warehouse.id} value={warehouse.id}>
+                  {warehouseList.map((warehouse: any) => (
+                    <SelectItem key={warehouse.id} value={warehouse.id?.toString()}>
                       {warehouse.name}
                     </SelectItem>
                   ))}
@@ -214,6 +234,9 @@ export default function InventoryStockRequestsPage() {
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">المخزن المحدد</Label>
                     <p className="font-medium text-lg">{selectedWarehouse.name}</p>
+                    {selectedWarehouse.code && (
+                      <p className="text-sm text-muted-foreground">الكود: {selectedWarehouse.code}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -301,11 +324,11 @@ export default function InventoryStockRequestsPage() {
                             }
                             placeholder="كود المادة"
                             className="text-right"
-                            disabled={!!item.itemId}
+                            disabled={!!item.itemMasterId}
                           />
                         </TableCell>
                         <TableCell className="text-right min-w-[200px]">
-                          {item.itemId ? (
+                          {item.itemMasterId ? (
                             <div className="font-medium">{item.itemName}</div>
                           ) : (
                             <Popover
@@ -316,9 +339,10 @@ export default function InventoryStockRequestsPage() {
                                 <Button
                                   variant="outline"
                                   className="w-full justify-start text-right text-muted-foreground"
+                                  disabled={itemsLoading}
                                 >
                                   <Search className="ml-2 h-4 w-4" />
-                                  {item.itemName || "ابحث عن مادة..."}
+                                  {itemsLoading ? "جاري التحميل..." : item.itemName || "ابحث عن مادة..."}
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent
@@ -343,7 +367,7 @@ export default function InventoryStockRequestsPage() {
                                       </div>
                                     </CommandEmpty>
                                     <CommandGroup>
-                                      {filteredItems.map((itemData) => (
+                                      {filteredItems.map((itemData: any) => (
                                         <CommandItem
                                           key={itemData.id}
                                           onSelect={() => {
@@ -367,10 +391,10 @@ export default function InventoryStockRequestsPage() {
                                               const newItems = [...prevItems];
                                               newItems[index] = {
                                                 ...newItems[index],
-                                                itemId: itemData.id,
+                                                itemMasterId: itemData.id,
                                                 itemName: itemData.name,
                                                 itemCode: itemData.code,
-                                                unit: itemData.unit,
+                                                unit: itemData.unit?.name || itemData.unit?.abbreviation || "قطعة",
                                               };
                                               return newItems;
                                             });
@@ -384,7 +408,7 @@ export default function InventoryStockRequestsPage() {
                                               {itemData.name}
                                             </div>
                                             <div className="text-xs text-muted-foreground">
-                                              {itemData.code} • {itemData.unit}
+                                              {itemData.code} {itemData.unit?.abbreviation && `• ${itemData.unit.abbreviation}`}
                                             </div>
                                           </div>
                                         </CommandItem>
@@ -404,7 +428,7 @@ export default function InventoryStockRequestsPage() {
                             }
                             placeholder="الوحدة"
                             className="w-full text-right"
-                            disabled={!!item.itemId}
+                            disabled={!!item.itemMasterId}
                           />
                         </TableCell>
                         <TableCell className="text-right min-w-[100px]">
@@ -455,9 +479,18 @@ export default function InventoryStockRequestsPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-3">
-            <Button onClick={handleSubmitRequest} size="lg">
-              <Send className="h-4 w-4 ml-2" />
-              إرسال الطلب
+            <Button onClick={handleSubmitRequest} size="lg" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  جاري الإرسال...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 ml-2" />
+                  إرسال الطلب
+                </>
+              )}
             </Button>
           </CardFooter>
         </Card>

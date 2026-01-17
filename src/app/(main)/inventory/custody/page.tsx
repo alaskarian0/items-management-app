@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,11 +33,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -58,155 +53,31 @@ import { toast } from "sonner";
 import {
   PackageCheck,
   UserCheck,
-  Users,
   FileText,
   Search,
-  ChevronDown,
-  ChevronRight,
   Check,
   ChevronsUpDown,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// Individual item with unique code
-interface IndividualItem {
-  id: string;
-  uniqueCode: string; // Each item has its own unique code
-  assignedTo?: string;
-  assignedDivision?: string;
-  assignedUnit?: string;
-  assignedPosition?: string;
-  assignedDate?: string;
-  notes?: string;
-  status: "pending" | "assigned";
-}
-
-// Grouped items by type
-interface ItemGroup {
-  id: string;
-  name: string;
-  baseCode: string;
-  totalQuantity: number;
-  sourceWarehouse: string;
-  receivedDate: string;
-  itemType: "ثابت" | "استهلاكي"; // Fixed asset or Consumable
-  items: IndividualItem[]; // Array of individual items
-}
-
-// Mock data - Each chair has its own unique code
-const MOCK_ITEM_GROUPS: ItemGroup[] = [
-  {
-    id: "GROUP001",
-    name: "كرسي مكتبي دوار",
-    baseCode: "FUR-CHR",
-    totalQuantity: 5,
-    sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
-    receivedDate: "2024-01-15",
-    itemType: "ثابت",
-    items: [
-      { id: "ITM001-1", uniqueCode: "FUR-CHR-2024-001", status: "pending" },
-      { id: "ITM001-2", uniqueCode: "FUR-CHR-2024-002", status: "pending" },
-      { id: "ITM001-3", uniqueCode: "FUR-CHR-2024-003", status: "assigned", assignedTo: "أحمد محمد", assignedDivision: "شعبة التخطيط", assignedDate: "2024-01-16" },
-      { id: "ITM001-4", uniqueCode: "FUR-CHR-2024-004", status: "pending" },
-      { id: "ITM001-5", uniqueCode: "FUR-CHR-2024-005", status: "pending" },
-    ]
-  },
-  {
-    id: "GROUP002",
-    name: "طاولة اجتماعات خشبية",
-    baseCode: "FUR-TBL",
-    totalQuantity: 3,
-    sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
-    receivedDate: "2024-01-16",
-    itemType: "ثابت",
-    items: [
-      { id: "ITM002-1", uniqueCode: "FUR-TBL-2024-001", status: "pending" },
-      { id: "ITM002-2", uniqueCode: "FUR-TBL-2024-002", status: "pending" },
-      { id: "ITM002-3", uniqueCode: "FUR-TBL-2024-003", status: "assigned", assignedTo: "سارة علي", assignedDivision: "شعبة المتابعة" },
-    ]
-  },
-  {
-    id: "GROUP003",
-    name: "سجاد فارسي",
-    baseCode: "CAR-PRS",
-    totalQuantity: 4,
-    sourceWarehouse: "مخزن السجاد والمفروشات",
-    receivedDate: "2024-01-17",
-    itemType: "ثابت",
-    items: [
-      { id: "ITM003-1", uniqueCode: "CAR-PRS-2024-001", status: "pending" },
-      { id: "ITM003-2", uniqueCode: "CAR-PRS-2024-002", status: "pending" },
-      { id: "ITM003-3", uniqueCode: "CAR-PRS-2024-003", status: "pending" },
-      { id: "ITM003-4", uniqueCode: "CAR-PRS-2024-004", status: "assigned", assignedTo: "محمد حسن", assignedDivision: "شعبة الحسابات" },
-    ]
-  },
-];
-
-// Mock divisions/units data
-const DIVISIONS = [
-  { id: "div1", name: "شعبة التخطيط" },
-  { id: "div2", name: "شعبة المتابعة" },
-  { id: "div3", name: "شعبة الحسابات" },
-  { id: "div4", name: "شعبة الموارد البشرية" },
-];
-
-// Employee interface
-interface Employee {
-  id: string;
-  name: string;
-  position: string;
-  divisionId: string;
-  divisionName: string;
-  unit?: string;
-  phone?: string;
-}
-
-// Mock employees data
-const MOCK_EMPLOYEES: Employee[] = [
-  {
-    id: "EMP001",
-    name: "أحمد محمد علي",
-    position: "مدير التخطيط",
-    divisionId: "div1",
-    divisionName: "شعبة التخطيط",
-    unit: "وحدة التخطيط الاستراتيجي",
-    phone: "07701234567",
-  },
-  {
-    id: "EMP002",
-    name: "سارة علي حسن",
-    position: "مسؤولة المتابعة",
-    divisionId: "div2",
-    divisionName: "شعبة المتابعة",
-    phone: "07709876543",
-  },
-  {
-    id: "EMP003",
-    name: "محمد حسن جاسم",
-    position: "محاسب",
-    divisionId: "div3",
-    divisionName: "شعبة الحسابات",
-    unit: "وحدة المحاسبة المالية",
-    phone: "07705551234",
-  },
-  {
-    id: "EMP004",
-    name: "فاطمة أحمد",
-    position: "موظفة موارد بشرية",
-    divisionId: "div4",
-    divisionName: "شعبة الموارد البشرية",
-    phone: "07708889999",
-  },
-];
+import { useAssetCustody, usePendingItems, CUSTODY_STATUS } from "@/hooks/use-asset-custody";
+import { useEmployees } from "@/hooks/use-employees";
+import { useDivisions } from "@/hooks/use-divisions";
 
 export default function ItemAssignmentsPage() {
-  const [itemGroups, setItemGroups] = useState<ItemGroup[]>(MOCK_ITEM_GROUPS);
-  const [selectedItem, setSelectedItem] = useState<{group: ItemGroup, item: IndividualItem} | null>(null);
+  // API hooks
+  const { custodies, loading: custodiesLoading, assignItem, refetch: refetchCustodies } = useAssetCustody();
+  const { pendingItems, loading: pendingLoading, refetch: refetchPending } = usePendingItems();
+  const { employees, loading: employeesLoading } = useEmployees({ isActive: true });
+  const { divisions, loading: divisionsLoading } = useDivisions();
+
+  // UI state
+  const [selectedItem, setSelectedItem] = useState<any>(null);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [employeeComboboxOpen, setEmployeeComboboxOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Assignment form state
   const [assignmentData, setAssignmentData] = useState({
@@ -214,20 +85,14 @@ export default function ItemAssignmentsPage() {
     notes: "",
   });
 
-  const toggleGroupExpansion = (groupId: string) => {
-    setExpandedGroups(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(groupId)) {
-        newSet.delete(groupId);
-      } else {
-        newSet.add(groupId);
-      }
-      return newSet;
-    });
-  };
+  // Get selected employee
+  const selectedEmployee = useMemo(() => {
+    if (!assignmentData.employeeId) return null;
+    return employees.find((emp) => emp.id.toString() === assignmentData.employeeId);
+  }, [assignmentData.employeeId, employees]);
 
-  const handleAssignClick = (group: ItemGroup, item: IndividualItem) => {
-    setSelectedItem({ group, item });
+  const handleAssignClick = (item: any) => {
+    setSelectedItem(item);
     setAssignmentData({
       employeeId: "",
       notes: "",
@@ -236,7 +101,7 @@ export default function ItemAssignmentsPage() {
     setAssignDialogOpen(true);
   };
 
-  const handleAssignSubmit = () => {
+  const handleAssignSubmit = async () => {
     if (!selectedItem) return;
 
     // Validate required fields
@@ -245,64 +110,61 @@ export default function ItemAssignmentsPage() {
       return;
     }
 
-    // Get selected employee data
-    const selectedEmployee = MOCK_EMPLOYEES.find(emp => emp.id === assignmentData.employeeId);
     if (!selectedEmployee) {
       toast.error("الموظف المحدد غير موجود");
       return;
     }
 
-    // Update individual item status
-    setItemGroups(groups =>
-      groups.map(group =>
-        group.id === selectedItem.group.id
-          ? {
-              ...group,
-              items: group.items.map(item =>
-                item.id === selectedItem.item.id
-                  ? {
-                      ...item,
-                      status: "assigned" as const,
-                      assignedTo: selectedEmployee.name,
-                      assignedDivision: selectedEmployee.divisionName,
-                      assignedUnit: selectedEmployee.unit,
-                      assignedPosition: selectedEmployee.position,
-                      assignedDate: new Date().toISOString().split('T')[0],
-                      notes: assignmentData.notes,
-                    }
-                  : item
-              )
-            }
-          : group
-      )
-    );
+    setSubmitting(true);
+    try {
+      await assignItem({
+        itemInstanceId: selectedItem.id,
+        employeeId: parseInt(assignmentData.employeeId),
+        departmentId: selectedEmployee.departmentId?.toString() || "",
+        divisionId: selectedEmployee.divisionId?.toString() || "",
+        unitId: selectedEmployee.unitId?.toString() || "",
+        startDate: new Date().toISOString().split('T')[0],
+        notes: assignmentData.notes || undefined,
+      });
 
-    toast.success(`تم تعيين ${selectedItem.item.uniqueCode} إلى ${selectedEmployee.name} (${selectedEmployee.divisionName}) بنجاح`);
-    setAssignDialogOpen(false);
-    setSelectedItem(null);
+      toast.success(`تم تعيين ${selectedItem.itemMaster?.name} إلى ${selectedEmployee.fullName} بنجاح`);
+      setAssignDialogOpen(false);
+      setSelectedItem(null);
+      refetchPending();
+      refetchCustodies();
+    } catch (error) {
+      console.error('Error assigning item:', error);
+      toast.error("حدث خطأ أثناء تعيين المادة");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Filter groups based on search term and status
-  const filteredGroups = itemGroups.map(group => ({
-    ...group,
-    items: group.items.filter(item => {
-      const matchesStatus = filterStatus === "all" || item.status === filterStatus;
-      const matchesSearch =
-        group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.uniqueCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.assignedTo && item.assignedTo.toLowerCase().includes(searchTerm.toLowerCase()));
-      return matchesStatus && matchesSearch;
-    })
-  })).filter(group => group.items.length > 0);
+  // Filter pending items based on search term
+  const filteredPendingItems = useMemo(() => {
+    if (!searchTerm) return pendingItems;
+    return pendingItems.filter((item) =>
+      item.itemMaster?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.itemMaster?.code?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [pendingItems, searchTerm]);
+
+  // Filter custodies based on status
+  const filteredCustodies = useMemo(() => {
+    if (filterStatus === "all") return custodies;
+    const statusNum = filterStatus === "active" ? CUSTODY_STATUS.ACTIVE : CUSTODY_STATUS.RETURNED;
+    return custodies.filter((c) => c.status === statusNum);
+  }, [custodies, filterStatus]);
 
   // Calculate statistics
   const stats = {
-    totalItems: itemGroups.reduce((sum, group) => sum + group.items.length, 0),
-    pending: itemGroups.reduce((sum, group) =>
-      sum + group.items.filter(i => i.status === "pending").length, 0),
-    assigned: itemGroups.reduce((sum, group) =>
-      sum + group.items.filter(i => i.status === "assigned").length, 0),
+    totalPending: pendingItems.length,
+    totalAssigned: custodies.filter((c) => c.status === CUSTODY_STATUS.ACTIVE).length,
+    totalReturned: custodies.filter((c) => c.status === CUSTODY_STATUS.RETURNED).length,
   };
+
+  const isLoading = custodiesLoading || pendingLoading || employeesLoading || divisionsLoading;
 
   return (
     <div className="space-y-6">
@@ -321,26 +183,13 @@ export default function ItemAssignmentsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي المواد</CardTitle>
-            <PackageCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalItems}</div>
-            <p className="text-xs text-muted-foreground">
-              عدد المواد الفردية المستلمة
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">بانتظار التوزيع</CardTitle>
             <FileText className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pending}</div>
+            <div className="text-2xl font-bold">{stats.totalPending}</div>
             <p className="text-xs text-muted-foreground">
-              مواد تحتاج إلى تعيين
+              مواد متاحة للتعيين
             </p>
           </CardContent>
         </Card>
@@ -351,20 +200,33 @@ export default function ItemAssignmentsPage() {
             <UserCheck className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.assigned}</div>
+            <div className="text-2xl font-bold">{stats.totalAssigned}</div>
             <p className="text-xs text-muted-foreground">
-              مواد تم تعيينها للموظفين
+              مواد موزعة حالياً
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">تم الإرجاع</CardTitle>
+            <PackageCheck className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalReturned}</div>
+            <p className="text-xs text-muted-foreground">
+              مواد تم إرجاعها
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Pending Items Section */}
       <Card>
         <CardHeader>
-          <CardTitle>المواد المستلمة</CardTitle>
+          <CardTitle>المواد المتاحة للتوزيع</CardTitle>
           <CardDescription>
-            عرض وتعيين المواد المرسلة من المخازن الأخرى - كل مادة لها كود فريد
+            المواد التي لم يتم تعيينها بعد ومتاحة للتوزيع على الموظفين
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -374,13 +236,86 @@ export default function ItemAssignmentsPage() {
               <div className="relative">
                 <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="ابحث عن المواد أو الكود أو المستلم..."
+                  placeholder="ابحث عن المواد..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pr-10"
                 />
               </div>
             </div>
+          </div>
+
+          {/* Pending Items Table */}
+          <div className="border rounded-md overflow-x-auto">
+            <Table dir="rtl">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right min-w-[150px]">الرقم التسلسلي</TableHead>
+                  <TableHead className="text-right min-w-[200px]">اسم المادة</TableHead>
+                  <TableHead className="text-right min-w-[100px]">الكود</TableHead>
+                  <TableHead className="text-right min-w-[100px]">الفئة</TableHead>
+                  <TableHead className="text-right min-w-[150px]">المخزن</TableHead>
+                  <TableHead className="text-right min-w-[100px]">الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredPendingItems.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                      لا توجد مواد متاحة للتوزيع
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredPendingItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-right font-mono">
+                        {item.serialNumber}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {item.itemMaster?.name}
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-muted-foreground">
+                        {item.itemMaster?.code}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.itemMaster?.category?.name || "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {item.warehouse?.name || "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAssignClick(item)}
+                        >
+                          تعيين
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Active Custodies Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>سجل التوزيعات</CardTitle>
+          <CardDescription>
+            عرض جميع عمليات التوزيع السابقة والحالية
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-4 items-end">
             <div className="w-[200px]">
               <Label>الحالة</Label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -389,128 +324,66 @@ export default function ItemAssignmentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">الكل</SelectItem>
-                  <SelectItem value="pending">بانتظار التوزيع</SelectItem>
-                  <SelectItem value="assigned">تم التوزيع</SelectItem>
+                  <SelectItem value="active">نشط</SelectItem>
+                  <SelectItem value="returned">تم الإرجاع</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Items Table with Collapsible Rows */}
+          {/* Custodies Table */}
           <div className="border rounded-md overflow-x-auto">
             <Table dir="rtl">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right w-10"></TableHead>
+                  <TableHead className="text-right min-w-[120px]">رقم العهدة</TableHead>
                   <TableHead className="text-right min-w-[200px]">اسم المادة</TableHead>
-                  <TableHead className="text-right min-w-[150px]">الكود الفريد</TableHead>
-                  <TableHead className="text-right min-w-[100px]">النوع</TableHead>
-                  <TableHead className="text-right min-w-[180px]">المخزن المصدر</TableHead>
-                  <TableHead className="text-right min-w-[150px]">المستلم</TableHead>
-                  <TableHead className="text-right min-w-[120px]">الحالة</TableHead>
-                  <TableHead className="text-right min-w-[100px]">الإجراءات</TableHead>
+                  <TableHead className="text-right min-w-[150px]">الموظف</TableHead>
+                  <TableHead className="text-right min-w-[120px]">الشعبة</TableHead>
+                  <TableHead className="text-right min-w-[100px]">تاريخ البدء</TableHead>
+                  <TableHead className="text-right min-w-[100px]">الحالة</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredGroups.length === 0 ? (
+                {custodiesLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground h-24">
-                      لا توجد مواد
+                    <TableCell colSpan={6} className="text-center h-24">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredCustodies.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
+                      لا توجد توزيعات
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredGroups.map((group) => (
-                    <Collapsible
-                      key={group.id}
-                      open={expandedGroups.has(group.id)}
-                      onOpenChange={() => toggleGroupExpansion(group.id)}
-                      asChild
-                    >
-                      <>
-                        {/* Group Header Row */}
-                        <CollapsibleTrigger asChild>
-                          <TableRow className="cursor-pointer hover:bg-muted/50 bg-muted/30">
-                            <TableCell className="text-right">
-                              {expandedGroups.has(group.id) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">
-                              {group.name}
-                              <div className="text-xs text-muted-foreground">
-                                {group.items.filter(i => i.status === "pending").length} بانتظار التوزيع، {group.items.filter(i => i.status === "assigned").length} تم التوزيع
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right font-mono text-muted-foreground">
-                              {group.baseCode}-...
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant={group.itemType === "ثابت" ? "default" : "secondary"}>
-                                {group.itemType}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">{group.sourceWarehouse}</TableCell>
-                            <TableCell className="text-right text-muted-foreground">
-                              {group.totalQuantity} مواد فردية
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Badge variant="outline">
-                                {group.items.length} مادة
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right"></TableCell>
-                          </TableRow>
-                        </CollapsibleTrigger>
-
-                        {/* Individual Items */}
-                        <CollapsibleContent asChild>
-                          <>
-                            {group.items.map((item) => (
-                              <TableRow key={item.id} className="bg-background">
-                                <TableCell className="text-right"></TableCell>
-                                <TableCell className="text-right pr-8 text-muted-foreground">
-                                  └ {group.name}
-                                </TableCell>
-                                <TableCell className="text-right font-mono font-semibold">
-                                  {item.uniqueCode}
-                                </TableCell>
-                                <TableCell className="text-right"></TableCell>
-                                <TableCell className="text-right"></TableCell>
-                                <TableCell className="text-right">
-                                  {item.assignedTo ? (
-                                    <div>
-                                      <div className="font-medium">{item.assignedTo}</div>
-                                      <div className="text-xs text-muted-foreground">
-                                        {item.assignedDivision}
-                                        {item.assignedUnit && ` - ${item.assignedUnit}`}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <span className="text-muted-foreground">-</span>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Badge variant={item.status === "pending" ? "outline" : "default"}>
-                                    {item.status === "pending" ? "بانتظار التوزيع" : "تم التوزيع"}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleAssignClick(group, item)}
-                                    disabled={item.status === "assigned"}
-                                  >
-                                    تعيين
-                                  </Button>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </>
-                        </CollapsibleContent>
-                      </>
-                    </Collapsible>
+                  filteredCustodies.map((custody) => (
+                    <TableRow key={custody.id}>
+                      <TableCell className="text-right font-mono">
+                        {custody.custodyNumber}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {custody.itemInstance?.itemMaster?.name}
+                        <div className="text-xs text-muted-foreground">
+                          {custody.itemInstance?.serialNumber}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {custody.employee?.fullName}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {custody.employee?.division?.name || "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {new Date(custody.startDate).toLocaleDateString("ar-IQ")}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={custody.status === CUSTODY_STATUS.ACTIVE ? "default" : "secondary"}>
+                          {custody.statusText}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
                   ))
                 )}
               </TableBody>
@@ -527,8 +400,8 @@ export default function ItemAssignmentsPage() {
             <DialogDescription>
               {selectedItem && (
                 <>
-                  تعيين <span className="font-mono font-semibold">{selectedItem.item.uniqueCode}</span>
-                  {" - "}{selectedItem.group.name}
+                  تعيين <span className="font-mono font-semibold">{selectedItem.serialNumber}</span>
+                  {" - "}{selectedItem.itemMaster?.name}
                 </>
               )}
             </DialogDescription>
@@ -545,10 +418,15 @@ export default function ItemAssignmentsPage() {
                     role="combobox"
                     aria-expanded={employeeComboboxOpen}
                     className="w-full justify-between"
+                    disabled={employeesLoading}
                   >
-                    {assignmentData.employeeId
-                      ? MOCK_EMPLOYEES.find((emp) => emp.id === assignmentData.employeeId)?.name
-                      : "ابحث واختر الموظف..."}
+                    {employeesLoading ? (
+                      "جاري التحميل..."
+                    ) : selectedEmployee ? (
+                      selectedEmployee.fullName
+                    ) : (
+                      "ابحث واختر الموظف..."
+                    )}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -558,25 +436,25 @@ export default function ItemAssignmentsPage() {
                     <CommandList>
                       <CommandEmpty>لا يوجد موظفين مطابقين للبحث</CommandEmpty>
                       <CommandGroup>
-                        {MOCK_EMPLOYEES.map((emp) => (
+                        {employees.map((emp) => (
                           <CommandItem
                             key={emp.id}
-                            value={`${emp.name} ${emp.position} ${emp.divisionName} ${emp.id}`}
+                            value={`${emp.fullName} ${emp.employeeId} ${emp.division?.name || ""}`}
                             onSelect={() => {
-                              setAssignmentData({ ...assignmentData, employeeId: emp.id });
+                              setAssignmentData({ ...assignmentData, employeeId: emp.id.toString() });
                               setEmployeeComboboxOpen(false);
                             }}
                           >
                             <div className="flex flex-col items-start flex-1">
-                              <span className="font-medium">{emp.name}</span>
+                              <span className="font-medium">{emp.fullName}</span>
                               <span className="text-xs text-muted-foreground">
-                                {emp.position} - {emp.divisionName}
+                                {emp.employeeId} - {emp.division?.name || "غير محدد"}
                               </span>
                             </div>
                             <Check
                               className={cn(
                                 "ml-2 h-4 w-4",
-                                assignmentData.employeeId === emp.id ? "opacity-100" : "opacity-0"
+                                assignmentData.employeeId === emp.id.toString() ? "opacity-100" : "opacity-0"
                               )}
                             />
                           </CommandItem>
@@ -589,41 +467,40 @@ export default function ItemAssignmentsPage() {
             </div>
 
             {/* Display selected employee details */}
-            {assignmentData.employeeId && (() => {
-              const selectedEmployee = MOCK_EMPLOYEES.find(emp => emp.id === assignmentData.employeeId);
-              return selectedEmployee ? (
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+            {selectedEmployee && (
+              <Card className="bg-muted/50">
+                <CardContent className="pt-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">الاسم</Label>
+                      <p className="font-medium">{selectedEmployee.fullName}</p>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">رقم الموظف</Label>
+                      <p className="font-medium font-mono">{selectedEmployee.employeeId}</p>
+                    </div>
+                    {selectedEmployee.department && (
                       <div>
-                        <Label className="text-xs text-muted-foreground">الاسم</Label>
-                        <p className="font-medium">{selectedEmployee.name}</p>
+                        <Label className="text-xs text-muted-foreground">الدائرة</Label>
+                        <p className="font-medium">{selectedEmployee.department.name}</p>
                       </div>
-                      <div>
-                        <Label className="text-xs text-muted-foreground">المنصب</Label>
-                        <p className="font-medium">{selectedEmployee.position}</p>
-                      </div>
+                    )}
+                    {selectedEmployee.division && (
                       <div>
                         <Label className="text-xs text-muted-foreground">الشعبة</Label>
-                        <p className="font-medium">{selectedEmployee.divisionName}</p>
+                        <p className="font-medium">{selectedEmployee.division.name}</p>
                       </div>
-                      {selectedEmployee.unit && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">الوحدة</Label>
-                          <p className="font-medium">{selectedEmployee.unit}</p>
-                        </div>
-                      )}
-                      {selectedEmployee.phone && (
-                        <div>
-                          <Label className="text-xs text-muted-foreground">رقم الهاتف</Label>
-                          <p className="font-medium font-mono">{selectedEmployee.phone}</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : null;
-            })()}
+                    )}
+                    {selectedEmployee.unit && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">الوحدة</Label>
+                        <p className="font-medium">{selectedEmployee.unit.name}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="notes">ملاحظات</Label>
@@ -640,11 +517,18 @@ export default function ItemAssignmentsPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)} disabled={submitting}>
               إلغاء
             </Button>
-            <Button onClick={handleAssignSubmit}>
-              تأكيد التعيين
+            <Button onClick={handleAssignSubmit} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                  جاري التعيين...
+                </>
+              ) : (
+                "تأكيد التعيين"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

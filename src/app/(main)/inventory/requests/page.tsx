@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,93 +29,45 @@ import {
   Search,
   Eye,
   FileText,
+  Loader2,
+  XCircle,
 } from "lucide-react";
-
-// Stock Request interface
-interface StockRequest {
-  id: string;
-  requestNumber: string;
-  submittedDate: string;
-  warehouseName: string;
-  warehouseId: string;
-  itemsCount: number;
-  status: "pending" | "completed" | "rejected";
-  submittedBy: string;
-}
-
-// Mock submitted requests
-const MOCK_SUBMITTED_REQUESTS: StockRequest[] = [
-  {
-    id: "1",
-    requestNumber: "SR-2024-001",
-    submittedDate: "2024-01-20",
-    warehouseName: "مخزن الأثاث والممتلكات العامة",
-    warehouseId: "furniture",
-    itemsCount: 3,
-    status: "pending",
-    submittedBy: "قسم حفظ النظام",
-  },
-  {
-    id: "2",
-    requestNumber: "SR-2024-002",
-    submittedDate: "2024-01-18",
-    warehouseName: "مخزن المواد العامة",
-    warehouseId: "general",
-    itemsCount: 5,
-    status: "completed",
-    submittedBy: "قسم حفظ النظام",
-  },
-  {
-    id: "3",
-    requestNumber: "SR-2024-003",
-    submittedDate: "2024-01-15",
-    warehouseName: "مخزن المواد الجافة",
-    warehouseId: "dry",
-    itemsCount: 2,
-    status: "rejected",
-    submittedBy: "قسم حفظ النظام",
-  },
-  {
-    id: "4",
-    requestNumber: "SR-2024-004",
-    submittedDate: "2024-01-10",
-    warehouseName: "مخزن الوقود والزيوت",
-    warehouseId: "fuel",
-    itemsCount: 4,
-    status: "completed",
-    submittedBy: "قسم حفظ النظام",
-  },
-];
+import { useStockQuery, STOCK_QUERY_STATUS } from "@/hooks/use-stock-query";
 
 export default function StockRequestsListPage() {
   const router = useRouter();
-  const [requests, setRequests] = useState<StockRequest[]>(
-    MOCK_SUBMITTED_REQUESTS
-  );
+  const { requests, loading, meta, setFilters } = useStockQuery();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: number) => {
     switch (status) {
-      case "pending":
+      case STOCK_QUERY_STATUS.PENDING:
         return (
           <Badge className="bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20">
             <Clock className="h-3 w-3 ml-1" />
             قيد المراجعة
           </Badge>
         );
-      case "completed":
+      case STOCK_QUERY_STATUS.APPROVED:
         return (
           <Badge className="bg-green-500/10 text-green-700 hover:bg-green-500/20">
             <CheckCircle className="h-3 w-3 ml-1" />
-            مكتمل
+            تمت الموافقة
           </Badge>
         );
-      case "rejected":
+      case STOCK_QUERY_STATUS.REJECTED:
         return (
           <Badge className="bg-red-500/10 text-red-700 hover:bg-red-500/20">
-            <AlertCircle className="h-3 w-3 ml-1" />
+            <XCircle className="h-3 w-3 ml-1" />
             مرفوض
+          </Badge>
+        );
+      case STOCK_QUERY_STATUS.COMPLETED:
+        return (
+          <Badge className="bg-blue-500/10 text-blue-700 hover:bg-blue-500/20">
+            <CheckCircle className="h-3 w-3 ml-1" />
+            مكتمل
           </Badge>
         );
       default:
@@ -124,17 +76,26 @@ export default function StockRequestsListPage() {
   };
 
   // Filter requests based on search and status
-  const filteredRequests = requests.filter((request) => {
-    const matchesSearch =
-      request.requestNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.warehouseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.submittedBy.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredRequests = useMemo(() => {
+    return requests.filter((request) => {
+      const matchesSearch =
+        request.requestNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.warehouse?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.requesterName?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "all" || request.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "all" || request.status.toString() === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    });
+  }, [requests, searchTerm, statusFilter]);
+
+  // Calculate statistics
+  const stats = useMemo(() => ({
+    pending: requests.filter((r) => r.status === STOCK_QUERY_STATUS.PENDING).length,
+    approved: requests.filter((r) => r.status === STOCK_QUERY_STATUS.APPROVED).length,
+    rejected: requests.filter((r) => r.status === STOCK_QUERY_STATUS.REJECTED).length,
+  }), [requests]);
 
   return (
     <div className="space-y-6">
@@ -156,9 +117,7 @@ export default function StockRequestsListPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">قيد المراجعة</p>
-                <p className="text-2xl font-bold">
-                  {requests.filter((r) => r.status === "pending").length}
-                </p>
+                <p className="text-2xl font-bold">{stats.pending}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
             </div>
@@ -169,10 +128,8 @@ export default function StockRequestsListPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">مكتمل</p>
-                <p className="text-2xl font-bold">
-                  {requests.filter((r) => r.status === "completed").length}
-                </p>
+                <p className="text-sm text-muted-foreground">تمت الموافقة</p>
+                <p className="text-2xl font-bold">{stats.approved}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -184,9 +141,7 @@ export default function StockRequestsListPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">مرفوض</p>
-                <p className="text-2xl font-bold">
-                  {requests.filter((r) => r.status === "rejected").length}
-                </p>
+                <p className="text-2xl font-bold">{stats.rejected}</p>
               </div>
               <AlertCircle className="h-8 w-8 text-red-600" />
             </div>
@@ -219,9 +174,10 @@ export default function StockRequestsListPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الحالات</SelectItem>
-                  <SelectItem value="pending">قيد المراجعة</SelectItem>
-                  <SelectItem value="completed">مكتمل</SelectItem>
-                  <SelectItem value="rejected">مرفوض</SelectItem>
+                  <SelectItem value={STOCK_QUERY_STATUS.PENDING.toString()}>قيد المراجعة</SelectItem>
+                  <SelectItem value={STOCK_QUERY_STATUS.APPROVED.toString()}>تمت الموافقة</SelectItem>
+                  <SelectItem value={STOCK_QUERY_STATUS.REJECTED.toString()}>مرفوض</SelectItem>
+                  <SelectItem value={STOCK_QUERY_STATUS.COMPLETED.toString()}>مكتمل</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -249,7 +205,13 @@ export default function StockRequestsListPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRequests.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center h-24">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRequests.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={7}
@@ -267,18 +229,16 @@ export default function StockRequestsListPage() {
                         {request.requestNumber}
                       </TableCell>
                       <TableCell className="text-right">
-                        {new Date(request.submittedDate).toLocaleDateString(
-                          "ar-IQ"
-                        )}
+                        {new Date(request.requestDate).toLocaleDateString("ar-IQ")}
                       </TableCell>
                       <TableCell className="text-right">
-                        {request.warehouseName}
+                        {request.warehouse?.name || "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {request.submittedBy}
+                        {request.requesterName || request.department?.name || "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {request.itemsCount}
+                        {request.itemCount}
                       </TableCell>
                       <TableCell className="text-right">
                         {getStatusBadge(request.status)}
@@ -289,15 +249,13 @@ export default function StockRequestsListPage() {
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              router.push(
-                                `/inventory/requests/${request.id}`
-                              )
+                              router.push(`/inventory/requests/${request.id}`)
                             }
                           >
                             <Eye className="h-4 w-4 ml-1" />
                             عرض
                           </Button>
-                          {request.status === "completed" && (
+                          {(request.status === STOCK_QUERY_STATUS.APPROVED || request.status === STOCK_QUERY_STATUS.COMPLETED) && (
                             <Button variant="outline" size="sm">
                               <FileText className="h-4 w-4 ml-1" />
                               التقرير
