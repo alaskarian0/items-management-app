@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   UserPlus,
@@ -43,174 +44,45 @@ import {
   Trash2,
   Edit,
   Search,
-  Building2,
   PackageCheck,
   Eye,
+  Loader2,
 } from "lucide-react";
-
-// Item assigned to employee
-interface AssignedItem {
-  id: string;
-  uniqueCode: string;
-  itemName: string;
-  itemType: "ثابت" | "استهلاكي";
-  sourceWarehouse: string;
-  assignedDate: string;
-  divisionName: string;
-  unit?: string;
-  notes?: string;
-}
-
-// Employee interface
-interface Employee {
-  id: string;
-  name: string;
-  position: string;
-  divisionId: string;
-  divisionName: string;
-  unit?: string;
-  phone?: string;
-  createdAt: string;
-  items: AssignedItem[];
-}
-
-// Mock divisions data
-const DIVISIONS = [
-  { id: "div1", name: "شعبة التخطيط" },
-  { id: "div2", name: "شعبة المتابعة" },
-  { id: "div3", name: "شعبة الحسابات" },
-  { id: "div4", name: "شعبة الموارد البشرية" },
-];
-
-// Mock employees data with items
-const MOCK_EMPLOYEES: Employee[] = [
-  {
-    id: "EMP001",
-    name: "أحمد محمد علي",
-    position: "مدير التخطيط",
-    divisionId: "div1",
-    divisionName: "شعبة التخطيط",
-    unit: "وحدة التخطيط الاستراتيجي",
-    phone: "07701234567",
-    createdAt: "2024-01-01",
-    items: [
-      {
-        id: "ITM001",
-        uniqueCode: "FUR-CHR-2024-003",
-        itemName: "كرسي مكتبي دوار",
-        itemType: "ثابت",
-        sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
-        assignedDate: "2024-01-16",
-        divisionName: "شعبة التخطيط",
-        notes: "كرسي جديد للمكتب الرئيسي",
-      },
-      {
-        id: "ITM002",
-        uniqueCode: "FUR-DSK-2024-001",
-        itemName: "مكتب خشبي",
-        itemType: "ثابت",
-        sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
-        assignedDate: "2024-01-18",
-        divisionName: "شعبة التخطيط",
-      },
-      {
-        id: "ITM003",
-        uniqueCode: "IT-LAP-2024-005",
-        itemName: "حاسوب محمول Dell",
-        itemType: "ثابت",
-        sourceWarehouse: "مخزن المواد العامة",
-        assignedDate: "2024-01-20",
-        divisionName: "شعبة التخطيط",
-      },
-    ],
-  },
-  {
-    id: "EMP002",
-    name: "سارة علي حسن",
-    position: "مسؤولة المتابعة",
-    divisionId: "div2",
-    divisionName: "شعبة المتابعة",
-    phone: "07709876543",
-    createdAt: "2024-01-05",
-    items: [
-      {
-        id: "ITM004",
-        uniqueCode: "FUR-TBL-2024-003",
-        itemName: "طاولة اجتماعات خشبية",
-        itemType: "ثابت",
-        sourceWarehouse: "مخزن الأثاث والممتلكات العامة",
-        assignedDate: "2024-01-17",
-        divisionName: "شعبة المتابعة",
-      },
-      {
-        id: "ITM005",
-        uniqueCode: "IT-PRN-2024-002",
-        itemName: "طابعة HP LaserJet",
-        itemType: "ثابت",
-        sourceWarehouse: "مخزن المواد العامة",
-        assignedDate: "2024-01-19",
-        divisionName: "شعبة المتابعة",
-      },
-    ],
-  },
-  {
-    id: "EMP003",
-    name: "محمد حسن جاسم",
-    position: "محاسب",
-    divisionId: "div3",
-    divisionName: "شعبة الحسابات",
-    unit: "وحدة المحاسبة المالية",
-    phone: "07705551234",
-    createdAt: "2024-01-10",
-    items: [
-      {
-        id: "ITM006",
-        uniqueCode: "CAR-PRS-2024-004",
-        itemName: "سجاد فارسي",
-        itemType: "ثابت",
-        sourceWarehouse: "مخزن السجاد والمفروشات",
-        assignedDate: "2024-01-15",
-        divisionName: "شعبة الحسابات",
-      },
-    ],
-  },
-  {
-    id: "EMP004",
-    name: "فاطمة أحمد",
-    position: "موظفة موارد بشرية",
-    divisionId: "div4",
-    divisionName: "شعبة الموارد البشرية",
-    phone: "07708889999",
-    createdAt: "2024-01-12",
-    items: [],
-  },
-];
+import { useEmployees, Employee } from "@/hooks/use-employees";
+import { useDepartments } from "@/hooks/use-departments";
+import { useDivisions } from "@/hooks/use-divisions";
 
 export default function EmployeesPage() {
   const router = useRouter();
-  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
+  const { employees, loading, error, createEmployee, updateEmployee, deleteEmployee, refetch } = useEmployees();
+  const { departments } = useDepartments();
+  const { divisions } = useDivisions();
+
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDivision, setFilterDivision] = useState<string>("all");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
-    name: "",
-    position: "",
+    employeeId: "",
+    firstName: "",
+    lastName: "",
+    departmentId: "",
     divisionId: "",
-    unit: "",
-    phone: "",
+    notes: "",
   });
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      position: "",
+      employeeId: "",
+      firstName: "",
+      lastName: "",
+      departmentId: "",
       divisionId: "",
-      unit: "",
-      phone: "",
+      notes: "",
     });
     setSelectedEmployee(null);
     setIsEditing(false);
@@ -218,86 +90,95 @@ export default function EmployeesPage() {
 
   const handleAddClick = () => {
     resetForm();
+    // Generate new employee ID
+    const year = new Date().getFullYear();
+    const nextNum = employees.length + 1;
+    setFormData(prev => ({
+      ...prev,
+      employeeId: `EMP-${year}-${String(nextNum).padStart(3, "0")}`,
+    }));
     setDialogOpen(true);
   };
 
   const handleEditClick = (employee: Employee) => {
     setSelectedEmployee(employee);
     setFormData({
-      name: employee.name,
-      position: employee.position,
-      divisionId: employee.divisionId,
-      unit: employee.unit || "",
-      phone: employee.phone || "",
+      employeeId: employee.employeeId,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      departmentId: employee.departmentId?.toString() || "",
+      divisionId: employee.divisionId?.toString() || "",
+      notes: employee.notes || "",
     });
     setIsEditing(true);
     setDialogOpen(true);
   };
 
-  const handleDeleteClick = (employee: Employee) => {
-    if (confirm(`هل أنت متأكد من حذف الموظف ${employee.name}؟`)) {
-      setEmployees(employees.filter((e) => e.id !== employee.id));
-      toast.success(`تم حذف الموظف ${employee.name} بنجاح`);
+  const handleDeleteClick = async (employee: Employee) => {
+    if (confirm(`هل أنت متأكد من حذف الموظف ${employee.fullName}؟`)) {
+      try {
+        await deleteEmployee(employee.id);
+        toast.success(`تم حذف الموظف ${employee.fullName} بنجاح`);
+      } catch (err) {
+        toast.error("فشل في حذف الموظف");
+      }
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate required fields
-    if (!formData.name || !formData.position || !formData.divisionId) {
-      toast.error("الرجاء ملء جميع الحقول المطلوبة (الاسم، المنصب، الشعبة)");
+    if (!formData.firstName || !formData.lastName) {
+      toast.error("الرجاء ملء جميع الحقول المطلوبة (الاسم الأول، الاسم الأخير)");
       return;
     }
 
-    const divisionName = DIVISIONS.find((d) => d.id === formData.divisionId)?.name || "";
+    setIsSubmitting(true);
 
-    if (isEditing && selectedEmployee) {
-      // Update existing employee
-      setEmployees(
-        employees.map((e) =>
-          e.id === selectedEmployee.id
-            ? {
-                ...e,
-                name: formData.name,
-                position: formData.position,
-                divisionId: formData.divisionId,
-                divisionName,
-                unit: formData.unit,
-                phone: formData.phone,
-              }
-            : e
-        )
-      );
-      toast.success(`تم تحديث بيانات الموظف ${formData.name} بنجاح`);
-    } else {
-      // Add new employee
-      const newEmployee: Employee = {
-        id: `EMP${String(employees.length + 1).padStart(3, "0")}`,
-        name: formData.name,
-        position: formData.position,
-        divisionId: formData.divisionId,
-        divisionName,
-        unit: formData.unit,
-        phone: formData.phone,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setEmployees([...employees, newEmployee]);
-      toast.success(`تم إضافة الموظف ${formData.name} بنجاح`);
+    try {
+      if (isEditing && selectedEmployee) {
+        // Update existing employee
+        await updateEmployee(selectedEmployee.id, {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          departmentId: formData.departmentId ? parseInt(formData.departmentId) : undefined,
+          divisionId: formData.divisionId ? parseInt(formData.divisionId) : undefined,
+          notes: formData.notes,
+        });
+        toast.success(`تم تحديث بيانات الموظف ${formData.firstName} ${formData.lastName} بنجاح`);
+      } else {
+        // Add new employee
+        await createEmployee({
+          employeeId: formData.employeeId,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          departmentId: formData.departmentId ? parseInt(formData.departmentId) : undefined,
+          divisionId: formData.divisionId ? parseInt(formData.divisionId) : undefined,
+          notes: formData.notes,
+        });
+        toast.success(`تم إضافة الموظف ${formData.firstName} ${formData.lastName} بنجاح`);
+      }
+
+      setDialogOpen(false);
+      resetForm();
+    } catch (err) {
+      toast.error(isEditing ? "فشل في تحديث الموظف" : "فشل في إضافة الموظف");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setDialogOpen(false);
-    resetForm();
   };
 
-  // Filter employees based on search term and division
-  const filteredEmployees = employees.filter((employee) => {
-    const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDivision =
-      filterDivision === "all" || employee.divisionId === filterDivision;
-    return matchesSearch && matchesDivision;
-  });
+  // Filter employees based on search term and department
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((employee) => {
+      const matchesSearch =
+        employee.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.employeeId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employee.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDepartment =
+        filterDepartment === "all" || employee.departmentId?.toString() === filterDepartment;
+      return matchesSearch && matchesDepartment;
+    });
+  }, [employees, searchTerm, filterDepartment]);
 
   // Navigate to employee details
   const handleViewDetails = (employee: Employee) => {
@@ -305,15 +186,35 @@ export default function EmployeesPage() {
   };
 
   // Statistics
-  const stats = {
+  const stats = useMemo(() => ({
     total: employees.length,
-    employeesWithItems: employees.filter((e) => e.items.length > 0).length,
-    totalItems: employees.reduce((sum, e) => sum + e.items.length, 0),
-    byDivision: DIVISIONS.map((div) => ({
-      ...div,
-      count: employees.filter((e) => e.divisionId === div.id).length,
+    active: employees.filter((e) => e.isActive).length,
+    byDepartment: departments.map((dept) => ({
+      ...dept,
+      count: employees.filter((e) => e.departmentId === dept.id).length,
     })),
-  };
+  }), [employees, departments]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-lg text-muted-foreground">حدث خطأ في تحميل البيانات</p>
+          <Button onClick={() => refetch()} className="mt-4">
+            إعادة المحاولة
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -325,7 +226,7 @@ export default function EmployeesPage() {
             إدارة الموظفين
           </h2>
           <p className="text-muted-foreground mt-1">
-            إضافة وتعديل وحذف الموظفين وتعيينهم للشعب
+            إضافة وتعديل وحذف الموظفين وتعيينهم للأقسام
           </p>
         </div>
         <Button onClick={handleAddClick}>
@@ -349,34 +250,34 @@ export default function EmployeesPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">موظفين لديهم مواد</CardTitle>
+            <CardTitle className="text-sm font-medium">الموظفين النشطين</CardTitle>
             <PackageCheck className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.employeesWithItems}</div>
-            <p className="text-xs text-muted-foreground">موظف يحملون مواد</p>
+            <div className="text-2xl font-bold">{stats.active}</div>
+            <p className="text-xs text-muted-foreground">موظف نشط</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي المواد</CardTitle>
+            <CardTitle className="text-sm font-medium">الأقسام</CardTitle>
             <PackageCheck className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalItems}</div>
-            <p className="text-xs text-muted-foreground">مادة موزعة</p>
+            <div className="text-2xl font-bold">{departments.length}</div>
+            <p className="text-xs text-muted-foreground">قسم</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">بدون مواد</CardTitle>
+            <CardTitle className="text-sm font-medium">الشعب</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total - stats.employeesWithItems}</div>
-            <p className="text-xs text-muted-foreground">موظف بدون مواد</p>
+            <div className="text-2xl font-bold">{divisions.length}</div>
+            <p className="text-xs text-muted-foreground">شعبة</p>
           </CardContent>
         </Card>
       </div>
@@ -402,16 +303,16 @@ export default function EmployeesPage() {
               </div>
             </div>
             <div className="w-[200px]">
-              <Label>الشعبة</Label>
-              <Select value={filterDivision} onValueChange={setFilterDivision}>
+              <Label>القسم</Label>
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">جميع الشعب</SelectItem>
-                  {DIVISIONS.map((div) => (
-                    <SelectItem key={div.id} value={div.id}>
-                      {div.name}
+                  <SelectItem value="all">جميع الأقسام</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id.toString()}>
+                      {dept.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -426,17 +327,16 @@ export default function EmployeesPage() {
                 <TableRow>
                   <TableHead className="text-right min-w-[120px]">رقم الموظف</TableHead>
                   <TableHead className="text-right min-w-[200px]">الاسم</TableHead>
-                  <TableHead className="text-right min-w-[150px]">المنصب</TableHead>
+                  <TableHead className="text-right min-w-[150px]">القسم</TableHead>
                   <TableHead className="text-right min-w-[150px]">الشعبة</TableHead>
-                  <TableHead className="text-right min-w-[100px]">المواد</TableHead>
-                  <TableHead className="text-right min-w-[120px]">رقم الهاتف</TableHead>
+                  <TableHead className="text-right min-w-[100px]">الحالة</TableHead>
                   <TableHead className="text-right min-w-[150px]">الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredEmployees.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
+                    <TableCell colSpan={6} className="text-center text-muted-foreground h-24">
                       لا يوجد موظفين
                     </TableCell>
                   </TableRow>
@@ -447,18 +347,27 @@ export default function EmployeesPage() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => handleViewDetails(employee)}
                     >
-                      <TableCell className="text-right font-mono">{employee.id}</TableCell>
-                      <TableCell className="text-right font-medium">{employee.name}</TableCell>
-                      <TableCell className="text-right">{employee.position}</TableCell>
+                      <TableCell className="text-right font-mono">{employee.employeeId}</TableCell>
+                      <TableCell className="text-right font-medium">{employee.fullName}</TableCell>
                       <TableCell className="text-right">
-                        <Badge variant="outline">{employee.divisionName}</Badge>
+                        {employee.department?.name ? (
+                          <Badge variant="outline">{employee.department.name}</Badge>
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={employee.items.length > 0 ? "default" : "secondary"}>
-                          {employee.items.length} مادة
+                        {employee.division?.name ? (
+                          <Badge variant="secondary">{employee.division.name}</Badge>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Badge variant={employee.isActive ? "default" : "secondary"}>
+                          {employee.isActive ? "نشط" : "غير نشط"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right font-mono">{employee.phone || "-"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button
@@ -505,7 +414,7 @@ export default function EmployeesPage() {
             </DialogTitle>
             <DialogDescription>
               {isEditing
-                ? `تعديل بيانات ${selectedEmployee?.name}`
+                ? `تعديل بيانات ${selectedEmployee?.fullName}`
                 : "أدخل بيانات الموظف الجديد"}
             </DialogDescription>
           </DialogHeader>
@@ -513,25 +422,26 @@ export default function EmployeesPage() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">الاسم الكامل *</Label>
+                <Label htmlFor="employeeId">رقم الموظف</Label>
                 <Input
-                  id="name"
-                  placeholder="أدخل الاسم الكامل"
-                  value={formData.name}
+                  id="employeeId"
+                  placeholder="EMP-2024-001"
+                  value={formData.employeeId}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({ ...formData, employeeId: e.target.value })
                   }
+                  disabled={isEditing}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="position">المنصب *</Label>
+                <Label htmlFor="firstName">الاسم الأول *</Label>
                 <Input
-                  id="position"
-                  placeholder="أدخل المنصب"
-                  value={formData.position}
+                  id="firstName"
+                  placeholder="أدخل الاسم الأول"
+                  value={formData.firstName}
                   onChange={(e) =>
-                    setFormData({ ...formData, position: e.target.value })
+                    setFormData({ ...formData, firstName: e.target.value })
                   }
                 />
               </div>
@@ -539,7 +449,42 @@ export default function EmployeesPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="division">الشعبة *</Label>
+                <Label htmlFor="lastName">الاسم الأخير *</Label>
+                <Input
+                  id="lastName"
+                  placeholder="أدخل الاسم الأخير"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, lastName: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="department">القسم</Label>
+                <Select
+                  value={formData.departmentId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, departmentId: value })
+                  }
+                >
+                  <SelectTrigger id="department">
+                    <SelectValue placeholder="اختر القسم" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id.toString()}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="division">الشعبة</Label>
                 <Select
                   value={formData.divisionId}
                   onValueChange={(value) =>
@@ -550,36 +495,24 @@ export default function EmployeesPage() {
                     <SelectValue placeholder="اختر الشعبة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {DIVISIONS.map((div) => (
-                      <SelectItem key={div.id} value={div.id}>
+                    {divisions.map((div) => (
+                      <SelectItem key={div.id} value={div.id.toString()}>
                         {div.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unit">الوحدة (اختياري)</Label>
-                <Input
-                  id="unit"
-                  placeholder="أدخل اسم الوحدة"
-                  value={formData.unit}
-                  onChange={(e) =>
-                    setFormData({ ...formData, unit: e.target.value })
-                  }
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">رقم الهاتف</Label>
-              <Input
-                id="phone"
-                placeholder="07XXXXXXXXX"
-                value={formData.phone}
+              <Label htmlFor="notes">ملاحظات</Label>
+              <Textarea
+                id="notes"
+                placeholder="أدخل ملاحظات إضافية"
+                value={formData.notes}
                 onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
+                  setFormData({ ...formData, notes: e.target.value })
                 }
               />
             </div>
@@ -589,7 +522,8 @@ export default function EmployeesPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               إلغاء
             </Button>
-            <Button onClick={handleSubmit}>
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 ml-2 animate-spin" />}
               {isEditing ? "حفظ التعديلات" : "إضافة الموظف"}
             </Button>
           </DialogFooter>

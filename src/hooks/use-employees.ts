@@ -168,3 +168,55 @@ export const useEmployees = (filters?: EmployeeFilters) => {
     setFilters,
   };
 };
+
+// Extended employee interface with asset custodies
+export interface EmployeeWithCustodies extends Employee {
+  assetCustodies?: Array<{
+    id: number;
+    custodyNumber: string;
+    startDate: string;
+    endDate?: string;
+    status: number;
+    condition?: string;
+    notes?: string;
+    itemInstance?: {
+      id: number;
+      serialNumber: string;
+      barcode?: string;
+      itemMaster?: {
+        id: number;
+        name: string;
+        code: string;
+      };
+    };
+  }>;
+}
+
+// Hook to get a single employee by ID
+export const useEmployee = (id: number) => {
+  const {
+    data,
+    loading,
+    fetchError,
+    refetch,
+  } = useApiData<EmployeeWithCustodies>(`/employees/${id}`, {
+    enableFetch: id > 0,
+    pagination: false,
+  });
+
+  const employee: EmployeeWithCustodies | null = useMemo(() => {
+    if (!data) return null;
+    const responseData = data as any;
+    if (responseData?.data) {
+      return responseData.data;
+    }
+    return null;
+  }, [data]);
+
+  return {
+    employee,
+    loading,
+    error: fetchError,
+    refetch,
+  };
+};

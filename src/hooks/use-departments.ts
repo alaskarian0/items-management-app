@@ -1,7 +1,7 @@
 'use client';
 
 import { useApiData } from './useApi';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 export interface Department {
   id: number;
@@ -37,6 +37,22 @@ export const useDepartments = () => {
   } = useApiData<Department>('/departments', {
     enableFetch: true,
   });
+
+  // Extract departments from API response
+  const departments: Department[] = useMemo(() => {
+    if (!data) return [];
+    const responseData = data as any;
+    if (responseData?.data?.items && Array.isArray(responseData.data.items)) {
+      return responseData.data.items;
+    }
+    if (Array.isArray(responseData?.data)) {
+      return responseData.data;
+    }
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    return [];
+  }, [data]);
 
   const createDepartment = useCallback(async (departmentData: CreateDepartmentDto) => {
     try {
@@ -85,7 +101,7 @@ export const useDepartments = () => {
   }, [deleteDepartment, refetch]);
 
   return {
-    departments: data,
+    departments,
     loading,
     error: fetchError,
     createDepartment,

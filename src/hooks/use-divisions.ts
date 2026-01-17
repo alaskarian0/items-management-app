@@ -1,7 +1,7 @@
 'use client';
 
 import { useApiData } from './useApi';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 export interface Division {
   id: number;
@@ -42,6 +42,22 @@ export const useDivisions = (departmentId?: number) => {
   } = useApiData<Division>(endpoint, {
     enableFetch: true,
   });
+
+  // Extract divisions from API response
+  const divisions: Division[] = useMemo(() => {
+    if (!data) return [];
+    const responseData = data as any;
+    if (responseData?.data?.items && Array.isArray(responseData.data.items)) {
+      return responseData.data.items;
+    }
+    if (Array.isArray(responseData?.data)) {
+      return responseData.data;
+    }
+    if (Array.isArray(responseData)) {
+      return responseData;
+    }
+    return [];
+  }, [data]);
 
   const createDivision = useCallback(async (divisionData: CreateDivisionDto) => {
     try {
@@ -90,7 +106,7 @@ export const useDivisions = (departmentId?: number) => {
   }, [deleteDivision, refetch]);
 
   return {
-    divisions: data,
+    divisions,
     loading,
     error: fetchError,
     createDivision,
